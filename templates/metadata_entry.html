@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Consolidated Protfolio Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<header>
+    <nav>
+        <a href="/">Home</a>
+        <a href = "/hist_price">Historic Price</a>
+        <a href = "/metadata/">Metadata Entry</a>
+        <a href = "/portfolio_order">Portfolio Order Entry</a>
+        <a href = "/processing_date">Processing Date</a>
+        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
+    </nav>
+</header>
+<body>
+    <div>
+    <form id = "metadata_entry_form">
+    <label for = "symbol">
+    <b>Symbol</b></label></br>
+    <input type = "text" id = "symbol" name = "symbol" placeholder="Enter the Stock/Mutual Fund Symbol" required autocomplete="off"></br>
+    
+    <label for = "alt_symbol">
+    <b>Name</b></label></br>
+    <input type = "text" id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Stock/Mutual Fund Name" required autocomplete="off"></br>
+    
+    <label for = "amc">
+    <b>AMC</b></label></br>
+    <input type = "text" id = "amc" name = "amc" placeholder="Enter the Mutual Fund AMC Name(Optional)" autocomplete="off"></br>
+    
+    <label for = "type">
+    <b>Type</b></label></br>
+    <input type = "text" id = "type" name = "type" placeholder="Enter the Mutual Fund Type(Optional)" autocomplete="off"></br>
+    
+    <label for = "fund_category">
+    <b>Fund Category</b></label></br>
+    <input type = "text" id = "fund_category" name = "fund_category" placeholder="Enter the Mutual Fund Category(Optional)" autocomplete="off"></br>
+    
+    <label for = "launched_on">
+    <b>Launched On</b></label></br>
+    <input type = "text" id = "launched_on" name = "launched_on" placeholder="Enter the Date in which Mutual Fund was Launched" autocomplete="off"></br>
+    
+    <label for = "exit_load">
+    <b>Exit Load</b></label></br>
+    <input type = "text" id = "exit_load" name = "exit_load" placeholder="Enter the Mutual Fund Exit Load" autocomplete="off"></br>
+    
+    <label for = "expense_ratio">
+    <b>Expense Ratio</b></label></br>
+    <input type = "text" id = "expense_ratio" name = "expense_ratio" placeholder="Enter the Mutual Fund Expense Ratio" autocomplete="off"></br>
+    
+    <label for = "fund_manager">
+    <b>Fund Manager</b></label></br>
+    <input type = "text" id = "fund_manager" name = "fund_manager" placeholder="Enter the Mutual Fund Manager" autocomplete="off"></br>
+    
+    <label for = "fund_manager_started_on">
+    <b>Fund Manager Started On</b></label></br>
+    <input type = "text" id = "fund_manager_started_on" name = "fund_manager_started_on" placeholder="Enter the Date in which Mutual Fund Manager Started" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Submit</button>
+    </form>
+    </div>
+    <div id = "result"></div>
+<script src="{{ url_for('static', filename='metadata_entry_form.js') }}" defer></script>
+</body>
+</html>

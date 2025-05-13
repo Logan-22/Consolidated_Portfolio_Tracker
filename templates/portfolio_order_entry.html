@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Consolidated Protfolio Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<header>
+    <nav>
+        <a href="/">Home</a>
+        <a href = "/hist_price">Historic Price</a>
+        <a href = "/metadata/">Metadata Entry</a>
+        <a href = "/portfolio_order">Portfolio Order Entry</a>
+        <a href = "/processing_date">Processing Date</a>
+        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
+    </nav>
+</header>
+<body>
+    <div>
+    <form id = "portfolio_order_entry_form">
+
+    <label for = "alt_symbol">
+    <b>Name</b></label>
+    <select id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Stock/Mutual Fund Name" required></select></br>
+
+    <label for = "purchase_date">
+    <b>Purchased On</b></label></br>
+    <input type = "date" id = "purchase_date" name = "purchase_date" placeholder="Enter the Date in which Stock/Mutual Fund was Purchased" autocomplete="off"></br>
+    
+    <label for = "invested_amount">
+    <b>Invested Amount</b></label></br>
+    <input type = "text" id = "invested_amount" name = "invested_amount" placeholder="Enter the Invested Amount" autocomplete="off"></br>
+    
+    <label for = "amc_amount">
+    <b>AMC Amount</b></label></br>
+    <input type = "text" id = "amc_amount" name = "amc_amount" placeholder="Enter the after fees amount invested" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Submit</button>
+    </form>
+    </div>
+    <div id = "result"></div>
+<script src="{{ url_for('static', filename='portfolio_order_entry_form.js') }}" defer></script>
+</body>
+</html>

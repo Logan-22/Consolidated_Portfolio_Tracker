@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# DB
+*.db
+databases/
+
 # C extensions
 *.so
 

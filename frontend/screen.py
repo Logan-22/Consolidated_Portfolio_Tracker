@@ -1,0 +1,23 @@
+from flask import Blueprint, render_template
+
+frontend = Blueprint('frontend', __name__)
+
+@frontend.route('/')
+def index():
+    return render_template('index.html')
+
+@frontend.route('/hist_price/')
+def hist_price_form():
+    return render_template('hist_price_form.html')
+
+@frontend.route('/metadata/')
+def metadata_entry():
+    return render_template('metadata_entry.html')
+
+@frontend.route('/portfolio_order/')
+def portfolio_order_entry():
+    return render_template('portfolio_order_entry.html')
+
+@frontend.route('/processing_date/')
+def processing_date():
+    return render_template('processing_date.html')

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Consolidated Protfolio Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<header>
+    <nav>
+        <a href="/">Home</a>
+        <a href = "/hist_price">Historic Price</a>
+        <a href = "/metadata/">Metadata Entry</a>
+        <a href = "/portfolio_order">Portfolio Order Entry</a>
+        <a href = "/processing_date">Processing Date</a>
+        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
+    </nav>
+</header>
+<body>
+    <div>
+    <form id = "processing_date_form">
+
+    <label for = "current_date">
+    <b>Current Date</b></label></br>
+    <input type = "date" id = "current_date" name = "current_date" autocomplete="off"></br>
+    
+    <label for = "mf_proc_date">
+    <b>Mutual Fund Proc Date</b></label></br>
+    <input type = "date" id = "mf_proc_date" name = "mf_proc_date" autocomplete="off"></br>
+    
+    <label for = "ppfs_mf_proc_date">
+    <b>Parag Parikh Mutual Fund Proc Date</b></label></br>
+    <input type = "date" id = "ppfs_mf_proc_date" name = "ppfs_mf_proc_date" autocomplete="off"></br>
+    
+    <label for = "stock_proc_date">
+    <b>Stock Proc Date</b></label></br>
+    <input type = "date" id = "stock_proc_date" name = "stock_proc_date" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Submit</button>
+    </form>
+    </div>
+    <div id = "result"></div>
+<script src="{{ url_for('static', filename='processing_date_form.js') }}" defer></script>
+</body>
+</html>

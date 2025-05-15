@@ -26,7 +26,7 @@ data.name_list.forEach(element => {
 document.getElementById('hist_price_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 const alt_symbol = document.getElementById('alt_symbol').value;
-const symbol_response = await fetch(`/api/symbol/${alt_symbol}`, {
+const symbol_response = await fetch(`/api/symbol/${alt_symbol}/`, {
 method: 'GET'
 })
 
@@ -36,12 +36,11 @@ const symbol = symbol_data.symbol_list[0]
 const start_date = document.getElementById('start_date').value;
 const end_date = document.getElementById('end_date').value;
 const formData = new FormData();
-formData.append('symbol', symbol);
 formData.append('alt_symbol', alt_symbol);
 formData.append('start_date', start_date);
 formData.append('end_date', end_date);
 
-const response = await fetch(`/api/hist_price/`, {
+const response = await fetch(`/api/hist_price/${symbol}/`, {
 method: 'POST',
 body: formData
 })

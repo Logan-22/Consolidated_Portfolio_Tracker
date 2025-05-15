@@ -7,7 +7,7 @@
     
 </head>
 <header>
-    <nav>
+    <nav id = "index_nav">
         <a href = "/">Home</a>
         <a href = "/hist_price">Historic Price</a>
         <a href = "/metadata">Metadata Entry</a>
@@ -18,7 +18,8 @@
 </header>
 
 <body>
-    <b>Consolidated Portfolio Tracker</b>
-    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
+<b>Consolidated Portfolio Tracker</b>
+<div id = "result"></div>
+<script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
 </body>
 </html>

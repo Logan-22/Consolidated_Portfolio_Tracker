@@ -3,13 +3,24 @@ import yfinance as yf
 from dateutil import parser
 from datetime import datetime
 
-from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_portfolio_order_table, insert_portfolio_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table
+from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_portfolio_order_table, insert_portfolio_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table
 
 api = Blueprint('api', __name__)
 
-@api.route('/api/hist_price/', methods = ['POST'])
-def hist_price():
-    symbol = request.form.get('symbol')
+@api.route('/api/max_date/', methods = ['GET'])
+def max_date_in_nav_tables():
+    table_list = get_tables_list()
+    table_list = table_list.get_json()
+    max_date_from_tables = {}
+    for table in table_list:
+            table = str(table).replace('[','').replace(']','')
+            max_date = get_max_date_from_table(table)
+            max_date = max_date.get_json()
+            max_date_from_tables[table] = max_date['max_date']
+    return jsonify({'max_date_from_tables':max_date_from_tables, 'message': "Successfully retrieved MAX Date data from NAV Tables", 'status': "Success"})
+    
+@api.route('/api/hist_price/<symbol>/', methods = ['POST'])
+def hist_price(symbol):
     alt_symbol = request.form.get('alt_symbol')
     alt_symbol = alt_symbol.replace(" ", "_")
     truncate_table(alt_symbol)
@@ -21,8 +32,9 @@ def hist_price():
     for index, value in pandas_data['Close'].items():
         date = str(index)[:10]
         if (parser.parse(date, fuzzy = 'fuzzy')):
-            insert_into_table(alt_symbol, date, round(value,4), date, '9998-12-31', 0)
+            insert_into_nav_table(alt_symbol, date, round(value,4), date, '9998-12-31', 0)
     return jsonify({'message': "Successfully inserted data into " + alt_symbol + " table", 'status': "Success"})
+
 
 @api.route('/api/metadata/', methods = ['POST'])
 def metadata_entry():
@@ -111,3 +123,31 @@ def proc_date_update():
         return jsonify({'message': "Successfully updated Processing Date Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/hist_price/<symbol>/<start_date>/<end_date>/', methods = ['POST'])
+def date_range_hist_price(symbol,start_date, end_date):
+    alt_symbol = request.form.get('alt_symbol')
+    alt_symbol = alt_symbol.replace(" ", "_")
+    ticker = yf.Ticker(symbol)
+    pandas_data = ticker.history(start=start_date, end=end_date)
+    for index, value in pandas_data['Close'].items():
+        date = str(index)[:10]
+        if (parser.parse(date, fuzzy = 'fuzzy')):
+            insert_into_nav_table(alt_symbol, date, round(value,4), date, '9998-12-31', 0)
+    return jsonify({'message': "Successfully inserted data into " + alt_symbol + " table", 'status': "Success"})
+
+@api.route('/api/nav/dup_check/', methods = ['GET'])
+def dup_check_on_all_nav_tables():
+    table_list = get_tables_list()
+    table_list = table_list.get_json()
+    dup_tables = {}
+    for table in table_list:
+        table = str(table).replace("[","").replace("]","").replace("'","")
+        dup_check_response = dup_check_on_nav_table(table)
+        if dup_check_response:
+            dup_check_response = dup_check_response.get_json()
+            dup_tables[table] = dup_check_response['value_date']
+    if dup_tables:
+        return jsonify({'dup_tables': dup_tables,'message': 'Successfully completed Duplicate Check On All NAV table','status': 'Duplicate Issue'})
+    else:
+        return ({'message': 'Successfully completed Duplicate Check On All NAV tables','status': 'Success'})

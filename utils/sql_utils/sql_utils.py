@@ -21,12 +21,24 @@ def create_table(alt_symbol):
         )
     ''')
 
-def insert_into_table(alt_symbol, date, price, start_date, end_date, record_deleted_flag):
+def insert_into_nav_table(alt_symbol, date, price, start_date, end_date, record_deleted_flag):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO " + alt_symbol + "(VALUE_DATE, PRICE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?)",
-                   (date, price, start_date, end_date, record_deleted_flag ))
-    conn.commit()
+    cursor.execute(f"SELECT VALUE_DATE, PRICE FROM {alt_symbol} WHERE VALUE_DATE = '{start_date}';")
+    rows = cursor.fetchall()
+    if rows:
+        for row in rows:
+            date_from_query = row[0]
+            price_from_query = row[1]
+            if date_from_query == date and price_from_query != price:
+                cursor.execute(f"UPDATE {alt_symbol} SET END_DATE = '{start_date}', RECORD_DELETED_FLAG = 1 WHERE VALUE_DATE = '{start_date}';")
+                cursor.execute("INSERT INTO " + alt_symbol + "(VALUE_DATE, PRICE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?)",
+                                (date, price, start_date, end_date, record_deleted_flag ))
+                conn.commit()
+    else:
+        cursor.execute("INSERT INTO " + alt_symbol + "(VALUE_DATE, PRICE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?)",
+        (date, price, start_date, end_date, record_deleted_flag ))
+        conn.commit()
     conn.close()
 
 def truncate_table(alt_symbol):
@@ -83,6 +95,7 @@ def get_symbol_from_metadata(alt_symbol):
     if rows:
         symbol_list = [{'symbol': row[0]} for row in rows]
         return jsonify(symbol_list)
+    return
 
 def get_nav_from_hist_table(table_name, purchase_date):
     conn = sqlite3.connect(db_path)
@@ -145,7 +158,6 @@ def create_processing_date_table():
     rows = cursor.fetchall()
     if rows:
         count = rows[0][0]
-    print(count)
     if count == 0:
         cursor.execute("INSERT INTO PROCESSING_DATE (CURRENT_DATE, MF_PROC_DATE, PPFS_MF_PROC_DATE, STOCK_PROC_DATE) VALUES (?, ?, ?, ?)",
                    (datetime.date.today(), datetime.date.today(), datetime.date.today(), datetime.date.today()))
@@ -158,3 +170,39 @@ def update_proc_date_in_processing_date_table(current_date, mf_proc_date, ppfs_m
     cursor.execute(f"UPDATE PROCESSING_DATE SET CURRENT_DATE = '{current_date}', MF_PROC_DATE = '{mf_proc_date}', PPFS_MF_PROC_DATE = '{ppfs_mf_proc_date}', STOCK_PROC_DATE = '{stock_proc_date}';")
     conn.commit()
     conn.close()
+
+def get_tables_list():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'PORTFOLIO_ORDER', 'PROCESSING_DATE');")
+    rows = cursor.fetchall()
+    conn.close()
+    tables_list = []
+    if rows:
+        for row in rows:
+            tables_list.append(row)
+        return jsonify(tables_list)
+    return
+    
+
+def get_max_date_from_table(table):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT MAX(VALUE_DATE) FROM {table};")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'max_date' : rows[0][0]}
+        return jsonify(data)
+    return
+
+def dup_check_on_nav_table(table):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT VALUE_DATE, COUNT(*) C FROM {table} WHERE RECORD_DELETED_FLAG = 0 GROUP BY 1 HAVING C > 1;")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'value_date' : rows[0][0]}
+        return jsonify(data)
+    return

@@ -22,15 +22,30 @@ resultDiv.innerHTML = `<strong>${data.message}</strong>`
 return
 }
 
-const current_date      = document.getElementById('current_date')
-const mf_proc_date      = document.getElementById('mf_proc_date')
-const ppfs_mf_proc_date = document.getElementById('ppfs_mf_proc_date')
-const stock_proc_date   = document.getElementById('stock_proc_date')
+const mf_proc_date          = document.getElementById('mf_proc_date');
+const mf_next_proc_date     = document.getElementById('mf_next_proc_date');
+const mf_prev_proc_date     = document.getElementById('mf_prev_proc_date');
 
-current_date.value      = data.current_date
+const ppf_mf_proc_date      = document.getElementById('ppf_mf_proc_date');
+const ppf_mf_next_proc_date = document.getElementById('ppf_mf_next_proc_date');
+const ppf_mf_prev_proc_date = document.getElementById('ppf_mf_prev_proc_date');
+
+const stock_proc_date       = document.getElementById('stock_proc_date');
+const stock_next_proc_date  = document.getElementById('stock_next_proc_date');
+const stock_prev_proc_date  = document.getElementById('stock_prev_proc_date');
+
 mf_proc_date.value      = data.mf_proc_date
-ppfs_mf_proc_date.value = data.ppfs_mf_proc_date
-stock_proc_date.value   = data.stock_proc_date
+mf_next_proc_date.value = data.mf_next_proc_date
+mf_prev_proc_date.value = data.mf_prev_proc_date
+
+ppf_mf_proc_date.value      = data.ppf_mf_proc_date
+ppf_mf_next_proc_date.value = data.ppf_mf_next_proc_date
+ppf_mf_prev_proc_date.value = data.ppf_mf_prev_proc_date
+
+stock_proc_date.value      = data.stock_proc_date
+stock_next_proc_date.value = data.stock_next_proc_date
+stock_prev_proc_date.value = data.stock_prev_proc_date
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -38,17 +53,31 @@ stock_proc_date.value   = data.stock_proc_date
 document.getElementById('processing_date_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
+const mf_proc_date          = document.getElementById('mf_proc_date').value;
+const mf_next_proc_date     = document.getElementById('mf_next_proc_date').value;
+const mf_prev_proc_date     = document.getElementById('mf_prev_proc_date').value;
 
-const current_date      = document.getElementById('current_date').value;
-const mf_proc_date      = document.getElementById('mf_proc_date').value;
-const ppfs_mf_proc_date = document.getElementById('ppfs_mf_proc_date').value;
-const stock_proc_date   = document.getElementById('stock_proc_date').value;
+const ppf_mf_proc_date      = document.getElementById('ppf_mf_proc_date').value;
+const ppf_mf_next_proc_date = document.getElementById('ppf_mf_next_proc_date').value;
+const ppf_mf_prev_proc_date = document.getElementById('ppf_mf_prev_proc_date').value;
+
+const stock_proc_date       = document.getElementById('stock_proc_date').value;
+const stock_next_proc_date  = document.getElementById('stock_next_proc_date').value;
+const stock_prev_proc_date  = document.getElementById('stock_prev_proc_date').value;
 
 const formData = new FormData();
-formData.append('current_date', current_date);
+
 formData.append('mf_proc_date', mf_proc_date);
-formData.append('ppfs_mf_proc_date', ppfs_mf_proc_date);
+formData.append('mf_next_proc_date', mf_next_proc_date);
+formData.append('mf_prev_proc_date', mf_prev_proc_date);
+
+formData.append('ppf_mf_proc_date', ppf_mf_proc_date);
+formData.append('ppf_mf_next_proc_date', ppf_mf_next_proc_date);
+formData.append('ppf_mf_prev_proc_date', ppf_mf_prev_proc_date);
+
 formData.append('stock_proc_date', stock_proc_date);
+formData.append('stock_next_proc_date', stock_next_proc_date);
+formData.append('stock_prev_proc_date', stock_prev_proc_date);
 
 const response = await fetch(`/api/processing_date/`, {
 method: 'POST',

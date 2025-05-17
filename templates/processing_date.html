@@ -19,23 +19,52 @@
     <div>
     <form id = "processing_date_form">
 
-    <label for = "current_date">
-    <b>Current Date</b></label></br>
-    <input type = "date" id = "current_date" name = "current_date" autocomplete="off"></br>
-    
+    <label for = "mf_proc_typ_cd">
+    <b>Processing Type Code for Mutual Funds</b></label></br>
+
     <label for = "mf_proc_date">
-    <b>Mutual Fund Proc Date</b></label></br>
+    <b>Mutual Fund Processing Date</b></label></br>
     <input type = "date" id = "mf_proc_date" name = "mf_proc_date" autocomplete="off"></br>
     
-    <label for = "ppfs_mf_proc_date">
-    <b>Parag Parikh Mutual Fund Proc Date</b></label></br>
-    <input type = "date" id = "ppfs_mf_proc_date" name = "ppfs_mf_proc_date" autocomplete="off"></br>
+    <label for = "mf_next_proc_date">
+    <b>Mutual Fund Next Processing Date</b></label></br>
+    <input type = "date" id = "mf_next_proc_date" name = "mf_next_proc_date" autocomplete="off"></br>
     
+    <label for = "mf_prev_proc_date">
+    <b>Mutual Fund Previous Processing Date</b></label></br>
+    <input type = "date" id = "mf_prev_proc_date" name = "mf_prev_proc_date" autocomplete="off"></br>
+    
+    <label for = "ppf_mf_proc_typ_cd">
+    <b>Processing Type Code for Parag Parikh Mutual Fund</b></label></br>
+
+    <label for = "ppf_mf_proc_date">
+    <b>Parag Parikh Mutual Fund Processing Date</b></label></br>
+    <input type = "date" id = "ppf_mf_proc_date" name = "ppf_mf_proc_date" autocomplete="off"></br>
+    
+    <label for = "ppf_mf_next_proc_date">
+    <b>Parag Parikh Mutual Fund Next Processing Date</b></label></br>
+    <input type = "date" id = "ppf_mf_next_proc_date" name = "ppf_mf_next_proc_date" autocomplete="off"></br>
+    
+    <label for = "ppf_mf_prev_proc_date">
+    <b>Parag Parikh Mutual Fund Previous Processing Date</b></label></br>
+    <input type = "date" id = "ppf_mf_prev_proc_date" name = "ppf_mf_prev_proc_date" autocomplete="off"></br>
+   
+    <label for = "ppf_mf_proc_typ_cd">
+    <b>Processing Type Code for Stocks</b></label></br>
+
     <label for = "stock_proc_date">
-    <b>Stock Proc Date</b></label></br>
+    <b>Stock Processing Date</b></label></br>
     <input type = "date" id = "stock_proc_date" name = "stock_proc_date" autocomplete="off"></br>
     
-    <button type = "submit" class = "submit">Submit</button>
+    <label for = "stock_next_proc_date">
+    <b>Stocks Next Processing Date</b></label></br>
+    <input type = "date" id = "stock_next_proc_date" name = "stock_next_proc_date" autocomplete="off"></br>
+    
+    <label for = "stock_prev_proc_date">
+    <b>Stocks Previous Processing Date</b></label></br>
+    <input type = "date" id = "stock_prev_proc_date" name = "stock_prev_proc_date" autocomplete="off"></br>
+      
+    <button type = "submit" class = "submit">Update Processing Dates</button>
     </form>
     </div>
     <div id = "result"></div>

@@ -3,7 +3,7 @@ import yfinance as yf
 from dateutil import parser
 from datetime import datetime
 
-from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_portfolio_order_table, insert_portfolio_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table
+from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_portfolio_order_table, insert_portfolio_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db
 
 api = Blueprint('api', __name__)
 
@@ -103,11 +103,26 @@ def proc_date_lookup():
     try:
         data = get_proc_date_from_processing_date_table()
         data = data.get_json()
-        current_date = data['current_date']
-        mf_proc_date = data['mf_proc_date']
-        ppfs_mf_proc_date = data['ppfs_mf_proc_date']
-        stock_proc_date = data['stock_proc_date']
-        return jsonify({'current_date': current_date,'mf_proc_date' : mf_proc_date, 'ppfs_mf_proc_date': ppfs_mf_proc_date,'stock_proc_date':stock_proc_date, 'message': "Successfully retrieved data from Processing Date Table", 'status': "Success"})
+        MF_PROC = data['MF_PROC']
+        PPF_MF_PROC = data['PPF_MF_PROC']
+        STOCK_PROC = data['STOCK_PROC']
+
+        mf_proc_date = MF_PROC[1]
+        mf_next_proc_date = MF_PROC[2]
+        mf_prev_proc_date = MF_PROC[3]
+
+        ppf_mf_proc_date = PPF_MF_PROC[1]
+        ppf_mf_next_proc_date = PPF_MF_PROC[2]
+        ppf_mf_prev_proc_date = PPF_MF_PROC[3]
+
+        stock_proc_date = STOCK_PROC[1]
+        stock_next_proc_date = STOCK_PROC[2]
+        stock_prev_proc_date = STOCK_PROC[3]
+
+        return jsonify({'mf_proc_date': mf_proc_date,'mf_next_proc_date' : mf_next_proc_date, 'mf_prev_proc_date': mf_prev_proc_date,
+                        'ppf_mf_proc_date': ppf_mf_proc_date,'ppf_mf_next_proc_date' : ppf_mf_next_proc_date, 'ppf_mf_prev_proc_date': ppf_mf_prev_proc_date,
+                        'stock_proc_date': stock_proc_date,'stock_next_proc_date' : stock_next_proc_date, 'stock_prev_proc_date': stock_prev_proc_date,
+                          'message': "Successfully retrieved data from Processing Date Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -115,11 +130,22 @@ def proc_date_lookup():
 def proc_date_update():
     try:
         create_processing_date_table()
-        current_date = request.form.get('current_date')
-        mf_proc_date = request.form.get('mf_proc_date')
-        ppfs_mf_proc_date = request.form.get('ppfs_mf_proc_date')
-        stock_proc_date = request.form.get('stock_proc_date')
-        update_proc_date_in_processing_date_table(current_date, mf_proc_date, ppfs_mf_proc_date, stock_proc_date)
+
+        mf_proc_date          = request.form.get('mf_proc_date')
+        mf_next_proc_date     = request.form.get('mf_next_proc_date')
+        mf_prev_proc_date     = request.form.get('mf_prev_proc_date')
+
+        ppf_mf_proc_date      = request.form.get('ppf_mf_proc_date')
+        ppf_mf_next_proc_date = request.form.get('ppf_mf_next_proc_date')
+        ppf_mf_prev_proc_date = request.form.get('ppf_mf_prev_proc_date')
+
+        stock_proc_date       = request.form.get('stock_proc_date')
+        stock_next_proc_date  = request.form.get('stock_next_proc_date')
+        stock_prev_proc_date  = request.form.get('stock_prev_proc_date')
+
+        update_proc_date_in_processing_date_table('MF_PROC', mf_proc_date, mf_next_proc_date, mf_prev_proc_date)
+        update_proc_date_in_processing_date_table('PPF_MF_PROC', ppf_mf_proc_date, ppf_mf_next_proc_date, ppf_mf_prev_proc_date)
+        update_proc_date_in_processing_date_table('STOCK_PROC', stock_proc_date, stock_next_proc_date, stock_prev_proc_date)
         return jsonify({'message': "Successfully updated Processing Date Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -151,3 +177,11 @@ def dup_check_on_all_nav_tables():
         return jsonify({'dup_tables': dup_tables,'message': 'Successfully completed Duplicate Check On All NAV table','status': 'Duplicate Issue'})
     else:
         return ({'message': 'Successfully completed Duplicate Check On All NAV tables','status': 'Success'})
+    
+@api.route('/api/create_mf_portfolio_view/', methods = ['GET'])
+def create_mf_portfolio_view():
+    try:
+        create_mf_portfolio_view_in_db()
+        return jsonify({'message': 'Successfully replaced MF Portfolio View in DB','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})

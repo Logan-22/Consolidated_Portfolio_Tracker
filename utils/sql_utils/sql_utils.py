@@ -1,6 +1,9 @@
 import sqlite3, os
 from flask import  jsonify
 import datetime
+from utils.sql_utils.views.MUTUAL_FUND_PORTFOLIO_VIEW import MUTUAL_FUND_PORTFOLIO_VIEW
+from utils.sql_utils.views.AGG_MUTUAL_FUND_PORTFOLIO_VIEW import AGG_MUTUAL_FUND_PORTFOLIO_VIEW
+from utils.sql_utils.views.FIN_MUTUAL_FUND_PORTFOLIO_VIEW import FIN_MUTUAL_FUND_PORTFOLIO_VIEW
 
 db_path = os.path.join(os.getcwd(), "databases", "consolidated_portfolio.db")
 
@@ -136,12 +139,14 @@ def insert_portfolio_order_entry(alt_symbol, purchase_date, invested_amount, sta
 def get_proc_date_from_processing_date_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT CURRENT_DATE, MF_PROC_DATE, PPFS_MF_PROC_DATE, STOCK_PROC_DATE FROM PROCESSING_DATE;")
+    proc_dates = {}
+    cursor.execute(f"SELECT DISTINCT PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE FROM PROCESSING_DATE;")
     rows = cursor.fetchall()
     conn.close()
     if rows:
-        dates = {'current_date': rows[0][0], 'mf_proc_date': rows[0][1], 'ppfs_mf_proc_date': rows[0][2], 'stock_proc_date' : rows[0][3]}
-        return jsonify(dates)
+        for row in rows:
+            proc_dates[row[0]] = row
+    return jsonify(proc_dates)
 
 def create_processing_date_table():
     conn = sqlite3.connect(db_path)
@@ -149,32 +154,36 @@ def create_processing_date_table():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS PROCESSING_DATE (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            CURRENT_DATE DATE,
-            MF_PROC_DATE DATE,
-            PPFS_MF_PROC_DATE DATE,
-            STOCK_PROC_DATE DATE
+            PROC_TYP_CD VARCHAR(100),
+            PROC_DATE DATE,
+            NEXT_PROC_DATE DATE,
+            PREV_PROC_DATE DATE
         )''')
     cursor.execute(f"SELECT COUNT(*) FROM PROCESSING_DATE;")
     rows = cursor.fetchall()
     if rows:
         count = rows[0][0]
     if count == 0:
-        cursor.execute("INSERT INTO PROCESSING_DATE (CURRENT_DATE, MF_PROC_DATE, PPFS_MF_PROC_DATE, STOCK_PROC_DATE) VALUES (?, ?, ?, ?)",
-                   (datetime.date.today(), datetime.date.today(), datetime.date.today(), datetime.date.today()))
+        cursor.execute("INSERT INTO PROCESSING_DATE (PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE) VALUES (?, ?, ?, ?)",
+                   ('MF_PROC', datetime.date.today(), datetime.date.today(), datetime.date.today()))
+        cursor.execute("INSERT INTO PROCESSING_DATE (PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE) VALUES (?, ?, ?, ?)",
+                   ('PPF_MF_PROC', datetime.date.today(), datetime.date.today(), datetime.date.today()))
+        cursor.execute("INSERT INTO PROCESSING_DATE (PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE) VALUES (?, ?, ?, ?)",
+                   ('STOCK_PROC', datetime.date.today(), datetime.date.today(), datetime.date.today()))
         conn.commit()
     conn.close()
 
-def update_proc_date_in_processing_date_table(current_date, mf_proc_date, ppfs_mf_proc_date, stock_proc_date):
+def update_proc_date_in_processing_date_table(proc_typ_cd, proc_date, next_proc_date, prev_proc_date):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"UPDATE PROCESSING_DATE SET CURRENT_DATE = '{current_date}', MF_PROC_DATE = '{mf_proc_date}', PPFS_MF_PROC_DATE = '{ppfs_mf_proc_date}', STOCK_PROC_DATE = '{stock_proc_date}';")
+    cursor.execute(f"UPDATE PROCESSING_DATE SET PROC_DATE = '{proc_date}', NEXT_PROC_DATE = '{next_proc_date}', PREV_PROC_DATE = '{prev_proc_date}' WHERE PROC_TYP_CD = '{proc_typ_cd}';")
     conn.commit()
     conn.close()
 
 def get_tables_list():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'PORTFOLIO_ORDER', 'PROCESSING_DATE');")
+    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'PORTFOLIO_ORDER', 'PROCESSING_DATE', 'Bandhan_Nifty_Alpha_50_Index_Fund');")
     rows = cursor.fetchall()
     conn.close()
     tables_list = []
@@ -206,3 +215,15 @@ def dup_check_on_nav_table(table):
         data = {'value_date' : rows[0][0]}
         return jsonify(data)
     return
+
+def create_mf_portfolio_view_in_db():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("DROP VIEW MUTUAL_FUND_PORTFOLIO_VIEW;")
+    cursor.execute(MUTUAL_FUND_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW AGG_MUTUAL_FUND_PORTFOLIO_VIEW;")
+    cursor.execute(AGG_MUTUAL_FUND_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW FIN_MUTUAL_FUND_PORTFOLIO_VIEW;")
+    cursor.execute(FIN_MUTUAL_FUND_PORTFOLIO_VIEW)
+    conn.commit()
+    conn.close()

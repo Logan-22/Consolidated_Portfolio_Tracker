@@ -5,9 +5,29 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('index_nav')) {
+    create_mf_portfolio_view();
     upsert_nav_tables();
+    }
   }
-});
+);
+
+async function create_mf_portfolio_view(){
+
+const view_response=  await fetch ('/api/create_mf_portfolio_view/', {
+  method: 'GET'
+})
+
+const view_data = await view_response.json();
+
+const resultDiv = document.getElementById('result')
+
+if(view_data.status === "Success"){
+    resultDiv.innerHTML += `<strong>${view_data.message}</strong></br>`
+}
+else{
+    resultDiv.innerHTML += `<strong>${view_data.message}</strong></br>`
+}
+}
 
 async function upsert_nav_tables(){
 

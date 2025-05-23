@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Consolidated Protfolio Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<header>
+    <nav>
+        <a href="/">Home</a>
+        <a href = "/hist_price">Historic Price</a>
+        <a href = "/metadata/">Metadata Entry</a>
+        <a href = "/portfolio_order">Portfolio Order Entry</a>
+        <a href = "/processing_date">Processing Date</a>
+        <a href = "/process_hist_returns">Process Historic Returns</a>
+        <a href = "/holiday_calendar_setup">Setup Holiday Calendar</a>
+        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
+    </nav>
+</header>
+<body>
+    <div>
+    <form id = "holiday_date_setup_form">
+        
+    <label for = "holiday_date">
+    <b>Holiday Date</b></label></br>
+    <input type = "date" id = "holiday_date" name = "holiday_date" autocomplete="off"></br>
+    
+    <label for = "holiday_name">
+    <b>Holiday Name</b></label></br>
+    <input type = "text" id = "holiday_name" name = "holiday_name" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Add Holiday</button>
+
+
+    <table id="holiday_table">
+    </table>
+    </form>
+
+    <form id = "working_date_setup_form">
+        
+    <label for = "working_date">
+    <b>Enter Non Weekday Working Date</b></label></br>
+    <input type = "date" id = "working_date" name = "working_date" autocomplete="off"></br>
+    
+    <label for = "working_day_name">
+    <b>Working Day Name</b></label></br>
+    <input type = "text" id = "working_day_name" name = "working_day_name" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Add Working Day</button>
+
+    </form>
+
+    <form id = "holiday_calendar_setup_form">
+        
+    <label for = "holiday_calendar_start_date">
+    <b>Holiday Calendar Start Date</b></label></br>
+    <input type = "date" id = "holiday_calendar_start_date" name = "holiday_calendar_start_date" autocomplete="off"></br>
+    
+    <label for = "holiday_calendar_end_date">
+    <b>Holiday Calendar End Date</b></label></br>
+    <input type = "date" id = "holiday_calendar_end_date" name = "holiday_calendar_start_date" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Create</button>
+
+    </form>
+    </div>
+    <div id = "result"></div>
+<script src="{{ url_for('static', filename='holiday_calendar_setup.js') }}" defer></script>
+</body>
+</html>

@@ -12,6 +12,8 @@
         <a href = "/metadata/">Metadata Entry</a>
         <a href = "/portfolio_order">Portfolio Order Entry</a>
         <a href = "/processing_date">Processing Date</a>
+        <a href = "/process_hist_returns">Process Historic Returns</a>
+        <a href = "/holiday_calendar_setup">Setup Holiday Calendar</a>
         <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
     </nav>
 </header>
@@ -20,7 +22,7 @@
     <form id = "processing_date_form">
 
     <label for = "mf_proc_typ_cd">
-    <b>Processing Type Code for Mutual Funds</b></label></br>
+    <b name = "mf_proc_typ_cd">Processing Type Code for Mutual Funds</b></label></br>
 
     <label for = "mf_proc_date">
     <b>Mutual Fund Processing Date</b></label></br>
@@ -35,7 +37,7 @@
     <input type = "date" id = "mf_prev_proc_date" name = "mf_prev_proc_date" autocomplete="off"></br>
     
     <label for = "ppf_mf_proc_typ_cd">
-    <b>Processing Type Code for Parag Parikh Mutual Fund</b></label></br>
+    <b name = "ppf_mf_proc_typ_cd">Processing Type Code for Parag Parikh Mutual Fund</b></label></br>
 
     <label for = "ppf_mf_proc_date">
     <b>Parag Parikh Mutual Fund Processing Date</b></label></br>
@@ -49,8 +51,8 @@
     <b>Parag Parikh Mutual Fund Previous Processing Date</b></label></br>
     <input type = "date" id = "ppf_mf_prev_proc_date" name = "ppf_mf_prev_proc_date" autocomplete="off"></br>
    
-    <label for = "ppf_mf_proc_typ_cd">
-    <b>Processing Type Code for Stocks</b></label></br>
+    <label for = "stock_proc_typ_cd">
+    <b name = "stock_proc_typ_cd">Processing Type Code for Stocks</b></label></br>
 
     <label for = "stock_proc_date">
     <b>Stock Processing Date</b></label></br>

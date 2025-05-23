@@ -4,13 +4,14 @@
     <meta charset="UTF-8" />
     <title>Consolidated Protfolio Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    
+     <!-- Link to Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <header>
-    <nav id = "index_nav">
-        <a href = "/">Home</a>
+    <nav>
+        <a href="/">Home</a>
         <a href = "/hist_price">Historic Price</a>
-        <a href = "/metadata">Metadata Entry</a>
+        <a href = "/metadata/">Metadata Entry</a>
         <a href = "/portfolio_order">Portfolio Order Entry</a>
         <a href = "/processing_date">Processing Date</a>
         <a href = "/process_hist_returns">Process Historic Returns</a>
@@ -18,10 +19,19 @@
         <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
     </nav>
 </header>
-
 <body>
-<b>Consolidated Portfolio Tracker</b>
-<div id = "result"></div>
-<script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
+    <div>
+    <form id = "process_hist_returns_form">
+
+    <b>Process Historic Returns</b></label></br></br>
+
+    <button type = "submit" class = "submit">Start Processing Historic Returns</button>
+    </form>
+    </div>
+    <div>
+        <canvas id="navChart"></canvas>
+    </div>
+    <div id = "result"></div>
+<script src="{{ url_for('static', filename='process_hist_returns_form.js') }}" defer></script>
 </body>
 </html>

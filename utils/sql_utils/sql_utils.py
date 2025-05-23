@@ -183,7 +183,7 @@ def update_proc_date_in_processing_date_table(proc_typ_cd, proc_date, next_proc_
 def get_tables_list():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'PORTFOLIO_ORDER', 'PROCESSING_DATE', 'Bandhan_Nifty_Alpha_50_Index_Fund');")
+    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'PORTFOLIO_ORDER', 'PROCESSING_DATE', 'HOLIDAY_DATES', 'HOLIDAY_CALENDAR', 'WORKING_DATES', 'Bandhan_Nifty_Alpha_50_Index_Fund','MF_HIST_RETURNS');")
     rows = cursor.fetchall()
     conn.close()
     tables_list = []
@@ -193,7 +193,6 @@ def get_tables_list():
         return jsonify(tables_list)
     return
     
-
 def get_max_date_from_table(table):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -227,3 +226,180 @@ def create_mf_portfolio_view_in_db():
     cursor.execute(FIN_MUTUAL_FUND_PORTFOLIO_VIEW)
     conn.commit()
     conn.close()
+
+def create_holiday_date_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS HOLIDAY_DATES (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            HOLIDAY_DATE DATE,
+            HOLIDAY_NAME VARCHAR(200),
+            HOLIDAY_DAY VARCHAR(20),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+def insert_into_holiday_date_table(holiday_date, holiday_name, holiday_day):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO HOLIDAY_DATES (HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY,  START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?)",
+                   (holiday_date, holiday_name, holiday_day, holiday_date, '9998-12-31', 0))
+    conn.commit()
+    conn.close()
+
+def get_holiday_date_from_holiday_date_table(current_year = '1900'):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY FROM HOLIDAY_DATES WHERE RECORD_DELETED_FLAG = 0 AND START_DATE >= '{current_year}-01-01';")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'holiday_date': row[0], 'holiday_name': row[1], 'holiday_day': row[2]} for row in rows]
+        return jsonify(data)
+    return
+
+def truncate_holiday_calendar_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS HOLIDAY_CALENDAR')
+
+def create_holiday_calendar_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS HOLIDAY_CALENDAR (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROCESSING_DATE DATE,
+            PROCESSING_DAY VARCHAR(15),
+            NEXT_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DAY VARCHAR(15),
+            PREV_PROCESSING_DATE DATE,
+            PREV_PROCESSING_DAY VARCHAR(15),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+def insert_into_holiday_calendar_table(counter_date, counter_day, next_counter_date, next_counter_day, prev_counter_date, prev_counter_day):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO HOLIDAY_CALENDAR (PROCESSING_DATE, PROCESSING_DAY, NEXT_PROCESSING_DATE, NEXT_PROCESSING_DAY, PREV_PROCESSING_DATE, PREV_PROCESSING_DAY, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                   (counter_date, counter_day, next_counter_date, next_counter_day, prev_counter_date, prev_counter_day, counter_date, '9998-12-31', 0))
+    conn.commit()
+    conn.close()
+
+def create_working_date_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS WORKING_DATES (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            WORKING_DATE DATE,
+            WORKING_DAY_NAME VARCHAR(200),
+            WORKING_DAY VARCHAR(20),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+def insert_into_working_date_table(working_date, working_day_name, working_day):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO WORKING_DATES (WORKING_DATE, WORKING_DAY_NAME, WORKING_DAY,  START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?)",
+                   (working_date, working_day_name, working_day, working_date, '9998-12-31', 0))
+    conn.commit()
+    conn.close()
+
+def get_working_date_from_holiday_date_table(current_year = '1900'):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT WORKING_DATE, WORKING_DAY_NAME, WORKING_DAY FROM WORKING_DATES WHERE RECORD_DELETED_FLAG = 0 AND START_DATE >= '{current_year}-01-01';")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'working_date': row[0], 'working_day_name': row[1], 'working_day': row[2]} for row in rows]
+        return jsonify(data)
+    data = [{'working_date': None, 'working_day_name': None, 'working_day': None}]
+    return jsonify(data)
+
+
+def truncate_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS MF_HIST_RETURNS')
+
+def create_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS MF_HIST_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROCESSING_DATE DATE,
+            PREV_PROCESSING_DATE DATE,
+            AMOUNT_INVESTED_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            AMOUNT_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            AMOUNT_AS_ON_PREV_PROCESSING_DATE NUMBER(10,4),
+            "TOTAL_P/L" NUMBER(10,4),
+            "DAY_P/L" NUMBER(10,4),
+            "%TOTAL_P/L" NUMBER(10,4),
+            "%DAY_P/L" NUMBER(10,4),
+            NEXT_PROCESSING_DATE DATE,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+
+def get_first_purchase_date_from_portfolio_order_date_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT MIN(PURCHASED_ON) FROM PORTFOLIO_ORDER WHERE RECORD_DELETED_FLAG = 0;")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'first_purchase_date': rows[0][0]}
+        return jsonify(data)
+    return
+
+def get_date_setup_from_holiday_calendar(counter_date):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT DISTINCT PROCESSING_DATE, NEXT_PROCESSING_DATE, PREV_PROCESSING_DATE FROM HOLIDAY_CALENDAR WHERE PROCESSING_DATE = '{counter_date}';")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'processing_date': row[0], 'next_processing_date': row[1], 'prev_processing_date': row[2]} for row in rows]
+        return jsonify(data)
+    return
+
+def get_metrics_from_fin_mutual_fund_portfolio_view():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT "FIN_P/L", "FIN_AMC_AMOUNT", "FIN_CURRENT_AMOUNT", "FIN_PREVIOUS_AMOUNT", "FIN_%P/L", "FIN_DAY_P/L", "FIN_%DAY_P/L" FROM FIN_MUTUAL_FUND_PORTFOLIO_VIEW;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'total_p_l': row[0], 'amount_invested_as_on_processing_date': row[1], 'amount_as_on_processing_date': row[2], 'amount_as_on_prev_processing_date': row[3], 'perc_total_p_l': row[4], 'day_p_l': row[5], 'perc_day_p_l': row[6]} for row in rows]
+        return jsonify(data)
+    return
+
+def insert_into_mf_hist_returns(processing_date, next_processing_date, prev_processing_date, total_p_l, amount_invested_as_on_processing_date, amount_as_on_processing_date, amount_as_on_prev_processing_date, perc_total_p_l, day_p_l, perc_day_p_l):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO MF_HIST_RETURNS (PROCESSING_DATE, PREV_PROCESSING_DATE, AMOUNT_INVESTED_AS_ON_PROCESSING_DATE, AMOUNT_AS_ON_PROCESSING_DATE, AMOUNT_AS_ON_PREV_PROCESSING_DATE, "TOTAL_P/L", "DAY_P/L", "%TOTAL_P/L", "%DAY_P/L", NEXT_PROCESSING_DATE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   (processing_date, prev_processing_date, amount_invested_as_on_processing_date, amount_as_on_processing_date, amount_as_on_prev_processing_date, total_p_l, day_p_l, perc_total_p_l, perc_day_p_l, next_processing_date, processing_date, '9998-12-31', 0))
+    conn.commit()
+    conn.close()
+
+def get_mf_hist_returns_from_mf_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT PROCESSING_DATE, "%TOTAL_P/L" FROM MF_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'processing_date': row[0], 'perc_total_p_l': row[1]} for row in rows]
+        return jsonify(data)
+    data = [{'processing_date': None, 'perc_total_p_l': None} for row in rows]
+    return jsonify(data)

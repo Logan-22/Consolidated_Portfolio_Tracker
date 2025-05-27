@@ -3,7 +3,7 @@ import yfinance as yf
 from dateutil import parser
 from datetime import datetime, timedelta
 
-from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_portfolio_order_table, insert_portfolio_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_date_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_portfolio_order_date_table, truncate_hist_returns_table , create_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table
+from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_date_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_hist_returns_table , create_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
 api = Blueprint('api', __name__)
@@ -81,8 +81,8 @@ def nav_lookup(table_name, purchase_date):
     nav = data['nav']
     return jsonify({'nav': nav, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
 
-@api.route('/api/portfolio_order/', methods = ['POST'])
-def portfolio_order():
+@api.route('/api/mf_order/', methods = ['POST'])
+def mf_order():
     alt_symbol = request.form.get('alt_symbol')
     purchase_date = request.form.get('purchase_date')
     invested_amount = request.form.get('invested_amount')
@@ -93,9 +93,9 @@ def portfolio_order():
     units = round(float(units), 3)
     stamp_fees_amount = round(float(invested_amount) - float(amc_amount),2)
     try:
-        create_portfolio_order_table()
-        insert_portfolio_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units)
-        return jsonify({'message': "Successfully inserted data into Portfolio Order table", 'status': "Success"})
+        create_mf_order_table()
+        insert_mf_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units)
+        return jsonify({'message': "Successfully inserted data into MF Order table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
     
@@ -288,7 +288,7 @@ def process_hist_returns():
         truncate_hist_returns_table()
         create_hist_returns_table()
         
-        first_purchase_data = get_first_purchase_date_from_portfolio_order_date_table()
+        first_purchase_data = get_first_purchase_date_from_mf_order_date_table()
         first_purchase_data = first_purchase_data.get_json()
         first_purchase_date = first_purchase_data['first_purchase_date']
 

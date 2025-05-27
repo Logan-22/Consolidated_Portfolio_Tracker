@@ -14,9 +14,9 @@ def hist_price_form():
 def metadata_entry():
     return render_template('metadata_entry.html')
 
-@frontend.route('/portfolio_order/')
-def portfolio_order_entry():
-    return render_template('portfolio_order_entry.html')
+@frontend.route('/mf_order/')
+def mf_order_entry():
+    return render_template('mf_order_entry.html')
 
 @frontend.route('/processing_date/')
 def processing_date():

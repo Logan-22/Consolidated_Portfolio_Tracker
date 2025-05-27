@@ -1,7 +1,7 @@
-// Portfolio Order Entry into Order Table
+// MF Order Entry into MF Order Table
 
 // Method : POST
-// URL    : /api/portfolio_order/
+// URL    : /api/mf_order/
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('alt_symbol')) {
@@ -23,7 +23,7 @@ data.name_list.forEach(element => {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-document.getElementById('portfolio_order_entry_form').addEventListener('submit', async function (e) {
+document.getElementById('mf_order_entry_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
 
@@ -52,7 +52,7 @@ formData.append('amc_amount', amc_amount);
 formData.append('nav_during_purchase', nav_during_purchase);
 formData.append('units', units);
 
-const response = await fetch(`/api/portfolio_order/`, {
+const response = await fetch(`/api/mf_order/`, {
 method: 'POST',
 body: formData
 })
@@ -62,7 +62,7 @@ const resultDiv = document.getElementById('result')
 
 if(data.status === "Success"){
     resultDiv.innerHTML = `<strong>${data.message}</strong>`
-    document.getElementById("portfolio_order_entry_form").reset();
+    document.getElementById("mf_order_entry_form").reset();
 }
 else{
     resultDiv.innerHTML = `<strong>${data.message}</strong>`

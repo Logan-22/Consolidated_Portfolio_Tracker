@@ -90,7 +90,7 @@ FROM
      END                                                                                                                    AS PREVIOUS_NAV
     
 FROM
-    PORTFOLIO_ORDER PO
+    MF_ORDER PO
 LEFT OUTER JOIN
     METADATA META
 ON

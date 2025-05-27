@@ -1,7 +1,7 @@
-// Portfolio Order Entry into Order Table
+// Holiday Entry into Holiday Date Table
 
 // Method : POST
-// URL    : /api/portfolio_order/
+// URL    : /api/holiday_date/
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('holiday_date_setup_form')) {

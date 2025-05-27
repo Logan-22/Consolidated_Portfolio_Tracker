@@ -110,11 +110,11 @@ def get_nav_from_hist_table(table_name, purchase_date):
         nav = {'nav': rows[0]}
         return jsonify(nav)
     
-def create_portfolio_order_table():
+def create_mf_order_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS PORTFOLIO_ORDER (
+        CREATE TABLE IF NOT EXISTS MF_ORDER (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
             NAME TEXT(200),
             PURCHASED_ON DATE,
@@ -128,10 +128,10 @@ def create_portfolio_order_table():
             RECORD_DELETED_FLAG INTEGER
         )''')
     
-def insert_portfolio_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units):
+def insert_mf_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO PORTFOLIO_ORDER (NAME, PURCHASED_ON, INVESTED_AMOUNT, STAMP_FEES_AMOUNT, AMC_AMOUNT, NAV_DURING_PURCHASE, UNITS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    cursor.execute("INSERT INTO MF_ORDER (NAME, PURCHASED_ON, INVESTED_AMOUNT, STAMP_FEES_AMOUNT, AMC_AMOUNT, NAV_DURING_PURCHASE, UNITS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                    (alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units, purchase_date, '9998-12-31', 0  ))
     conn.commit()
     conn.close()
@@ -183,7 +183,7 @@ def update_proc_date_in_processing_date_table(proc_typ_cd, proc_date, next_proc_
 def get_tables_list():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'PORTFOLIO_ORDER', 'PROCESSING_DATE', 'HOLIDAY_DATES', 'HOLIDAY_CALENDAR', 'WORKING_DATES', 'Bandhan_Nifty_Alpha_50_Index_Fund','MF_HIST_RETURNS');")
+    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'MF_ORDER', 'PROCESSING_DATE', 'HOLIDAY_DATES', 'HOLIDAY_CALENDAR', 'WORKING_DATES', 'Bandhan_Nifty_Alpha_50_Index_Fund','MF_HIST_RETURNS');")
     rows = cursor.fetchall()
     conn.close()
     tables_list = []
@@ -351,10 +351,10 @@ def create_hist_returns_table():
             RECORD_DELETED_FLAG INTEGER
         )''')
 
-def get_first_purchase_date_from_portfolio_order_date_table():
+def get_first_purchase_date_from_mf_order_date_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT MIN(PURCHASED_ON) FROM PORTFOLIO_ORDER WHERE RECORD_DELETED_FLAG = 0;")
+    cursor.execute(f"SELECT MIN(PURCHASED_ON) FROM MF_ORDER WHERE RECORD_DELETED_FLAG = 0;")
     rows = cursor.fetchall()
     conn.close()
     if rows:

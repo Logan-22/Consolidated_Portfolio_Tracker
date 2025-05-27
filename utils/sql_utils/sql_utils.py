@@ -395,11 +395,23 @@ def insert_into_mf_hist_returns(processing_date, next_processing_date, prev_proc
 def get_mf_hist_returns_from_mf_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f'SELECT PROCESSING_DATE, "%TOTAL_P/L" FROM MF_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
+    cursor.execute(f'SELECT PROCESSING_DATE, "%TOTAL_P/L", "%DAY_P/L" FROM MF_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
     rows = cursor.fetchall()
     conn.close()
     if rows:
-        data = [{'processing_date': row[0], 'perc_total_p_l': row[1]} for row in rows]
+        data = [{'processing_date': row[0], 'perc_total_p_l': row[1], 'perc_day_p_l': row[2]} for row in rows]
         return jsonify(data)
-    data = [{'processing_date': None, 'perc_total_p_l': None} for row in rows]
+    data = [{'processing_date': None, 'perc_total_p_l': None, 'perc_day_p_l': None} for row in rows]
+    return jsonify(data)
+
+def get_max_next_proc_date_from_mf_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT MAX(NEXT_PROCESSING_DATE) FROM MF_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'max_next_processing_date': rows[0][0]}
+        return jsonify(data)
+    data = {'max_next_processing_date': None}
     return jsonify(data)

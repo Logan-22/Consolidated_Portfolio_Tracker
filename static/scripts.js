@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('index_nav')) {
     create_mf_portfolio_view();
     upsert_nav_tables();
+    upsert_mf_hist_returns_table();
     }
   }
 );
@@ -31,7 +32,7 @@ else{
 
 async function upsert_nav_tables(){
 
-const max_date_response = await fetch ('/api/max_date/', {
+const max_date_response = await fetch ('/api/nav_tables/max_date/', {
   method: 'GET'
 })
 
@@ -67,7 +68,7 @@ body: formData
 //end of for loop
 }
 
-const dup_check_response = await fetch(`/api/nav/dup_check/`, {
+const dup_check_response = await fetch(`/api/nav_tables/dup_check/`, {
 method: 'GET'
 })
 
@@ -85,6 +86,51 @@ else{
       resultDiv.innerHTML += `<strong>${dup_table} ---> ${dup_check_data.dup_tables[dup_table]} Value Date</strong></br>`
     }
 }
+}
+
+// GET /api/mf_hist_returns/max_date/
+
+async function upsert_mf_hist_returns_table(){
+const mf_hist_max_next_proc_date_response = await fetch ('/api/mf_hist_returns/max_next_proc_date/', {
+  method: 'GET'
+})
+
+const mf_hist_max_next_proc_date_data = await mf_hist_max_next_proc_date_response.json();
+max_next_proc_date_in_mf_hist_returns = mf_hist_max_next_proc_date_data.data.max_next_processing_date
+
+// Get the Max of all Nav tables and get the minimum our of the those
+
+const nav_max_date_response = await fetch ('/api/nav_tables/max_date/', {
+  method: 'GET'
+})
+
+const nav_max_date_data = await nav_max_date_response.json();
+
+let min_nav_date = new Date()
+
+Object.values(nav_max_date_data.max_date_from_tables).forEach(date => {
+  date = new Date(date)
+  if ( date < min_nav_date){
+    min_nav_date = date
+  }
+})
+
+const year = min_nav_date.getFullYear();
+const month = String(min_nav_date.getMonth() + 1).padStart(2, '0');
+const day = String(min_nav_date.getDate()).padStart(2, '0');
+
+const end_date = `${year}-${month}-${day}` // Least date present in all NAV Tables
+
+const response = await fetch (`/api/mf_hist_returns/${max_next_proc_date_in_mf_hist_returns}/${end_date}`, {
+  method: 'GET'
+})
+
+const data = await response.json();
+
+const resultDiv = document.getElementById('result')
+resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
+resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

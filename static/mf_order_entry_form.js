@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function init_alt_symbol_dropdown(){
-const response = await fetch ('/api/name_list/', {
+const response = await fetch ('/api/mf_name_list/', {
   method: 'GET'
 })
 

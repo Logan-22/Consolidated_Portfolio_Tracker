@@ -3,7 +3,7 @@ import yfinance as yf
 from dateutil import parser
 from datetime import datetime, timedelta
 
-from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_date_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_hist_returns_table , create_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table
+from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_date_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_hist_returns_table , create_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table, create_stock_order_table, insert_stock_order_entry, get_all_names_from_metadata
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
 api = Blueprint('api', __name__)
@@ -41,6 +41,7 @@ def hist_price(symbol):
 def metadata_entry():
     symbol = request.form.get('symbol')
     alt_symbol = request.form.get('alt_symbol')
+    portfolio_type = request.form.get('portfolio_type')
     amc = request.form.get('amc')
     mf_type = request.form.get('type')
     fund_category = request.form.get('fund_category')
@@ -49,21 +50,41 @@ def metadata_entry():
     expense_ratio = request.form.get('expense_ratio')
     fund_manager = request.form.get('fund_manager')
     fund_manager_started_on = request.form.get('fund_manager_started_on')
+    isin = request.form.get('isin')
     try:
         create_metadata_table()
-        insert_metadata_entry(symbol, alt_symbol, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on)
+        insert_metadata_entry(symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin)
         return jsonify({'message': "Successfully inserted data into Metadata table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
-
+    
 @api.route('/api/name_list/', methods = ['GET'])
-def name_list():
-    data = get_name_from_metadata()
+def all_name_list():
+    data = get_all_names_from_metadata()
     data = data.get_json()
     name_list = []
     for item in data:
         name_list.append(item['name'])
     return jsonify({'name_list': name_list, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
+
+@api.route('/api/mf_name_list/', methods = ['GET'])
+def mf_name_list():
+    data = get_name_from_metadata('Mutual Fund')
+    data = data.get_json()
+    name_list = []
+    for item in data:
+        name_list.append(item['name'])
+    return jsonify({'name_list': name_list, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
+
+@api.route('/api/stock_name_list/', methods = ['GET'])
+def stock_name_list():
+    data = get_name_from_metadata('Stock')
+    data = data.get_json()
+    name_list = []
+    for item in data:
+        name_list.append(item['name'])
+    return jsonify({'name_list': name_list, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
+
 
 @api.route('/api/symbol/<alt_symbol>/', methods = ['GET'])
 def symbol_lookup(alt_symbol):
@@ -379,3 +400,44 @@ def process_mf_hist_returns_from_start_to_end_date(start_date, end_date):
         return jsonify({'message': f'Successfully inserted historic returns for {str(log_date)} in to MF_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/stock_order/', methods = ['POST'])
+def stock_order():
+    alt_symbol = request.form.get('alt_symbol')
+    trade_entry_date = request.form.get('trade_entry_date')
+    trade_entry_time = request.form.get('trade_entry_time')
+    trade_exit_date = request.form.get('trade_exit_date')
+    trade_exit_time = request.form.get('trade_exit_time')
+    stock_quantity = request.form.get('stock_quantity')
+    trade_type = request.form.get('trade_type')
+    leverage = request.form.get('leverage')
+    trade_position = request.form.get('trade_position')
+    stock_buy_price = request.form.get('stock_buy_price')
+    stock_sell_price = request.form.get('stock_sell_price')
+    brokerage = request.form.get('brokerage')
+    exchange_transaction_fees = request.form.get('exchange_transaction_fees')
+    igst = request.form.get('igst')
+    securities_transaction_tax = request.form.get('securities_transaction_tax')
+    sebi_turnover_fees = request.form.get('sebi_turnover_fees')
+    auto_square_off_charges = request.form.get('auto_square_off_charges')
+    depository_charges = request.form.get('depository_charges')
+    holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, trade_exit_time = None, None, None, None, None
+    net_obligation, total_fees, net_receivable, actual_p_l_w_leverage = None, None, None, None
+    if trade_exit_date:
+        trade_exit_time = request.form.get('trade_exit_time')
+        # Derived Fields
+        holding_days = request.form.get('holding_days')
+        sell_minus_buy = round(float(request.form.get('sell_minus_buy')), 4)
+        actual_p_l_w_o_leverage = round(float(request.form.get('actual_p_l_w_o_leverage')),2)
+        deployed_capital = round(float(request.form.get('deployed_capital')),4)
+        net_obligation = round(float(request.form.get('net_obligation')),4)
+        total_fees = round(float(request.form.get('total_fees')),4)
+        net_receivable = round(float(request.form.get('net_receivable')),4)
+        actual_p_l_w_leverage = round(float(request.form.get('actual_p_l_w_leverage')),2)
+
+    try:
+        create_stock_order_table()
+        insert_stock_order_entry(alt_symbol, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, stock_quantity, trade_type, leverage, trade_position, stock_buy_price, stock_sell_price, brokerage, exchange_transaction_fees, igst, securities_transaction_tax, sebi_turnover_fees, holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, net_obligation, total_fees, net_receivable, auto_square_off_charges, depository_charges, actual_p_l_w_leverage)
+        return jsonify({'message': "Successfully inserted data into Stock Order table", 'status': "Success"})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})

@@ -21,6 +21,15 @@
 <body>
     <div>
     <form id = "metadata_entry_form">
+
+    <label for = "portfolio_type">
+    <b>Portfolio Type</b></label></br>
+    <select id = "portfolio_type" name = "portfolio_type" required>
+        <option id = "options">Mutual Fund</option>
+        <option id = "options">Stock</option>
+        <option id = "options">Recurring Deposit</option>
+    </select></br>
+
     <label for = "symbol">
     <b>Symbol</b></label></br>
     <input type = "text" id = "symbol" name = "symbol" placeholder="Enter the Stock/Mutual Fund Symbol" required autocomplete="off"></br>
@@ -29,21 +38,22 @@
     <b>Name</b></label></br>
     <input type = "text" id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Stock/Mutual Fund Name" required autocomplete="off"></br>
     
+    <div id = "mf_optional_form">
     <label for = "amc">
     <b>AMC</b></label></br>
-    <input type = "text" id = "amc" name = "amc" placeholder="Enter the Mutual Fund AMC Name(Optional)" autocomplete="off"></br>
+    <input type = "text" id = "amc" name = "amc" placeholder="Enter the Mutual Fund AMC Name" autocomplete="off"></br>
     
     <label for = "type">
     <b>Type</b></label></br>
-    <input type = "text" id = "type" name = "type" placeholder="Enter the Mutual Fund Type(Optional)" autocomplete="off"></br>
+    <input type = "text" id = "type" name = "type" placeholder="Enter the Mutual Fund Type" autocomplete="off"></br>
     
     <label for = "fund_category">
     <b>Fund Category</b></label></br>
-    <input type = "text" id = "fund_category" name = "fund_category" placeholder="Enter the Mutual Fund Category(Optional)" autocomplete="off"></br>
+    <input type = "text" id = "fund_category" name = "fund_category" placeholder="Enter the Mutual Fund Category" autocomplete="off"></br>
     
     <label for = "launched_on">
     <b>Launched On</b></label></br>
-    <input type = "text" id = "launched_on" name = "launched_on" placeholder="Enter the Date in which Mutual Fund was Launched" autocomplete="off"></br>
+    <input type = "text" id = "launched_on" name = "launched_on" placeholder="Enter the Mutual Fund Launch Date" autocomplete="off"></br>
     
     <label for = "exit_load">
     <b>Exit Load</b></label></br>
@@ -60,6 +70,13 @@
     <label for = "fund_manager_started_on">
     <b>Fund Manager Started On</b></label></br>
     <input type = "text" id = "fund_manager_started_on" name = "fund_manager_started_on" placeholder="Enter the Date in which Mutual Fund Manager Started" autocomplete="off"></br>
+    </div>
+
+    <div id = "stock_optional_form">
+    <label for = "isin">
+    <b>ISIN</b></label></br>
+    <input type = "text" id = "isin" name = "isin" placeholder="Enter the Stock ISIN" autocomplete="off"></br>
+    </div>
     
     <button type = "submit" class = "submit">Submit</button>
     </form>

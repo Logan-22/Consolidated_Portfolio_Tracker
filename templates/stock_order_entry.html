@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Consolidated Protfolio Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<header>
+    <nav>
+        <a href="/">Home</a>
+        <a href = "/hist_price">Historic Price</a>
+        <a href = "/metadata/">Metadata Entry</a>
+        <a href = "/mf_order">Mutual Funds Order Entry</a>
+        <a href = "/stock_order">Stocks Order Entry</a>
+        <a href = "/processing_date">Processing Date</a>
+        <a href = "/process_hist_returns">Process Historic Returns</a>
+        <a href = "/holiday_calendar_setup">Setup Holiday Calendar</a>
+        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
+    </nav>
+</header>
+<body>
+    <div>
+    <form id = "stock_order_entry_form">
+
+    <label for = "alt_symbol">
+    <b>Name</b></label>
+    <select id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Stock Name"></select></br>
+
+    <label for = "trade_entry_date">
+    <b>Trade Entry Date</b></label></br>
+    <input type = "date" id = "trade_entry_date" name = "trade_entry_date" placeholder="Enter the Date in which Trade was Entered" autocomplete="off"></br>
+    
+    <label for = "trade_entry_time">
+    <b>Trade Entry Time</b></label></br>
+    <input type = "time" step="1" id = "trade_entry_time" name = "trade_entry_time" placeholder="Enter the Time in which Trade was Entered" autocomplete="off"></br>
+    
+    <label for = "trade_exit_date">
+    <b>Trade Exit Date</b></label></br>
+    <input type = "date" id = "trade_exit_date" name = "trade_exit_date" placeholder="Enter the Date in which Trade was Exited" autocomplete="off"></br>
+    
+    <label for = "trade_exit_time">
+    <b>Trade Exit Time</b></label></br>
+    <input type = "time" step="1" id = "trade_exit_time" name = "trade_exit_time" placeholder="Enter the Time in which Trade was Exited" autocomplete="off"></br>
+    
+    <label for = "stock_quantity">
+    <b>Stock Quantity</b></label></br>
+    <input type = "number" id = "stock_quantity" name = "stock_quantity" placeholder="Enter the Quantity of Stock Traded" autocomplete="off"></br>
+    
+    <label for = "trade_type">
+    <b>Trade Type</b></label></br>
+    <select id = "trade_type" name = "trade_type" placeholder="Enter the Trade Type" required>
+        <option id="options">Intraday Trading</option>
+        <option id="options">Swing Trading</option>
+    </select></br>
+
+    <label for = "leverage">
+    <b>Leverage</b></label></br>
+    <input type = "number" id = "leverage" name = "leverage" placeholder="Enter the Leverage for the Trade" autocomplete="off"></br>
+    
+    <label for = "trade_position">
+    <b>Trade Position</b></label></br>
+    <select id = "trade_position" name = "trade_position" placeholder="Enter the Trade Position" required>
+        <option id="options">Long</option>
+        <option id="options">Short</option>
+    </select></br>
+
+    <label for = "stock_buy_price">
+    <b>Stock Buy Price</b></label></br>
+    <input type = "text" id = "stock_buy_price" name = "stock_buy_price" placeholder="Enter the Stock Buy Price" autocomplete="off"></br>
+    
+    <label for = "stock_sell_price">
+    <b>Stock Sell Price</b></label></br>
+    <input type = "text" id = "stock_sell_price" name = "stock_sell_price" placeholder="Enter the Stock Sell Price" autocomplete="off"></br>
+    
+    <label for = "brokerage">
+    <b>Brokerage Fees</b></label></br>
+    <input type = "text" id = "brokerage" name = "brokerage" placeholder="Enter the Brokerage Fees" autocomplete="off"></br>
+    
+    <label for = "exchange_transaction_fees">
+    <b>Exchange Transaction Fees</b></label></br>
+    <input type = "text" id = "exchange_transaction_fees" name = "exchange_transaction_fees" placeholder="Enter the Exchange Transaction Fees" autocomplete="off"></br>
+    
+    <label for = "igst">
+    <b>IGST Tax</b></label></br>
+    <input type = "text" id = "igst" name = "igst" placeholder="Enter the IGST Tax" autocomplete="off"></br>
+    
+    <label for = "securities_transaction_tax">
+    <b>Securities Transaction Tax</b></label></br>
+    <input type = "text" id = "securities_transaction_tax" name = "securities_transaction_tax" placeholder="Enter the Securities Transaction Tax" autocomplete="off"></br>
+    
+    <label for = "sebi_turnover_fees">
+    <b>SEBI Turnover Fees</b></label></br>
+    <input type = "text" id = "sebi_turnover_fees" name = "sebi_turnover_fees" placeholder="Enter the SEBI Turnover Fees" autocomplete="off"></br>
+
+    <label for = "auto_square_off_charges">
+    <b>Auto Square Off Charges(if any)</b></label></br>
+    <input type = "text" id = "auto_square_off_charges" name = "auto_square_off_charges" placeholder="Enter the Auto Square Off Charges(If any)" autocomplete="off"></br>
+    
+    <label for = "depository_charges">
+    <b>Depository Charges(if any)</b></label></br>
+    <input type = "text" id = "depository_charges" name = "depository_charges" placeholder="Enter the Depository Charges(If any)" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Submit</button>
+    </form>
+    </div>
+    <div id = "result"></div>
+<script src="{{ url_for('static', filename='stock_order_entry_form.js') }}" defer></script>
+</body>
+</html>

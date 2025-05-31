@@ -70,6 +70,7 @@ input {
   border: 1px solid #ccc;
   border-radius: 6px;
   margin-bottom: 1rem;
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
 
 select {
@@ -78,13 +79,19 @@ select {
   border: 1px solid #ccc;
   border-radius: 6px;
   margin-bottom: 1rem;
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
 
-#options, #alt_symbol{
+#options, #alt_symbol, #portfolio_type, #purchase_date, #symbol{
   font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
 
 input::-webkit-input-placeholder {
+  font-family: 'Cambria', Arial, Helvetica, sans-serif;
+}
+
+input[type="date"]::-webkit-input-placeholder {
+  /*  Targeting the calendar icon in Chrome */
   font-family: 'Cambria', Arial, Helvetica, sans-serif;
 }
 
@@ -193,3 +200,9 @@ canvas {
       margin-left: auto;
       margin-right: auto;
     }
+
+/* Hide items */
+
+.hidden{
+  display: none !important;
+}

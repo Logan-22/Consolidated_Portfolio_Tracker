@@ -57,7 +57,7 @@ let total_fees = null
 let net_receivable = null
 let actual_p_l_w_leverage = null
 
-if (!!trade_exit_date & !!trade_exit_time){
+if (!!trade_exit_date & !!trade_exit_time) {
   if (trade_type === "Intraday"){
     holding_days = 0
   } else{
@@ -81,6 +81,21 @@ if (!!trade_exit_date & !!trade_exit_time){
   }
   if (! depository_charges){
     depository_charges = 0
+  }
+  if (! sebi_turnover_fees){
+    sebi_turnover_fees = 0
+  }
+  if (! securities_transaction_tax){
+    securities_transaction_tax = 0
+  }
+  if (! igst){
+    igst = 0
+  }
+  if (! exchange_transaction_fees){
+    exchange_transaction_fees = 0
+  }
+  if (! brokerage){
+    brokerage = 0
   }
   net_obligation = sell_minus_buy * stock_quantity
   total_fees = brokerage + exchange_transaction_fees + igst + securities_transaction_tax + sebi_turnover_fees

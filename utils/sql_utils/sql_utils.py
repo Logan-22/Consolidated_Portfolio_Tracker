@@ -4,6 +4,9 @@ import datetime
 from utils.sql_utils.views.MUTUAL_FUND_PORTFOLIO_VIEW import MUTUAL_FUND_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_MUTUAL_FUND_PORTFOLIO_VIEW import AGG_MUTUAL_FUND_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_MUTUAL_FUND_PORTFOLIO_VIEW import FIN_MUTUAL_FUND_PORTFOLIO_VIEW
+from utils.sql_utils.views.STOCK_REALISED_PORTFOLIO_VIEW import STOCK_REALISED_PORTFOLIO_VIEW
+from utils.sql_utils.views.AGG_STOCK_REALISED_PORTFOLIO_VIEW import AGG_STOCK_REALISED_PORTFOLIO_VIEW
+from utils.sql_utils.views.FIN_STOCK_REALISED_PORTFOLIO_VIEW import FIN_STOCK_REALISED_PORTFOLIO_VIEW
 
 db_path = os.path.join(os.getcwd(), "databases", "consolidated_portfolio.db")
 
@@ -13,8 +16,8 @@ if not os.path.exists(os.path.dirname(db_path)):
 def create_table(alt_symbol):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ''' + alt_symbol + ''' (
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS "{alt_symbol}" (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
             VALUE_DATE DATE,
             PRICE REAL,
@@ -27,7 +30,7 @@ def create_table(alt_symbol):
 def insert_into_nav_table(alt_symbol, date, price, start_date, end_date, record_deleted_flag):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT VALUE_DATE, PRICE FROM {alt_symbol} WHERE VALUE_DATE = '{start_date}';")
+    cursor.execute(f"""SELECT VALUE_DATE, PRICE FROM "{alt_symbol}" WHERE VALUE_DATE = '{start_date}' AND RECORD_DELETED_FLAG = 0;""")
     rows = cursor.fetchall()
     if rows:
         for row in rows:
@@ -39,7 +42,7 @@ def insert_into_nav_table(alt_symbol, date, price, start_date, end_date, record_
                                 (date, price, start_date, end_date, record_deleted_flag ))
                 conn.commit()
     else:
-        cursor.execute("INSERT INTO " + alt_symbol + "(VALUE_DATE, PRICE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?)",
+        cursor.execute(f'INSERT INTO "{alt_symbol}" (VALUE_DATE, PRICE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?)',
         (date, price, start_date, end_date, record_deleted_flag ))
         conn.commit()
     conn.close()
@@ -47,8 +50,7 @@ def insert_into_nav_table(alt_symbol, date, price, start_date, end_date, record_
 def truncate_table(alt_symbol):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        DROP TABLE IF EXISTS ''' + alt_symbol);
+    cursor.execute(f'DROP TABLE IF EXISTS "{alt_symbol}');
 
 def create_metadata_table():
     conn = sqlite3.connect(db_path)
@@ -68,6 +70,7 @@ def create_metadata_table():
             FUND_MANAGER TEXT(100),
             FUND_MANAGER_STARTED_ON DATE,
             ISIN TEXT(100),
+            PROCESS_FLAG INTEGER,
             START_DATE DATE,
             END_DATE DATE,
             RECORD_DELETED_FLAG INTEGER
@@ -78,8 +81,8 @@ def insert_metadata_entry(symbol, alt_symbol, portfolio_type, amc, mf_type, fund
     cursor = conn.cursor()
     today = datetime.date.today()
     today = today.strftime("%Y-%m-%d")
-    cursor.execute("INSERT INTO METADATA (SYMBOL, NAME, PORTFOLIO_TYPE, AMC, MF_TYPE, FUND_CATEGORY, LAUNCHED_ON, EXIT_LOAD, EXPENSE_RATIO, FUND_MANAGER, FUND_MANAGER_STARTED_ON, ISIN, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                   (symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin, today, '9998-12-31', 0  ))
+    cursor.execute("INSERT INTO METADATA (SYMBOL, NAME, PORTFOLIO_TYPE, AMC, MF_TYPE, FUND_CATEGORY, LAUNCHED_ON, EXIT_LOAD, EXPENSE_RATIO, FUND_MANAGER, FUND_MANAGER_STARTED_ON, ISIN, PROCESS_FLAG, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                   (symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin, 1, today, '9998-12-31', 0  ))
     conn.commit()
     conn.close()
 
@@ -96,7 +99,7 @@ def get_name_from_metadata(portfolio_type):
 def get_all_names_from_metadata():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT NAME FROM METADATA ORDER BY NAME")
+    cursor.execute("SELECT DISTINCT NAME FROM METADATA ORDER BY NAME")
     rows = cursor.fetchall()
     conn.close()
     if rows:
@@ -197,7 +200,20 @@ def update_proc_date_in_processing_date_table(proc_typ_cd, proc_date, next_proc_
 def get_tables_list():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT NAME FROM SQLITE_MASTER WHERE TYPE = 'table' AND NAME NOT IN ('sqlite_sequence', 'METADATA', 'MF_ORDER', 'PROCESSING_DATE', 'HOLIDAY_DATES', 'HOLIDAY_CALENDAR', 'WORKING_DATES', 'Bandhan_Nifty_Alpha_50_Index_Fund','MF_HIST_RETURNS', 'STOCK_ORDER');")
+    cursor.execute("SELECT DISTINCT NAME FROM METADATA WHERE PROCESS_FLAG = 1 ORDER BY NAME")
+    rows = cursor.fetchall()
+    conn.close()
+    tables_list = []
+    if rows:
+        for row in rows:
+            tables_list.append(row)
+        return jsonify(tables_list)
+    return
+
+def get_all_tables_list():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT NAME FROM METADATA ORDER BY NAME")
     rows = cursor.fetchall()
     conn.close()
     tables_list = []
@@ -210,7 +226,7 @@ def get_tables_list():
 def get_max_date_from_table(table):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT MAX(VALUE_DATE) FROM {table};")
+    cursor.execute(f'SELECT MAX(VALUE_DATE) FROM "{table}";')
     rows = cursor.fetchall()
     conn.close()
     if rows:
@@ -221,7 +237,7 @@ def get_max_date_from_table(table):
 def dup_check_on_nav_table(table):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT VALUE_DATE, COUNT(*) C FROM {table} WHERE RECORD_DELETED_FLAG = 0 GROUP BY 1 HAVING C > 1;")
+    cursor.execute(f'SELECT VALUE_DATE, COUNT(*) C FROM "{table}" WHERE RECORD_DELETED_FLAG = 0 GROUP BY 1 HAVING C > 1;')
     rows = cursor.fetchall()
     conn.close()
     if rows:
@@ -232,12 +248,24 @@ def dup_check_on_nav_table(table):
 def create_mf_portfolio_view_in_db():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("DROP VIEW MUTUAL_FUND_PORTFOLIO_VIEW;")
+    cursor.execute("DROP VIEW IF EXISTS MUTUAL_FUND_PORTFOLIO_VIEW;")
     cursor.execute(MUTUAL_FUND_PORTFOLIO_VIEW)
-    cursor.execute("DROP VIEW AGG_MUTUAL_FUND_PORTFOLIO_VIEW;")
+    cursor.execute("DROP VIEW IF EXISTS AGG_MUTUAL_FUND_PORTFOLIO_VIEW;")
     cursor.execute(AGG_MUTUAL_FUND_PORTFOLIO_VIEW)
-    cursor.execute("DROP VIEW FIN_MUTUAL_FUND_PORTFOLIO_VIEW;")
+    cursor.execute("DROP VIEW IF EXISTS FIN_MUTUAL_FUND_PORTFOLIO_VIEW;")
     cursor.execute(FIN_MUTUAL_FUND_PORTFOLIO_VIEW)
+    conn.commit()
+    conn.close()
+
+def create_stock_portfolio_view_in_db():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("DROP VIEW IF EXISTS STOCK_REALISED_PORTFOLIO_VIEW;")
+    cursor.execute(STOCK_REALISED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS AGG_STOCK_REALISED_PORTFOLIO_VIEW;")
+    cursor.execute(AGG_STOCK_REALISED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS FIN_STOCK_REALISED_PORTFOLIO_VIEW;")
+    cursor.execute(FIN_STOCK_REALISED_PORTFOLIO_VIEW)
     conn.commit()
     conn.close()
 
@@ -473,4 +501,137 @@ def insert_stock_order_entry(alt_symbol, trade_entry_date, trade_entry_time, tra
     cursor.execute('INSERT INTO STOCK_ORDER (NAME, TRADE_ENTRY_DATE, TRADE_ENTRY_TIME, TRADE_EXIT_DATE, TRADE_EXIT_TIME, STOCK_QUANTITY, TRADE_TYPE, LEVERAGE, TRADE_POSITION, STOCK_BUY_PRICE, STOCK_SELL_PRICE, BROKERAGE, EXCHANGE_TRANSACTION_FEES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURNOVER_FEES, HOLDING_DAYS, "SELL-BUY", "%ACTUAL_P_L_WITHOUT_LEVERAGE", DEPLOYED_CAPITAL, NET_OBLIGATION, TOTAL_FEES, NET_RECEIVABLE, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, "%ACTUAL_P_L_WITH_LEVERAGE", START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                    (alt_symbol, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, stock_quantity, trade_type, leverage, trade_position, stock_buy_price, stock_sell_price, brokerage, exchange_transaction_fees, igst, securities_transaction_tax, sebi_turnover_fees, holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, net_obligation, total_fees, net_receivable, auto_square_off_charges, depository_charges, actual_p_l_w_leverage, trade_entry_date, '9998-12-31', 0  ))
     conn.commit()
+    conn.close()
+
+def create_trade_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS TRADES (
+            TRADE_ID VARCHAR(200),
+            FEE_ID VARCHAR(200),
+            TRADE_SET_ID VARCHAR(200),
+            STOCK_NAME VARCHAR(200),
+            STOCK_ISIN VARCHAR(100),
+            TRADE_DATE DATE,
+            ORDER_NUMBER VARCHAR(100),
+            ORDER_TIME TIME,
+            TRADE_NUMBER VARCHAR(100),
+            TRADE_TIME TIME,
+            BUY_OR_SELL CHAR(1),
+            STOCK_QUANTITY INTEGER,
+            BROKERAGE_PER_TRADE NUMERIC(10,4),
+            NET_TRADE_PRICE_PER_UNIT NUMERIC(10,4),
+            NET_TOTAL_BEFORE_LEVIES NUMERIC(10,4),
+            TRADE_SET INTEGER,
+            TRADE_POSITION VARCHAR(10),
+            TRADE_ENTRY_DATE DATE,
+            TRADE_ENTRY_TIME TIME,
+            TRADE_EXIT_DATE DATE,
+            TRADE_EXIT_TIME TIME,
+            TRADE_TYPE TEXT(20),
+            LEVERAGE INTEGER,
+            CLOSING_TRADE_ID VARCHAR(200),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+def create_fee_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FEE_COMPONENT (
+            FEE_ID VARCHAR(200),
+            TRADE_DATE DATE,
+            NET_OBLIGATION NUMERIC(10,4),
+            BROKERAGE NUMERIC(10,4),
+            EXCHANGE_TRANSACTION_CHARGES NUMERIC(10,4),
+            IGST NUMERIC(10,4),
+            SECURTIES_TRANSACTION_TAX NUMERIC(10,4),
+            SEBI_TURN_OVER_FEES NUMERIC(10,4),
+            AUTO_SQUARE_OFF_CHARGES NUMERIC(10,4),
+            DEPOSITORY_CHARGES NUMERIC(10,4),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+
+def upsert_trade_entry_in_db(trade_id, fee_id, trade_set_id, stock_symbol, stock_isin, trade_date, order_number, order_time, trade_number, trade_time, buy_or_sell, stock_quantity, brokerage_per_trade, net_trade_price_per_unit, net_total_before_levies, trade_set, trade_position, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, trade_type, leverage):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    today = datetime.date.today()
+    today = today.strftime("%Y-%m-%d")
+    cursor.execute(f"""SELECT STOCK_NAME, STOCK_ISIN, TRADE_DATE, ORDER_NUMBER, ORDER_TIME, TRADE_NUMBER, TRADE_TIME, BUY_OR_SELL,
+       STOCK_QUANTITY, BROKERAGE_PER_TRADE, NET_TRADE_PRICE_PER_UNIT, NET_TOTAL_BEFORE_LEVIES, TRADE_SET,
+       TRADE_POSITION, TRADE_ENTRY_DATE, TRADE_ENTRY_TIME, TRADE_EXIT_DATE, TRADE_EXIT_TIME, TRADE_TYPE, LEVERAGE
+       FROM TRADES WHERE TRADE_ID = '{trade_id}' AND RECORD_DELETED_FLAG = 0;""")
+    rows = cursor.fetchall()
+    if rows:
+        for row in rows:
+            stock_name_from_query               = row[0]
+            stock_isin_from_query               = row[1]
+            trade_date_from_query               = row[2]
+            order_number_from_query             = row[3]
+            order_time_from_query               = row[4]
+            trade_number_from_query             = row[5]
+            trade_time_from_query               = row[6]
+            buy_or_sell_from_query              = row[7]
+            stock_quantity_from_query           = row[8]
+            brokerage_per_trade_from_query      = row[9]
+            net_trade_price_per_unit_from_query = row[10]
+            net_total_before_levies_from_query  = row[11]
+            trade_set_from_query                = row[12]
+            trade_position_from_query           = row[13]
+            trade_entry_date_from_query         = row[14]
+            trade_entry_time_from_query         = row[15]
+            trade_exit_date_from_query          = row[16]
+            trade_exit_time_from_query          = row[17]
+            trade_type_from_query               = row[18]
+            leverage_from_query                 = row[19]
+            if (stock_name_from_query != stock_symbol or stock_isin_from_query != stock_isin or trade_date_from_query != trade_date or order_number_from_query != order_number or order_time_from_query != order_time or trade_number_from_query != trade_number or trade_time_from_query != trade_time or buy_or_sell_from_query != buy_or_sell or stock_quantity_from_query != stock_quantity or brokerage_per_trade_from_query != brokerage_per_trade or net_trade_price_per_unit_from_query != net_trade_price_per_unit or net_total_before_levies_from_query != net_total_before_levies or trade_set_from_query != trade_set or trade_position_from_query != trade_position or trade_entry_date_from_query != trade_entry_date or trade_entry_time_from_query != trade_entry_time or trade_exit_date_from_query != trade_exit_date or trade_exit_time_from_query != trade_exit_time or trade_type_from_query != trade_type or leverage_from_query != leverage):
+                cursor.execute(f"UPDATE TRADES SET END_DATE = '{today}', RECORD_DELETED_FLAG = 1 WHERE TRADE_ID = '{trade_id}';")
+                cursor.execute("""INSERT INTO  TRADES (TRADE_ID, FEE_ID, TRADE_SET_ID, STOCK_NAME, STOCK_ISIN, TRADE_DATE, ORDER_NUMBER, ORDER_TIME, TRADE_NUMBER, TRADE_TIME, BUY_OR_SELL,
+                                  STOCK_QUANTITY, BROKERAGE_PER_TRADE, NET_TRADE_PRICE_PER_UNIT, NET_TOTAL_BEFORE_LEVIES, TRADE_SET,
+                                  TRADE_POSITION, TRADE_ENTRY_DATE, TRADE_ENTRY_TIME, TRADE_EXIT_DATE, TRADE_EXIT_TIME, TRADE_TYPE, LEVERAGE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                  (str(trade_id), str(fee_id), str(trade_set_id), stock_symbol, stock_isin, trade_date, order_number, order_time, trade_number, trade_time, buy_or_sell, stock_quantity, brokerage_per_trade, net_trade_price_per_unit, net_total_before_levies, trade_set, trade_position, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, trade_type, leverage, today, '9998-12-31', 0))
+                conn.commit()
+    else:
+        cursor.execute("""INSERT INTO TRADES (TRADE_ID, FEE_ID, TRADE_SET_ID, STOCK_NAME, STOCK_ISIN, TRADE_DATE, ORDER_NUMBER, ORDER_TIME, TRADE_NUMBER, TRADE_TIME, BUY_OR_SELL,
+                          STOCK_QUANTITY, BROKERAGE_PER_TRADE, NET_TRADE_PRICE_PER_UNIT, NET_TOTAL_BEFORE_LEVIES, TRADE_SET,
+                          TRADE_POSITION, TRADE_ENTRY_DATE, TRADE_ENTRY_TIME, TRADE_EXIT_DATE, TRADE_EXIT_TIME, TRADE_TYPE, LEVERAGE, CLOSING_TRADE_ID, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                          (str(trade_id), str(fee_id), str(trade_set_id), stock_symbol, stock_isin, trade_date, order_number, order_time, trade_number, trade_time, buy_or_sell, stock_quantity, brokerage_per_trade, net_trade_price_per_unit, net_total_before_levies, trade_set, trade_position, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, trade_type, leverage, None, trade_date, '9998-12-31', 0))
+        conn.commit()
+    conn.close()
+
+def upsert_fee_entry_in_db(fee_id, trade_date, net_obligation, brokerage, exc_trans_charges, igst, sec_trans_tax, sebi_turn_fees, auto_square_off_charges, depository_charges):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    today = datetime.date.today()
+    today = today.strftime("%Y-%m-%d")
+    cursor.execute(f"""SELECT TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURTIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES
+       FROM FEE_COMPONENT WHERE FEE_ID = '{fee_id}' AND RECORD_DELETED_FLAG = 0;""")
+    rows = cursor.fetchall()
+    if rows:
+        for row in rows:
+            trade_date_from_query                   = row[0]
+            net_obligation_from_query               = row[1]
+            brokerage_from_query                    = row[2]
+            exchange_transaction_charges_from_query = row[3]
+            igst_from_query                         = row[4]
+            sec_trans_tax_from_query                = row[5]
+            sebi_turn_fees_from_query               = row[6]
+            auto_square_off_charges_from_query      = row[7]
+            depository_charges_from_query           = row[8]
+
+            if (trade_date_from_query != trade_date or net_obligation_from_query != float(net_obligation) or brokerage_from_query != float(brokerage) or exchange_transaction_charges_from_query != float(exc_trans_charges) or igst_from_query != float(igst) or sec_trans_tax_from_query != float(sec_trans_tax) or sebi_turn_fees_from_query != float(sebi_turn_fees) or auto_square_off_charges_from_query != float(auto_square_off_charges) or depository_charges_from_query != float(depository_charges)):
+                cursor.execute(f"UPDATE FEE_COMPONENT SET END_DATE = '{today}', RECORD_DELETED_FLAG = 1 WHERE FEE_ID = '{fee_id}';")
+                cursor.execute("INSERT INTO  FEE_COMPONENT (FEE_ID, TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURTIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                              (str(fee_id), trade_date, net_obligation, brokerage, exc_trans_charges, igst, sec_trans_tax, sebi_turn_fees, auto_square_off_charges, depository_charges, today, '9998-12-31', 0))
+                conn.commit()
+    else:
+        cursor.execute("INSERT INTO FEE_COMPONENT (FEE_ID, TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURTIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                      (str(fee_id), trade_date, net_obligation, brokerage, exc_trans_charges, igst, sec_trans_tax, sebi_turn_fees, auto_square_off_charges, depository_charges, trade_date, '9998-12-31', 0))
+        conn.commit()
     conn.close()

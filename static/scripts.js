@@ -6,15 +6,14 @@
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('index_nav')) {
     create_mf_portfolio_view();
-    upsert_nav_tables();
-    upsert_mf_hist_returns_table();
+    upsert_price_tables();
     }
   }
 );
 
 async function create_mf_portfolio_view(){
 
-const view_response=  await fetch ('/api/create_mf_portfolio_view/', {
+const view_response=  await fetch ('/api/create_portfolio_view/', {
   method: 'GET'
 })
 
@@ -30,9 +29,9 @@ else{
 }
 }
 
-async function upsert_nav_tables(){
+async function upsert_price_tables(){
 
-const max_date_response = await fetch ('/api/nav_tables/max_date/', {
+const max_date_response = await fetch ('/api/price_tables/max_date/', {
   method: 'GET'
 })
 
@@ -86,6 +85,7 @@ else{
       resultDiv.innerHTML += `<strong>${dup_table} ---> ${dup_check_data.dup_tables[dup_table]} Value Date</strong></br>`
     }
 }
+upsert_mf_hist_returns_table();
 }
 
 // GET /api/mf_hist_returns/max_date/
@@ -100,7 +100,7 @@ max_next_proc_date_in_mf_hist_returns = mf_hist_max_next_proc_date_data.data.max
 
 // Get the Max of all Nav tables and get the minimum our of the those
 
-const nav_max_date_response = await fetch ('/api/nav_tables/max_date/', {
+const nav_max_date_response = await fetch ('/api/all_price_tables/max_date/', {
   method: 'GET'
 })
 

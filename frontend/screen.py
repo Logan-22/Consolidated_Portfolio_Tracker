@@ -22,6 +22,10 @@ def mf_order_entry():
 def stock_order_entry():
     return render_template('stock_order_entry.html')
 
+@frontend.route('/stock_order_pdf/')
+def stock_order_pdf():
+    return render_template('stock_order_pdf.html')
+
 @frontend.route('/processing_date/')
 def processing_date():
     return render_template('processing_date.html')
@@ -33,3 +37,7 @@ def process_hist_returns():
 @frontend.route('/holiday_calendar_setup/')
 def holiday_calendar_setup():
     return render_template('holiday_calendar_setup.html')
+
+@frontend.route('/additional_links/')
+def additional_links():
+    return render_template('additional_links.html')

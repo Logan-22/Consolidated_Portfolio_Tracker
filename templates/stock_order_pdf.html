@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Consolidated Protfolio Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<header>
+    <nav>
+        <a href = "/">Home</a>
+        <a href = "/hist_price">Historic Price</a>
+        <a href = "/metadata">Metadata Entry</a>
+        <a href = "/mf_order">Mutual Funds Order Entry</a>
+        <a href = "/stock_order_pdf">Stock Order PDF</a>
+        <a href = "/additional_links">Additional Links</a>
+        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
+    </nav>
+</header>
+<body>
+    <div>
+    <form id = "stock_order_pdf_form" enctype="multipart/form-data">
+
+    <label for = "stock_pdf">
+    <b>Stock PDF</b></label>
+    <input type = "file" id = "stock_pdf" name = "stock_pdf" placeholder="Upload the Stock PDF" autocomplete="off" accept = "application/pdf" required></br>
+
+    <label for = "file_password">
+    <b>File Password</b></label></br>
+    <input type = "password" id = "file_password" name = "file_password" autocomplete="off"></br>
+    
+    <button type = "submit" class = "submit">Submit</button>
+    </form>
+    </div>
+
+    <div id="trade_div">
+        <table id="trade_table">
+        </table>
+    </div></br>
+
+    <div id="fee_div">
+        <table id="fee_table">
+        </table>
+    </div></br>
+
+    <button id = "add_fee_button">Add Fee Component</button><br/><br/>
+
+    <button id = "update_button">Update Info</button>
+
+    </div></br></br>
+
+    <div id = "result"></div>
+<script src="{{ url_for('static', filename='stock_order_pdf_form.js') }}" defer></script>
+</body>
+</html>

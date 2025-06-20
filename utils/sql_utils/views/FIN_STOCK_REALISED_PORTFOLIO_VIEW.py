@@ -14,7 +14,7 @@ SELECT
     ,SUB.BROKERAGE                                             AS BROKERAGE
     ,SUB.EXCHANGE_TRANSACTION_CHARGES                          AS EXCHANGE_TRANSACTION_CHARGES
     ,SUB.IGST                                                  AS IGST
-    ,SUB.SECURTIES_TRANSACTION_TAX                             AS SECURTIES_TRANSACTION_TAX
+    ,SUB.SECURITIES_TRANSACTION_TAX                            AS SECURITIES_TRANSACTION_TAX
     ,SUB.SEBI_TURN_OVER_FEES                                   AS SEBI_TURN_OVER_FEES
     ,SUB.TOTAL_FEES                                            AS TOTAL_FEES
     ,ROUND(SUB."NET_P/L",4)                                    AS "NET_P/L"
@@ -42,20 +42,20 @@ SELECT
     ,ROUND(SUM(ASRPV."AGG_P/L")/SUM(ASRPV.AGG_ACTUAL_DEPLOYED_CAPITAL)
      * 100,2)                                                  AS "%_P/L_WITH_LEVERAGE"
     ,FEE.NET_OBLIGATION                                        AS NET_OBLIGATION
-    ,CASE WHEN SUM(ASRPV."AGG_P/L") = FEE.NET_OBLIGATION
+    ,CASE WHEN ROUND(SUM(ASRPV."AGG_P/L"),2) = ROUND(FEE.NET_OBLIGATION,2)
           THEN 'Matched'
      ELSE 'Unmatched' END                                      AS "AGG_P/L_NET_OBLIGATION_MATCH_STATUS"
     ,FEE.BROKERAGE                                             AS BROKERAGE
     ,FEE.EXCHANGE_TRANSACTION_CHARGES                          AS EXCHANGE_TRANSACTION_CHARGES
     ,FEE.IGST                                                  AS IGST
-    ,FEE.SECURTIES_TRANSACTION_TAX                             AS SECURTIES_TRANSACTION_TAX
+    ,FEE.SECURITIES_TRANSACTION_TAX                            AS SECURITIES_TRANSACTION_TAX
     ,FEE.SEBI_TURN_OVER_FEES                                   AS SEBI_TURN_OVER_FEES
     ,FEE.BROKERAGE + FEE.EXCHANGE_TRANSACTION_CHARGES +
-     FEE.IGST + FEE.SECURTIES_TRANSACTION_TAX +
+     FEE.IGST + FEE.SECURITIES_TRANSACTION_TAX +
      FEE.SEBI_TURN_OVER_FEES                                   AS TOTAL_FEES
     ,FEE.NET_OBLIGATION - (
      FEE.BROKERAGE + FEE.EXCHANGE_TRANSACTION_CHARGES +
-     FEE.IGST + FEE.SECURTIES_TRANSACTION_TAX +
+     FEE.IGST + FEE.SECURITIES_TRANSACTION_TAX +
      FEE.SEBI_TURN_OVER_FEES)                                  AS "NET_P/L"
     ,FEE.AUTO_SQUARE_OFF_CHARGES                               AS AUTO_SQUARE_OFF_CHARGES
     ,FEE.DEPOSITORY_CHARGES                                    AS DEPOSITORY_CHARGES
@@ -63,7 +63,7 @@ SELECT
      FEE.DEPOSITORY_CHARGES                                    AS TOTAL_CHARGES
     ,FEE.NET_OBLIGATION - (
      FEE.BROKERAGE + FEE.EXCHANGE_TRANSACTION_CHARGES +
-     FEE.IGST + FEE.SECURTIES_TRANSACTION_TAX +
+     FEE.IGST + FEE.SECURITIES_TRANSACTION_TAX +
      FEE.SEBI_TURN_OVER_FEES) - 
      (FEE.AUTO_SQUARE_OFF_CHARGES + 
      FEE.DEPOSITORY_CHARGES)                                   AS "NET_P/L_MINUS_CHARGES"

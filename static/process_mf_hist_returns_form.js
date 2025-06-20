@@ -91,10 +91,10 @@ else{
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-document.getElementById('process_hist_returns_form').addEventListener('submit', async function (e) {
+document.getElementById('process_mf_hist_returns_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const response = await fetch(`/api/process_hist_returns/`, {
+const response = await fetch(`/api/process_mf_hist_returns/`, {
 method: 'GET'
 })
 

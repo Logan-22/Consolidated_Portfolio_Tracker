@@ -367,12 +367,12 @@ def get_working_date_from_holiday_date_table(current_year = '1900'):
     return jsonify(data)
 
 
-def truncate_hist_returns_table():
+def truncate_mf_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('DROP TABLE IF EXISTS MF_HIST_RETURNS')
 
-def create_hist_returns_table():
+def create_mf_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
@@ -548,7 +548,7 @@ def create_fee_table():
             BROKERAGE NUMERIC(10,4),
             EXCHANGE_TRANSACTION_CHARGES NUMERIC(10,4),
             IGST NUMERIC(10,4),
-            SECURTIES_TRANSACTION_TAX NUMERIC(10,4),
+            SECURITIES_TRANSACTION_TAX NUMERIC(10,4),
             SEBI_TURN_OVER_FEES NUMERIC(10,4),
             AUTO_SQUARE_OFF_CHARGES NUMERIC(10,4),
             DEPOSITORY_CHARGES NUMERIC(10,4),
@@ -610,7 +610,7 @@ def upsert_fee_entry_in_db(fee_id, trade_date, net_obligation, brokerage, exc_tr
     cursor = conn.cursor()
     today = datetime.date.today()
     today = today.strftime("%Y-%m-%d")
-    cursor.execute(f"""SELECT TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURTIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES
+    cursor.execute(f"""SELECT TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES
        FROM FEE_COMPONENT WHERE FEE_ID = '{fee_id}' AND RECORD_DELETED_FLAG = 0;""")
     rows = cursor.fetchall()
     if rows:
@@ -627,11 +627,70 @@ def upsert_fee_entry_in_db(fee_id, trade_date, net_obligation, brokerage, exc_tr
 
             if (trade_date_from_query != trade_date or net_obligation_from_query != float(net_obligation) or brokerage_from_query != float(brokerage) or exchange_transaction_charges_from_query != float(exc_trans_charges) or igst_from_query != float(igst) or sec_trans_tax_from_query != float(sec_trans_tax) or sebi_turn_fees_from_query != float(sebi_turn_fees) or auto_square_off_charges_from_query != float(auto_square_off_charges) or depository_charges_from_query != float(depository_charges)):
                 cursor.execute(f"UPDATE FEE_COMPONENT SET END_DATE = '{today}', RECORD_DELETED_FLAG = 1 WHERE FEE_ID = '{fee_id}';")
-                cursor.execute("INSERT INTO  FEE_COMPONENT (FEE_ID, TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURTIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                cursor.execute("INSERT INTO  FEE_COMPONENT (FEE_ID, TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                               (str(fee_id), trade_date, net_obligation, brokerage, exc_trans_charges, igst, sec_trans_tax, sebi_turn_fees, auto_square_off_charges, depository_charges, today, '9998-12-31', 0))
                 conn.commit()
     else:
-        cursor.execute("INSERT INTO FEE_COMPONENT (FEE_ID, TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURTIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        cursor.execute("INSERT INTO FEE_COMPONENT (FEE_ID, TRADE_DATE, NET_OBLIGATION, BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                       (str(fee_id), trade_date, net_obligation, brokerage, exc_trans_charges, igst, sec_trans_tax, sebi_turn_fees, auto_square_off_charges, depository_charges, trade_date, '9998-12-31', 0))
         conn.commit()
     conn.close()
+
+def truncate_realised_stock_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS REALISED_STOCK_HIST_RETURNS')
+
+def create_realised_stock_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS REALISED_STOCK_HIST_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            TRADE_DATE DATE,
+            TRADE_TYPE VARCHAR(20),
+            FEE_ID VARCHAR(100),
+            PERCEIVED_DEPLOYED_CAPITAL NUMBER(10,4),
+            ACTUAL_DEPLOYED_CAPITAL NUMBER(10,4),
+            "TOTAL_P/L" NUMBER(10,4),
+            "%_P/L_WITHOUT_LEVERAGE" NUMBER(10,2),
+            "%_P/L_WITH_LEVERAGE" NUMBER(10,2),
+            NET_OBLIGATION NUMBER(10,4),
+            "TOTAL_P/L_VS_NET_OBLIGATION_MATCH_STATUS" VARCHAR(10),
+            BROKERAGE NUMBER(10,4),
+            EXCHANGE_TRANSACTION_CHARGES NUMBER(10,4),
+            IGST NUMBER(10,4),
+            SECURITIES_TRANSACTION_TAX NUMBER(10,4),
+            SEBI_TURN_OVER_FEES NUMBER(10,4),
+            TOTAL_FEES NUMBER(10,4),
+            "NET_P/L" NUMBER(10,4),
+            "NET_%_P/L_WITHOUT_LEVERAGE" NUMBER(10,2),
+            "NET_%_P/L_WITH_LEVERAGE" NUMBER(10,2),
+            TOTAL_CHARGES NUMBER(10,4),
+            "NET_P/L_MINUS_CHARGES" NUMBER(10,4),
+            "NET_%_P/L_WITHOUT_LEVERAGE_INCLUDING_CHARGES" NUMBER(10,2),
+            "NET_%_P/L_WITH_LEVERAGE_INCLUDING_CHARGES" NUMBER(10,2),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+def insert_into_realised_stock_hist_returns():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''INSERT INTO REALISED_STOCK_HIST_RETURNS (TRADE_DATE, TRADE_TYPE, FEE_ID, PERCEIVED_DEPLOYED_CAPITAL, ACTUAL_DEPLOYED_CAPITAL, "TOTAL_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "TOTAL_P/L_VS_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCLUDING_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCLUDING_CHARGES", START_DATE, END_DATE, RECORD_DELETED_FLAG) 
+                   SELECT TRADE_DATE, TRADE_TYPE, FEE_ID, AGG_PERCEIVED_DEPLOYED_CAPITAL, AGG_ACTUAL_DEPLOYED_CAPITAL, "AGG_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "AGG_P/L_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCL_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCL_CHARGES", TRADE_DATE, '9998-12-31', 0 FROM FIN_STOCK_REALISED_PORTFOLIO_VIEW;''')
+    conn.commit()
+    conn.close()
+
+def get_stock_hist_returns_from_mf_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT TRADE_DATE, "%_P/L_WITH_LEVERAGE" FROM REALISED_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY TRADE_DATE;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'trade_date': row[0], 'perc_p_l_with_leverage': row[1]} for row in rows]
+        return jsonify(data)
+    data = [{'trade_date': None, 'perc_p_l_with_leverage': None} for row in rows]
+    return jsonify(data)

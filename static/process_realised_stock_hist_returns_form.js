@@ -7,7 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+let chart;
+
 async function init_returns_chart(){
+
+if (chart){
+  chart.destroy()
+}
 
 const response = await fetch (`/api/realised_stock_hist_returns/`, {
   method: 'GET'
@@ -26,7 +32,7 @@ data.data.forEach(realised_stock_hist_return => {
 
 const ctx = document.getElementById('navChart').getContext('2d');
 
-new Chart(ctx, {
+chart = new Chart(ctx, {
   type: 'bar',
   data: {
     labels: trade_date_array,

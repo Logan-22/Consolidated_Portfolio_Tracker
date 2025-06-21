@@ -45,3 +45,7 @@ def holiday_calendar_setup():
 @frontend.route('/additional_links/')
 def additional_links():
     return render_template('additional_links.html')
+
+@frontend.route('/close_trades/')
+def close_trades():
+    return render_template('close_trades.html')

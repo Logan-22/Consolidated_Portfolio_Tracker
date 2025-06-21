@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Consolidated Protfolio Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    
+</head>
+<header>
+    <nav>
+        <a href = "/">Home</a>
+        <a href = "/hist_price">Historic Price</a>
+        <a href = "/metadata">Metadata Entry</a>
+        <a href = "/mf_order">Mutual Funds Order Entry</a>
+        <a href = "/stock_order_pdf">Stock Order PDF</a>
+        <a href = "/additional_links">Additional Links</a>
+        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
+    </nav>
+</header>
+<body>
+<form id="close_trades_form">
+    <label for = "opening_trade_id">
+    <b>Opening Trade ID</b></label>
+    <select id = "opening_trade_id" name = "opening_trade_id" placeholder="Select an Opening Trade ID" required></select></br>
+
+    <label for = "alt_symbol">
+    <b>Stock Symbol</b>
+    <input type = "text" id = "alt_symbol" name = "alt_symbol" placeholder = "Select an Opening Trade ID to Continue" readonly>
+
+    <label for = "opening_trade_date">
+    <b>Opening Trade Date</b>
+    <input type = "date" id = "opening_trade_date" name="opening_trade_date" placeholder = "Select an Opening Trade ID to Continue" readonly>
+
+    <label for = "opening_trade_stock_quantity">
+    <b>Opening Trade Stock Quantity</b>
+    <input type = "number" id = "opening_trade_stock_quantity" name="opening_trade_stock_quantity" placeholder = "Select an Opening Trade ID to Continue" readonly>
+
+    <label for = "opening_trade_buy_or_sell">
+    <b>Opening Trade Buy Or Sell</b>
+    <input type = "text" id = "opening_trade_buy_or_sell" name="opening_trade_buy_or_sell" placeholder = "Select an Opening Trade ID to Continue" readonly>
+
+    <button type = "submit" class="submit">Submit</button>
+</form>
+
+<div id = "result"></div>
+<script src="{{ url_for('static', filename='close_trades.js') }}" defer></script>
+</body>
+</html>

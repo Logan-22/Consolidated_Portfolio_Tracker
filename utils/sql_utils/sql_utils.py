@@ -675,11 +675,11 @@ def create_realised_stock_hist_returns_table():
             RECORD_DELETED_FLAG INTEGER
         )''')
     
-def insert_into_realised_stock_hist_returns():
+def insert_into_realised_stock_hist_returns(start_date = '1900-01-01', end_date = '9998-12-31'):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''INSERT INTO REALISED_STOCK_HIST_RETURNS (TRADE_DATE, TRADE_TYPE, FEE_ID, PERCEIVED_DEPLOYED_CAPITAL, ACTUAL_DEPLOYED_CAPITAL, "TOTAL_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "TOTAL_P/L_VS_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCLUDING_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCLUDING_CHARGES", START_DATE, END_DATE, RECORD_DELETED_FLAG) 
-                   SELECT TRADE_DATE, TRADE_TYPE, FEE_ID, AGG_PERCEIVED_DEPLOYED_CAPITAL, AGG_ACTUAL_DEPLOYED_CAPITAL, "AGG_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "AGG_P/L_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCL_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCL_CHARGES", TRADE_DATE, '9998-12-31', 0 FROM FIN_STOCK_REALISED_PORTFOLIO_VIEW;''')
+    cursor.execute(f'''INSERT INTO REALISED_STOCK_HIST_RETURNS (TRADE_DATE, TRADE_TYPE, FEE_ID, PERCEIVED_DEPLOYED_CAPITAL, ACTUAL_DEPLOYED_CAPITAL, "TOTAL_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "TOTAL_P/L_VS_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCLUDING_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCLUDING_CHARGES", START_DATE, END_DATE, RECORD_DELETED_FLAG) 
+                   SELECT TRADE_DATE, TRADE_TYPE, FEE_ID, AGG_PERCEIVED_DEPLOYED_CAPITAL, AGG_ACTUAL_DEPLOYED_CAPITAL, "AGG_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "AGG_P/L_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCL_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCL_CHARGES", TRADE_DATE, '9998-12-31', 0 FROM FIN_STOCK_REALISED_PORTFOLIO_VIEW WHERE TRADE_DATE > '{start_date}' AND TRADE_DATE <= '{end_date}';''')
     conn.commit()
     conn.close()
 
@@ -693,4 +693,28 @@ def get_stock_hist_returns_from_mf_hist_returns_table():
         data = [{'trade_date': row[0], 'perc_p_l_with_leverage': row[1]} for row in rows]
         return jsonify(data)
     data = [{'trade_date': None, 'perc_p_l_with_leverage': None} for row in rows]
+    return jsonify(data)
+
+def get_max_trade_date_from_realised_stock_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT MAX(TRADE_DATE) FROM REALISED_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'max_trade_date': rows[0][0]}
+        return jsonify(data)
+    data = {'max_trade_date': None}
+    return jsonify(data)
+
+def get_open_trades_from_trades_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT TRADE_ID, STOCK_NAME, TRADE_DATE, STOCK_QUANTITY, BUY_OR_SELL FROM TRADES WHERE TRADE_EXIT_DATE IS NULL;")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'trade_id': row[0], 'stock_name': row[1], 'trade_date': row[2], 'stock_quantity': row[3], 'buy_or_sell': row[4]} for row in rows]
+        return jsonify(data)
+    data = [{'trade_id': None, 'stock_name': None, 'trade_date': None, 'stock_quantity': None, 'buy_or_sell': None}]
     return jsonify(data)

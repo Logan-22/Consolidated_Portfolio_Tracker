@@ -86,6 +86,7 @@ else{
     }
 }
 upsert_mf_hist_returns_table();
+upsert_realised_stock_hist_returns_table();
 }
 
 // GET /api/mf_hist_returns/max_date/
@@ -96,9 +97,9 @@ const mf_hist_max_next_proc_date_response = await fetch ('/api/mf_hist_returns/m
 })
 
 const mf_hist_max_next_proc_date_data = await mf_hist_max_next_proc_date_response.json();
-max_next_proc_date_in_mf_hist_returns = mf_hist_max_next_proc_date_data.data.max_next_processing_date
+const max_next_proc_date_in_mf_hist_returns = mf_hist_max_next_proc_date_data.data.max_next_processing_date
 
-// Get the Max of all Nav tables and get the minimum our of the those
+// Get the Max of all Nav tables and get the minimum out of the those
 
 const nav_max_date_response = await fetch ('/api/all_price_tables/max_date/', {
   method: 'GET'
@@ -122,6 +123,35 @@ const day = String(min_nav_date.getDate()).padStart(2, '0');
 const end_date = `${year}-${month}-${day}` // Least date present in all NAV Tables
 
 const response = await fetch (`/api/mf_hist_returns/${max_next_proc_date_in_mf_hist_returns}/${end_date}`, {
+  method: 'GET'
+})
+
+const data = await response.json();
+
+const resultDiv = document.getElementById('result')
+resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
+resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+
+}
+
+// GET /api/realised_stock_hist_returns/max_trade_date/
+
+async function upsert_realised_stock_hist_returns_table(){
+const realised_stock_hist_max_trade_date_response = await fetch ('/api/realised_stock_hist_returns/max_trade_date/', {
+  method: 'GET'
+})
+
+const realised_stock_hist_max_trade_date_data = await realised_stock_hist_max_trade_date_response.json();
+const realised_stock_hist_max_trade_date = realised_stock_hist_max_trade_date_data.data.max_trade_date
+
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, '0');
+const day = String(today.getDate()).padStart(2, '0');
+
+const end_date = `${year}-${month}-${day}`
+
+const response = await fetch (`/api/realised_stock_hist_returns/${realised_stock_hist_max_trade_date}/${end_date}`, {
   method: 'GET'
 })
 

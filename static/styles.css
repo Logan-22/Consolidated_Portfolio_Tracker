@@ -254,3 +254,7 @@ button {
 .updated{
   background-color: #28a745 !important;
 }
+
+input:read-only{
+  background-color: silver;
+}

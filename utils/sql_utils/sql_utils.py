@@ -718,3 +718,31 @@ def get_open_trades_from_trades_table():
         return jsonify(data)
     data = [{'trade_id': None, 'stock_name': None, 'trade_date': None, 'stock_quantity': None, 'buy_or_sell': None}]
     return jsonify(data)
+
+def create_close_trades_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS CLOSE_TRADES (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            STOCK_SYMBOL VARCHAR(100),
+            OPENING_TRADE_ID VARCHAR(200),
+            OPENING_TRADE_DATE DATE,
+            OPENING_TRADE_STOCK_QUANTITY INTEGER,
+            OPENING_TRADE_BUY_OR_SELL VARCHAR(10),
+            CLOSING_TRADE_ID VARCHAR(200),
+            CLOSING_TRADE_DATE DATE,
+            CLOSING_TRADE_STOCK_QUANTITY INTEGER,
+            CLOSING_TRADE_BUY_OR_SELL VARCHAR(10),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+def insert_into_close_trades_table(opening_trade_id, opening_alt_symbol, opening_trade_date, opening_trade_stock_quantity, opening_trade_buy_or_sell, closing_trade_id, closing_alt_symbol, closing_trade_date, closing_trade_stock_quantity, closing_trade_buy_or_sell):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO CLOSE_TRADES (STOCK_SYMBOL, OPENING_TRADE_ID, OPENING_TRADE_DATE, OPENING_TRADE_STOCK_QUANTITY, OPENING_TRADE_BUY_OR_SELL, CLOSING_TRADE_ID, CLOSING_TRADE_DATE, CLOSING_TRADE_STOCK_QUANTITY, CLOSING_TRADE_BUY_OR_SELL, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   (opening_alt_symbol, opening_trade_id, opening_trade_date, opening_trade_stock_quantity, opening_trade_buy_or_sell, closing_trade_id, closing_trade_date, closing_trade_stock_quantity, closing_trade_buy_or_sell, closing_trade_date, '9998-12-31', 0  ))
+    conn.commit()
+    conn.close()

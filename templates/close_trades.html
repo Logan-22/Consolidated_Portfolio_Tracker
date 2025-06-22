@@ -19,13 +19,15 @@
 </header>
 <body>
 <form id="close_trades_form">
+<div id ="close_trades_form_div_parent" class="div_grid_parent">
+    <div id ="opening_trades" class="div_child">
     <label for = "opening_trade_id">
     <b>Opening Trade ID</b></label>
     <select id = "opening_trade_id" name = "opening_trade_id" placeholder="Select an Opening Trade ID" required></select></br>
 
-    <label for = "alt_symbol">
-    <b>Stock Symbol</b>
-    <input type = "text" id = "alt_symbol" name = "alt_symbol" placeholder = "Select an Opening Trade ID to Continue" readonly>
+    <label for = "opening_alt_symbol">
+    <b>Opening Stock Symbol</b>
+    <input type = "text" id = "opening_alt_symbol" name = "opening_alt_symbol" placeholder = "Select an Opening Trade ID to Continue" readonly>
 
     <label for = "opening_trade_date">
     <b>Opening Trade Date</b>
@@ -38,9 +40,53 @@
     <label for = "opening_trade_buy_or_sell">
     <b>Opening Trade Buy Or Sell</b>
     <input type = "text" id = "opening_trade_buy_or_sell" name="opening_trade_buy_or_sell" placeholder = "Select an Opening Trade ID to Continue" readonly>
+    </div>
 
-    <button type = "submit" class="submit">Submit</button>
+    <div id="closing_trades" class="div_child">
+    <label for = "closing_trade_id">
+    <b>Closing Trade ID</b></label>
+    <select id = "closing_trade_id" name = "closing_trade_id" placeholder="Select an Closing Trade ID" required></select></br>
+
+    <label for = "closing_alt_symbol">
+    <b>Closing Stock Symbol</b>
+    <input type = "text" id = "closing_alt_symbol" name = "closing_alt_symbol" placeholder = "Select an Opening Trade ID to Continue" readonly>
+
+    <label for = "closing_trade_date">
+    <b>Closing Trade Date</b>
+    <input type = "date" id = "closing_trade_date" name="closing_trade_date" placeholder = "Select an Opening Trade ID to Continue" readonly>
+
+    <label for = "closing_trade_stock_quantity">
+    <b>Closing Trade Stock Quantity</b>
+    <input type = "number" id = "closing_trade_stock_quantity" name="closing_trade_stock_quantity" placeholder = "Select an Opening Trade ID to Continue" readonly>
+
+    <label for = "closing_trade_buy_or_sell">
+    <b>Closing Trade Buy Or Sell</b>
+    <input type = "text" id = "closing_trade_buy_or_sell" name="closing_trade_buy_or_sell" placeholder = "Select an Opening Trade ID to Continue" readonly>
+    </div>
+    <br/>
+
+</div>
+<button type = "submit" class="submit">Add</button>
 </form>
+
+<div id="closed_trade_entry">
+    <table id="closed_trade_entry_table">
+        <tr>
+            <th>Opening Trade ID</th>
+            <th>Opening Stock Symbol</th>
+            <th>Opening Trade Date</th>
+            <th>Opening Stock Quantity</th>
+            <th>Opening Buy Or Sell</th>
+            <th>Closing Trade ID</th>
+            <th>Closing Stock Symbol</th>
+            <th>Closing Trade Date</th>
+            <th>Closing Stock Quantity</th>
+            <th>Closing Buy Or Sell</th>
+        </tr>
+    </table>
+</div></br>
+
+<button type = "submit" class="submit" id = "close_trades_submit">Submit</button>
 
 <div id = "result"></div>
 <script src="{{ url_for('static', filename='close_trades.js') }}" defer></script>

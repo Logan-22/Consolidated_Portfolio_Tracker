@@ -6,7 +6,7 @@ import os
 from json import loads
 from uuid import NAMESPACE_URL,uuid5
 
-from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_date_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_mf_hist_returns_table , create_mf_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table, create_stock_order_table, insert_stock_order_entry, get_all_names_from_metadata, upsert_trade_entry_in_db, create_trade_table, create_fee_table, upsert_fee_entry_in_db, get_all_tables_list, create_stock_portfolio_view_in_db, get_stock_hist_returns_from_mf_hist_returns_table, truncate_realised_stock_hist_returns_table, create_realised_stock_hist_returns_table, insert_into_realised_stock_hist_returns, get_max_trade_date_from_realised_stock_hist_returns_table, get_open_trades_from_trades_table
+from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_date_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_mf_hist_returns_table , create_mf_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table, create_stock_order_table, insert_stock_order_entry, get_all_names_from_metadata, upsert_trade_entry_in_db, create_trade_table, create_fee_table, upsert_fee_entry_in_db, get_all_tables_list, create_stock_portfolio_view_in_db, get_stock_hist_returns_from_mf_hist_returns_table, truncate_realised_stock_hist_returns_table, create_realised_stock_hist_returns_table, insert_into_realised_stock_hist_returns, get_max_trade_date_from_realised_stock_hist_returns_table, get_open_trades_from_trades_table, create_close_trades_table, insert_into_close_trades_table
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
 # Folders
@@ -787,5 +787,28 @@ def get_open_trades_list():
         open_trades_list = get_open_trades_from_trades_table()
         open_trades_list = open_trades_list.get_json()
         return jsonify({'data': open_trades_list,'message': 'Successfully retrieved Open Trades from TRADES Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/close_trade/', methods = ['POST'])
+def close_trade_entry():
+    try:
+        create_close_trades_table()
+
+        close_trades_data_array = loads(request.form.get('close_trades_data_array')) # json.loads()
+        for close_trade_data in close_trades_data_array:
+            opening_trade_id = close_trade_data['opening_trade_id']
+            opening_alt_symbol = close_trade_data['opening_alt_symbol']
+            opening_trade_date = close_trade_data['opening_trade_date']
+            opening_trade_stock_quantity = close_trade_data['opening_trade_stock_quantity']
+            opening_trade_buy_or_sell = close_trade_data['opening_trade_buy_or_sell']
+            closing_trade_id = close_trade_data['closing_trade_id']
+            closing_alt_symbol = close_trade_data['closing_alt_symbol']
+            closing_trade_date = close_trade_data['closing_trade_date']
+            closing_trade_stock_quantity = close_trade_data['closing_trade_stock_quantity']
+            closing_trade_buy_or_sell = close_trade_data['closing_trade_buy_or_sell']
+
+            insert_into_close_trades_table(opening_trade_id, opening_alt_symbol, opening_trade_date, opening_trade_stock_quantity, opening_trade_buy_or_sell, closing_trade_id, closing_alt_symbol, closing_trade_date, closing_trade_stock_quantity, closing_trade_buy_or_sell)
+        return jsonify({'message': 'Successfully inserted into CLOSE_TRADES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})

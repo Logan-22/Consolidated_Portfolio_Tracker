@@ -258,3 +258,17 @@ button {
 input:read-only{
   background-color: silver;
 }
+
+.div_grid_parent{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 5rem;
+}
+
+#close_trades_form{
+  max-width: 1000px !important;
+}
+
+.error{
+  background-color: #ff3333;
+}

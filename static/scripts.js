@@ -87,6 +87,7 @@ else{
 }
 upsert_mf_hist_returns_table();
 upsert_realised_stock_hist_returns_table();
+upsert_realised_swing_stock_hist_returns_table();
 }
 
 // GET /api/mf_hist_returns/max_date/
@@ -152,6 +153,35 @@ const day = String(today.getDate()).padStart(2, '0');
 const end_date = `${year}-${month}-${day}`
 
 const response = await fetch (`/api/realised_stock_hist_returns/${realised_stock_hist_max_trade_date}/${end_date}`, {
+  method: 'GET'
+})
+
+const data = await response.json();
+
+const resultDiv = document.getElementById('result')
+resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
+resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+
+}
+
+// GET /api/realised_swing_stock_hist_returns/max_trade_date/
+
+async function upsert_realised_swing_stock_hist_returns_table(){
+const realised_swing_stock_hist_max_trade_date_response = await fetch ('/api/realised_swing_stock_hist_returns/max_trade_close_date/', {
+  method: 'GET'
+})
+
+const realised_swing_stock_hist_max_trade_date_data = await realised_swing_stock_hist_max_trade_date_response.json();
+const realised_swing_stock_hist_max_trade_close_date = realised_swing_stock_hist_max_trade_date_data.data.max_trade_close_date
+
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, '0');
+const day = String(today.getDate()).padStart(2, '0');
+
+const end_date = `${year}-${month}-${day}`
+
+const response = await fetch (`/api/realised_swing_stock_hist_returns/${realised_swing_stock_hist_max_trade_close_date}/${end_date}`, {
   method: 'GET'
 })
 

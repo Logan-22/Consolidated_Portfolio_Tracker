@@ -7,6 +7,9 @@ from utils.sql_utils.views.FIN_MUTUAL_FUND_PORTFOLIO_VIEW import FIN_MUTUAL_FUND
 from utils.sql_utils.views.STOCK_REALISED_PORTFOLIO_VIEW import STOCK_REALISED_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_STOCK_REALISED_PORTFOLIO_VIEW import AGG_STOCK_REALISED_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_STOCK_REALISED_PORTFOLIO_VIEW import FIN_STOCK_REALISED_PORTFOLIO_VIEW
+from utils.sql_utils.views.STOCK_SWING_REALISED_PORTFOLIO_VIEW import STOCK_SWING_REALISED_PORTFOLIO_VIEW
+from utils.sql_utils.views.AGG_STOCK_SWING_REALISED_PORTFOLIO_VIEW import AGG_STOCK_SWING_REALISED_PORTFOLIO_VIEW
+from utils.sql_utils.views.FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW import FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW
 
 db_path = os.path.join(os.getcwd(), "databases", "consolidated_portfolio.db")
 
@@ -266,6 +269,15 @@ def create_stock_portfolio_view_in_db():
     cursor.execute(AGG_STOCK_REALISED_PORTFOLIO_VIEW)
     cursor.execute("DROP VIEW IF EXISTS FIN_STOCK_REALISED_PORTFOLIO_VIEW;")
     cursor.execute(FIN_STOCK_REALISED_PORTFOLIO_VIEW)
+
+    # Swing Trade Views
+    cursor.execute("DROP VIEW IF EXISTS STOCK_SWING_REALISED_PORTFOLIO_VIEW;")
+    cursor.execute(STOCK_SWING_REALISED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS AGG_STOCK_SWING_REALISED_PORTFOLIO_VIEW;")
+    cursor.execute(AGG_STOCK_SWING_REALISED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW;")
+    cursor.execute(FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW)
+    
     conn.commit()
     conn.close()
 
@@ -683,10 +695,29 @@ def insert_into_realised_stock_hist_returns(start_date = '1900-01-01', end_date 
     conn.commit()
     conn.close()
 
-def get_stock_hist_returns_from_mf_hist_returns_table():
+def get_stock_hist_returns_from_realised_stock_and_swing_stock_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f'SELECT TRADE_DATE, "%_P/L_WITH_LEVERAGE" FROM REALISED_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY TRADE_DATE;')
+    cursor.execute(f'''SELECT * FROM
+(
+SELECT
+    RSHR.TRADE_DATE                    AS TRADE_DATE
+    ,RSHR."%_P/L_WITH_LEVERAGE"        AS "NET_%_P/L"
+FROM
+    REALISED_STOCK_HIST_RETURNS RSHR
+WHERE
+    RSHR.RECORD_DELETED_FLAG = 0 
+UNION ALL
+SELECT 
+    RSSHR.TRADE_CLOSE_DATE             AS TRADE_DATE
+    ,RSSHR."NET_%_P/L"                 AS "NET_%_P/L"
+FROM
+    REALISED_SWING_STOCK_HIST_RETURNS RSSHR
+WHERE
+    RECORD_DELETED_FLAG = 0
+)
+ORDER BY TRADE_DATE, "NET_%_P/L"
+;''')
     rows = cursor.fetchall()
     conn.close()
     if rows:
@@ -710,10 +741,14 @@ def get_max_trade_date_from_realised_stock_hist_returns_table():
 def get_open_trades_from_trades_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT TRADE_ID, STOCK_NAME, TRADE_DATE, STOCK_QUANTITY, BUY_OR_SELL FROM TRADES WHERE TRADE_EXIT_DATE IS NULL;")
+    cursor.execute(f"""SELECT TRADE_ID, STOCK_NAME, TRADE_DATE, STOCK_QUANTITY, BUY_OR_SELL FROM TRADES WHERE TRADE_EXIT_DATE IS NULL
+                       AND TRADE_ID NOT IN(SELECT DISTINCT TRD.TRADE_ID FROM TRADES TRD INNER JOIN FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW FSSRPV ON TRD.FEE_ID = FSSRPV.OPENING_FEE_ID AND FSSRPV.TRADES_CLOSE_STATUS = 'TRADES_COMPLETELY_CLOSED')
+                       AND TRADE_ID NOT IN(SELECT DISTINCT TRD.TRADE_ID FROM TRADES TRD INNER JOIN FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW FSSRPV ON TRD.FEE_ID = FSSRPV.CLOSING_FEE_ID AND FSSRPV.TRADES_CLOSE_STATUS = 'TRADES_COMPLETELY_CLOSED') ;""")
     rows = cursor.fetchall()
+    print(rows)
     conn.close()
     if rows:
+
         data = [{'trade_id': row[0], 'stock_name': row[1], 'trade_date': row[2], 'stock_quantity': row[3], 'buy_or_sell': row[4]} for row in rows]
         return jsonify(data)
     data = [{'trade_id': None, 'stock_name': None, 'trade_date': None, 'stock_quantity': None, 'buy_or_sell': None}]
@@ -746,3 +781,67 @@ def insert_into_close_trades_table(opening_trade_id, opening_alt_symbol, opening
                    (opening_alt_symbol, opening_trade_id, opening_trade_date, opening_trade_stock_quantity, opening_trade_buy_or_sell, closing_trade_id, closing_trade_date, closing_trade_stock_quantity, closing_trade_buy_or_sell, closing_trade_date, '9998-12-31', 0  ))
     conn.commit()
     conn.close()
+
+def truncate_realised_swing_stock_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS REALISED_SWING_STOCK_HIST_RETURNS')
+
+def create_realised_swing_stock_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS REALISED_SWING_STOCK_HIST_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            STOCK_NAME VARCHAR(20),
+            OPENING_FEE_ID VARCHAR(200),
+            CLOSING_FEE_ID VARCHAR(200),
+            TRADE_OPEN_DATE DATE,
+            TRADE_CLOSE_DATE DATE,
+            OPENING_STOCK_QUANTITY INTEGER,
+            CLOSING_STOCK_QUANTITY INTEGER,
+            REMAINING_STOCK_BALANCE INTEGER,
+            TRADES_CLOSE_STATUS VARCHAR(30),
+            OPENING_BUY_PRICE NUMBER(10,4),
+            OPEN_NET_OBLIGATION NUMBER(10,4),
+            OPEN_MATCH_STATUS VARCHAR(30),
+            OPEN_TOTAL_BROKERAGE NUMBER(10,4),
+            OPEN_TOTAL_CHARGES NUMBER(10,4),
+            OPEN_TOTAL_FEES NUMBER(10,4),
+            CLOSING_SELL_PRICE NUMBER(10,4),
+            CLOSE_NET_OBLIGATION NUMBER(10,4),
+            CLOSE_MATCH_STATUS VARCHAR(30),
+            CLOSE_TOTAL_BROKERAGE NUMBER(10,4),
+            CLOSE_TOTAL_CHARGES NUMBER(10,4),
+            CLOSE_TOTAL_FEES NUMBER(10,4),
+            TOTAL_FEES NUMBER(10,4),
+            "P/L" NUMBER(10,4),
+            "%_P/L" NUMBER(10,2),
+            "NET_P/L" NUMBER(10,4),
+            "NET_%_P/L" NUMBER(10,2),
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        )''')
+    
+def insert_into_realised_swing_stock_hist_returns(start_date = '1900-01-01', end_date = '9998-12-31'):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'''INSERT INTO REALISED_SWING_STOCK_HIST_RETURNS (STOCK_NAME, OPENING_FEE_ID, CLOSING_FEE_ID, TRADE_OPEN_DATE, TRADE_CLOSE_DATE, OPENING_STOCK_QUANTITY, CLOSING_STOCK_QUANTITY, REMAINING_STOCK_BALANCE, TRADES_CLOSE_STATUS, OPENING_BUY_PRICE, OPEN_NET_OBLIGATION, OPEN_MATCH_STATUS, OPEN_TOTAL_BROKERAGE, OPEN_TOTAL_CHARGES, OPEN_TOTAL_FEES,
+                       CLOSING_SELL_PRICE, CLOSE_NET_OBLIGATION, CLOSE_MATCH_STATUS, CLOSE_TOTAL_BROKERAGE, CLOSE_TOTAL_CHARGES, CLOSE_TOTAL_FEES, TOTAL_FEES, "P/L", "%_P/L", "NET_P/L", "NET_%_P/L", START_DATE, END_DATE, RECORD_DELETED_FLAG) 
+                       SELECT STOCK_NAME, OPENING_FEE_ID, CLOSING_FEE_ID, TRADE_OPEN_DATE, TRADE_CLOSE_DATE, AGG_OPENING_STOCK_QUANTITY, AGG_CLOSING_STOCK_QUANTITY, REMAINING_STOCK_BALANCE, TRADES_CLOSE_STATUS, AGG_OPENING_BUY_PRICE, OPEN_NET_OBLIGATION, OPEN_MATCH_STATUS, OPEN_TOTAL_BROKERAGE, OPEN_TOTAL_CHARGES, OPEN_TOTAL_FEES,
+                       AGG_CLOSING_SELL_PRICE, CLOSE_NET_OBLIGATION, CLOSE_MATCH_STATUS, CLOSE_TOTAL_BROKERAGE, CLOSE_TOTAL_CHARGES, CLOSE_TOTAL_FEES, TOTAL_FEES, "AGG_P/L", "AGG_%_P/L", "NET_P/L", "NET_%_P/L", TRADE_CLOSE_DATE, '9998-12-31', 0 FROM FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW WHERE TRADE_CLOSE_DATE > '{start_date}' AND TRADE_CLOSE_DATE <= '{end_date}';''')
+    conn.commit()
+    conn.close()
+
+def get_max_trade_close_date_from_realised_swing_stock_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT MAX(TRADE_CLOSE_DATE) FROM REALISED_SWING_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'max_trade_close_date': rows[0][0]}
+        return jsonify(data)
+    data = {'max_trade_close_date': None}
+    return jsonify(data)

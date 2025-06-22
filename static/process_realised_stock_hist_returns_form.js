@@ -105,16 +105,34 @@ const response = await fetch(`/api/process_realised_stock_hist_returns/`, {
 method: 'GET'
 })
 
+
 const data = await response.json();
 const resultDiv = document.getElementById('result')
 
 if(data.status === "Success"){
     resultDiv.innerHTML = `<strong>${data.message}</strong>`
-    init_returns_chart()
 }
 else{
     resultDiv.innerHTML = `<strong>${data.message}</strong>`
 }
+
+const swing_response = await fetch(`/api/process_realised_swing_stock_hist_returns/`, {
+method: 'GET'
+})
+
+const swing_data = await swing_response.json();
+
+if(swing_data.status === "Success"){
+    resultDiv.innerHTML += `<strong>${data.message}</strong>`
+}
+else{
+    resultDiv.innerHTML = `<strong>${data.message}</strong>`
+}
+
+if(swing_data.status === "Success" && data.status === "Success"){
+  init_returns_chart()
+}
+
 })
 
 // Mode Switch

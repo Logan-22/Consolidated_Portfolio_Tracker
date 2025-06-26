@@ -19,9 +19,21 @@
 </header>
 <body>
 <form id="hist_price_form">
+    <label for = "exchange_symbol">
+    <b>Exchange Symbol</b></label>
+    <select id = "exchange_symbol" name = "exchange_symbol" placeholder="Enter the Exchange Symbol of Stock/Mutual Fund" required></select></br>
+
+    <label for = "yahoo_symbol">
+    <b>Yahoo Symbol</b></label>
+    <input type = "text" id = "yahoo_symbol" name = "yahoo_symbol" placeholder="Enter the Exchange Symbol of Stock/Mutual Fund" readonly></br>
+
     <label for = "alt_symbol">
-    <b>Name</b></label>
-    <select id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Stock/Mutual Fund Name" required></select></br>
+    <b>Alt Symbol</b></label>
+    <input type = "text" id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Exchange Symbol of Stock/Mutual Fund" readonly></br>
+
+    <label for = "portfolio_type">
+    <b>Portfolio Type</b></label>
+    <input type = "text" id = "portfolio_type" name = "portfolio_type" placeholder="Enter the Exchange Symbol of Stock/Mutual Fund" readonly></br>
 
     <label for = "start_date">
     <b>Start Date</b>

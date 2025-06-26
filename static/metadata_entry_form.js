@@ -31,27 +31,33 @@ mf_optional_form.classList.add('hidden')
 }
 }
 
-
+document.getElementById('exchange_symbol').addEventListener('input', function (e){
+e.preventDefault();
+let exchange_symbol   = document.getElementById('exchange_symbol').value;
+const alt_symbol      = document.getElementById('alt_symbol');
+alt_symbol.value      = exchange_symbol.replaceAll(" ", "_").replaceAll(".", "_").toLowerCase()
+})
 
 
 document.getElementById('metadata_entry_form').addEventListener('submit', async function (e) {
 e.preventDefault();
-const symbol = document.getElementById('symbol').value;
-const alt_symbol = document.getElementById('alt_symbol').value;
-const portfolio_type = document.getElementById('portfolio_type').value;
-const amc = document.getElementById('amc').value;
-const type = document.getElementById('type').value;
-const fund_category = document.getElementById('fund_category').value;
-const launched_on = document.getElementById('launched_on').value;
-const exit_load = document.getElementById('exit_load').value;
-const expense_ratio = document.getElementById('expense_ratio').value;
-const fund_manager = document.getElementById('fund_manager').value;
-const fund_manager_started_on = document.getElementById('fund_manager_started_on').value;
-const isin = document.getElementById('isin').value;
-
+const exchange_symbol         = document.getElementById('exchange_symbol').value;
+const yahoo_symbol            = document.getElementById('yahoo_symbol').value;
+const alt_symbol              = document.getElementById('alt_symbol').value;
+const portfolio_type          = document.getElementById('portfolio_type').value;
+const amc                     = document.getElementById('amc').value
+const type                    = document.getElementById('type').value
+const fund_category           = document.getElementById('fund_category').value
+const launched_on             = document.getElementById('launched_on').value
+const exit_load               = document.getElementById('exit_load').value
+const expense_ratio           = document.getElementById('expense_ratio').value
+const fund_manager            = document.getElementById('fund_manager').value
+const fund_manager_started_on = document.getElementById('fund_manager_started_on').value
+const isin                    = document.getElementById('isin').value
 
 const formData = new FormData();
-formData.append('symbol', symbol);
+formData.append('exchange_symbol', exchange_symbol);
+formData.append('yahoo_symbol', yahoo_symbol);
 formData.append('alt_symbol', alt_symbol);
 formData.append('portfolio_type', portfolio_type);
 formData.append('amc', amc);
@@ -64,7 +70,7 @@ formData.append('fund_manager', fund_manager);
 formData.append('fund_manager_started_on', fund_manager_started_on);
 formData.append('isin', isin);
 
-const response = await fetch(`/api/metadata/`, {
+const response = await fetch(`/api/metadata_store/`, {
 method: 'POST',
 body: formData
 })

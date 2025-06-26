@@ -5,20 +5,20 @@
 // URL    : /api/stock_order/
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('alt_symbol')) {
+  if (document.getElementById('exchange_symbol')) {
     init_alt_symbol_dropdown();
   }
 });
 
 async function init_alt_symbol_dropdown(){
-const response = await fetch ('/api/stock_name_list/', {
+const stock_symbol_response = await fetch ('/api/metadata_store/symbols?portfolio_type=Stock', {
   method: 'GET'
 })
 
-const data = await response.json();
-const name_input = document.getElementById('alt_symbol')
-data.name_list.forEach(element => {
-  name_input.innerHTML += `<option id = "options">${element}</option>`
+const stock_symbol_data = await stock_symbol_response.json();
+const exchange_symbol = document.getElementById('exchange_symbol')
+stock_symbol_data.all_symbols_list.forEach(element => {
+  exchange_symbol.innerHTML += `<option id = "options">${element.exchange_symbol}</option>`
 });
 }
 

@@ -20,22 +20,26 @@
     <div>
     <form id = "mf_order_entry_form">
 
+    <label for = "exchange_symbol">
+    <b>Exchange Symbol</b></label></br>
+    <select id = "exchange_symbol" name = "exchange_symbol" placeholder="Enter the Exchange Symbol of Mutual Fund" required></select></br>
+
     <label for = "alt_symbol">
-    <b>Name</b></label>
-    <select id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Mutual Fund Name" required></select></br>
+    <b>Alt Symbol</b></label></br>
+    <input type = "text" id = "alt_symbol" name = "alt_symbol" placeholder="Enter the Exchange Symbol of Mutual Fund" readonly autocomplete="off"></br>
 
     <label for = "purchase_date">
     <b>Purchased On</b></label></br>
     <input type = "date" id = "purchase_date" name = "purchase_date" placeholder="Enter the Date in which Mutual Fund was Purchased" autocomplete="off"></br>
-    
+
     <label for = "invested_amount">
     <b>Invested Amount</b></label></br>
     <input type = "text" id = "invested_amount" name = "invested_amount" placeholder="Enter the Invested Amount" autocomplete="off"></br>
-    
+
     <label for = "amc_amount">
     <b>AMC Amount</b></label></br>
     <input type = "text" id = "amc_amount" name = "amc_amount" placeholder="Enter the after fees amount invested" autocomplete="off"></br>
-    
+
     <button type = "submit" class = "submit">Submit</button>
     </form>
     </div>

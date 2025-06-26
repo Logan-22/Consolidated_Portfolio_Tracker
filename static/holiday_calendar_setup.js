@@ -14,7 +14,7 @@ async function init_holiday_table(){
 const today = new Date();
 const current_year = today.getFullYear();
 
-const response = await fetch (`/api/holiday_date/${current_year}`, {
+const response = await fetch (`/api/holiday_date?current_year=${current_year}`, {
   method: 'GET'
 })
 

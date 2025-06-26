@@ -6,140 +6,115 @@ import os
 from json import loads
 from uuid import NAMESPACE_URL,uuid5
 
-from utils.sql_utils.sql_utils import create_table, truncate_table, insert_into_nav_table, create_metadata_table, insert_metadata_entry, get_name_from_metadata, get_symbol_from_metadata, get_nav_from_hist_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_tables_list, get_max_date_from_table, dup_check_on_nav_table, create_mf_portfolio_view_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_date_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_mf_hist_returns_table , create_mf_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table, create_stock_order_table, insert_stock_order_entry, get_all_names_from_metadata, upsert_trade_entry_in_db, create_trade_table, create_fee_table, upsert_fee_entry_in_db, get_all_tables_list, create_stock_portfolio_view_in_db, get_stock_hist_returns_from_realised_stock_and_swing_stock_hist_returns_table, truncate_realised_stock_hist_returns_table, create_realised_stock_hist_returns_table, insert_into_realised_stock_hist_returns, get_max_trade_date_from_realised_stock_hist_returns_table, get_open_trades_from_trades_table, create_close_trades_table, insert_into_close_trades_table, truncate_realised_swing_stock_hist_returns_table, create_realised_swing_stock_hist_returns_table, insert_into_realised_swing_stock_hist_returns, get_max_trade_close_date_from_realised_swing_stock_hist_returns_table
+from utils.sql_utils.sql_utils import create_price_table, delete_alt_symbol_from_price_table, upsert_into_price_table, create_metadata_store_table, insert_metadata_store_entry, get_price_from_price_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_max_value_date_for_alt_symbol, duplicate_check_on_price_table, create_mf_portfolio_views_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_dates_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_mf_hist_returns_table , create_mf_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table, create_stock_order_table, insert_stock_order_entry, get_all_symbols_list_from_metadata_store, upsert_trade_entry_in_db, create_trade_table, create_fee_table, upsert_fee_entry_in_db, get_all_tables_list, create_stock_portfolio_views_in_db, get_stock_hist_returns_from_realised_stock_and_swing_stock_hist_returns_table, truncate_realised_stock_hist_returns_table, create_realised_stock_hist_returns_table, insert_into_realised_stock_hist_returns, get_max_trade_date_from_realised_stock_hist_returns_table, get_open_trades_from_trades_table, create_close_trades_table, insert_into_close_trades_table, truncate_realised_swing_stock_hist_returns_table, create_realised_swing_stock_hist_returns_table, insert_into_realised_swing_stock_hist_returns, get_max_trade_close_date_from_realised_swing_stock_hist_returns_table
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
 # Folders
 
 from utils.folder_utils.paths import upload_folder_path
 from werkzeug.utils import secure_filename
-from PyPDF2 import PdfReader, PdfWriter
+from PyPDF2 import PdfReader
 
 api = Blueprint('api', __name__)
 
 app_namespace = uuid5(NAMESPACE_URL,"Consolidated_Portfolio_Tracker") # Change Later
 
-@api.route('/api/price_tables/max_date/', methods = ['GET'])
-def max_date_in_price_tables():
-    table_list = get_tables_list()
-    table_list = table_list.get_json()
-    max_date_from_tables = {}
-    for table in table_list:
-            table = str(table).replace('[','').replace(']','').replace(" ","_").replace("'","")
-            max_date = get_max_date_from_table(table)
-            max_date = max_date.get_json()
-            max_date_from_tables[table] = max_date['max_date']
-    return jsonify({'max_date_from_tables':max_date_from_tables, 'message': "Successfully retrieved MAX Date data from NAV Tables", 'status': "Success"})
-
-@api.route('/api/all_price_tables/max_date/', methods = ['GET'])
-def max_date_in_all_price_tables():
-    table_list = get_all_tables_list()
-    table_list = table_list.get_json()
-    max_date_from_tables = {}
-    for table in table_list:
-            table = str(table).replace('[','').replace(']','').replace(" ","_").replace("'","")
-            max_date = get_max_date_from_table(table)
-            max_date = max_date.get_json()
-            max_date_from_tables[table] = max_date['max_date']
-    return jsonify({'max_date_from_tables':max_date_from_tables, 'message': "Successfully retrieved MAX Date data from NAV Tables", 'status': "Success"})
-
-@api.route('/api/hist_price/<symbol>/', methods = ['POST'])
-def hist_price(symbol):
-    alt_symbol = request.form.get('alt_symbol')
-    alt_symbol = alt_symbol.replace(" ", "_")
-    truncate_table(alt_symbol)
-    create_table(alt_symbol)
-    end_date = request.form.get('end_date')
-    start_date = request.form.get('start_date')
-    ticker = yf.Ticker(symbol)
-    pandas_data = ticker.history(start=start_date, end=end_date)
-    for index, value in pandas_data['Close'].items():
-        date = str(index)[:10]
-        if (parser.parse(date, fuzzy = 'fuzzy')):
-            insert_into_nav_table(alt_symbol, date, round(value,4), date, '9998-12-31', 0)
-    return jsonify({'message': "Successfully inserted data into " + alt_symbol + " table", 'status': "Success"})
-
-
-@api.route('/api/metadata/', methods = ['POST'])
-def metadata_entry():
-    symbol = request.form.get('symbol')
-    alt_symbol = request.form.get('alt_symbol')
-    portfolio_type = request.form.get('portfolio_type')
-    amc = request.form.get('amc')
-    mf_type = request.form.get('type')
-    fund_category = request.form.get('fund_category')
-    launched_on = request.form.get('launched_on')
-    exit_load = request.form.get('exit_load')
-    expense_ratio = request.form.get('expense_ratio')
-    fund_manager = request.form.get('fund_manager')
-    fund_manager_started_on = request.form.get('fund_manager_started_on')
-    isin = request.form.get('isin')
+@api.route('/api/price_table/max_value_date/', methods = ['GET'])
+def get_max_value_date_from_price_table():
     try:
-        create_metadata_table()
-        insert_metadata_entry(symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin)
-        return jsonify({'message': "Successfully inserted data into Metadata table", 'status': "Success"})
+        process_flag = request.args.get('process_flag') or None
+        consider_for_hist_returns = request.args.get('consider_for_hist_returns') or None
+        max_value_date_data = get_max_value_date_for_alt_symbol(process_flag, consider_for_hist_returns)
+        max_value_date_data = max_value_date_data.get_json()
+        return jsonify({'max_value_date_data':max_value_date_data, 'message': "Successfully retrieved Maximum Value Date data from PRICE_TABLE table", 'status': "Success"})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/price_table/close_price/<alt_symbol>/', methods = ['POST'])
+def upsert_price_table_for_alt_symbol(alt_symbol):
+    try:
+        yahoo_symbol   = request.form.get('yahoo_symbol')
+        portfolio_type = request.form.get('portfolio_type')
+        start_date     = request.form.get('start_date')
+        end_date       = request.form.get('end_date')
+        start_from     = request.args.get('start_from') or None
+        end_till       = request.args.get('end_till') or None
+
+        create_price_table()
+        if not start_from or not end_till:
+            delete_alt_symbol_from_price_table(alt_symbol)
+        if start_from and end_till:
+            start_date = start_from
+            end_date   = end_till
+
+        ticker = yf.Ticker(yahoo_symbol)
+        pandas_data = ticker.history(start = start_date, end = end_date)
+        for index, value in pandas_data['Close'].items():
+            value_date = str(index)[:10]
+            if (parser.parse(value_date, fuzzy = 'fuzzy')):
+                upsert_into_price_table(alt_symbol, portfolio_type, value_date, '15:30:00', round(value,4), 'CLOSE_PRICE', value_date, '9998-12-31', 0)
+        return jsonify({'message': f"Successfully inserted Close Price data into PRICE_TABLE table for {alt_symbol} from {start_date} and {end_date}", 'status': "Success"})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/metadata_store/', methods = ['POST'])
+def metadata_entry():
+    try:
+        exchange_symbol         = request.form.get('exchange_symbol')
+        yahoo_symbol            = request.form.get('yahoo_symbol')
+        alt_symbol              = request.form.get('alt_symbol')
+        portfolio_type          = request.form.get('portfolio_type')
+        amc                     = request.form.get('amc') or None
+        mf_type                 = request.form.get('type') or None
+        fund_category           = request.form.get('fund_category') or None
+        launched_on             = request.form.get('launched_on') or None
+        exit_load               = request.form.get('exit_load') or None
+        expense_ratio           = request.form.get('expense_ratio') or None
+        fund_manager            = request.form.get('fund_manager') or None
+        fund_manager_started_on = request.form.get('fund_manager_started_on') or None
+        isin                    = request.form.get('isin') or None
+        create_metadata_store_table()
+        insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin)
+        return jsonify({'message': "Successfully inserted metadata into METADATA_STORE table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
     
-@api.route('/api/name_list/', methods = ['GET'])
-def all_name_list():
-    data = get_all_names_from_metadata()
-    data = data.get_json()
-    name_list = []
-    for item in data:
-        name_list.append(item['name'])
-    return jsonify({'name_list': name_list, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
-
-@api.route('/api/mf_name_list/', methods = ['GET'])
-def mf_name_list():
-    data = get_name_from_metadata('Mutual Fund')
-    data = data.get_json()
-    name_list = []
-    for item in data:
-        name_list.append(item['name'])
-    return jsonify({'name_list': name_list, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
-
-@api.route('/api/stock_name_list/', methods = ['GET'])
-def stock_name_list():
-    data = get_name_from_metadata('Stock')
-    data = data.get_json()
-    name_list = []
-    for item in data:
-        name_list.append(item['name'])
-    return jsonify({'name_list': name_list, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
-
-
-@api.route('/api/symbol/<alt_symbol>/', methods = ['GET'])
-def symbol_lookup(alt_symbol):
-    data = get_symbol_from_metadata(alt_symbol)
-    data = data.get_json()
-    symbol_list = []
-    for item in data:
-        symbol_list.append(item['symbol'])
-    return jsonify({'symbol_list': symbol_list, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
-
-@api.route('/api/nav_lookup/<table_name>/<purchase_date>', methods = ['GET'])
-def nav_lookup(table_name, purchase_date):
-    data = get_nav_from_hist_table(table_name, purchase_date)
-    data = data.get_json()
-    nav = data['nav']
-    return jsonify({'nav': nav, 'message': "Successfully retrieved data from Metadata Table", 'status': "Success"})
+@api.route('/api/metadata_store/symbols/', methods = ['GET'])
+def get_all_symbols_list():
+    try:
+        portfolio_type = request.args.get('portfolio_type') or None
+        all_symbols_data = get_all_symbols_list_from_metadata_store(portfolio_type)
+        all_symbols_data = all_symbols_data.get_json()
+        return jsonify({'all_symbols_list': all_symbols_data, 'message': "Successfully retrieved All Symbols List from METADATA_STORE Table", 'status': "Success"})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+    
+@api.route('/api/price_table/close_price/', methods = ['GET'])
+def price_table_lookup():
+    try:
+        alt_symbol    = request.args.get('alt_symbol') or None
+        purchase_date = request.args.get('purchase_date') or None
+        price_data = get_price_from_price_table(alt_symbol, purchase_date)
+        price_data = price_data.get_json()
+        return jsonify({'price_data': price_data, 'message': "Successfully retrieved Price data from PRICE_TABLE", 'status': "Success"})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
 
 @api.route('/api/mf_order/', methods = ['POST'])
 def mf_order():
-    alt_symbol = request.form.get('alt_symbol')
-    purchase_date = request.form.get('purchase_date')
-    invested_amount = request.form.get('invested_amount')
-    stamp_fees_amount = request.form.get('stamp_fees_amount')
-    amc_amount = request.form.get('amc_amount')
-    nav_during_purchase = request.form.get('nav_during_purchase')
-    units = request.form.get('units')
-    units = round(float(units), 3)
-    stamp_fees_amount = round(float(invested_amount) - float(amc_amount),2)
     try:
+        exchange_symbol = request.form.get('exchange_symbol')
+        purchase_date = request.form.get('purchase_date')
+        invested_amount = request.form.get('invested_amount')
+        stamp_fees_amount = request.form.get('stamp_fees_amount')
+        amc_amount = request.form.get('amc_amount')
+        price_during_purchase = request.form.get('price_during_purchase')
+        units = request.form.get('units')
+        units = round(float(units), 3)
+        stamp_fees_amount = round(float(invested_amount) - float(amc_amount),2)
         create_mf_order_table()
-        insert_mf_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units)
-        return jsonify({'message': "Successfully inserted data into MF Order table", 'status': "Success"})
+        insert_mf_order_entry(exchange_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, price_during_purchase, units)
+        return jsonify({'message': "Successfully inserted data into MF_ORDER table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
     
@@ -167,7 +142,7 @@ def proc_date_lookup():
         return jsonify({'mf_proc_date': mf_proc_date,'mf_next_proc_date' : mf_next_proc_date, 'mf_prev_proc_date': mf_prev_proc_date,
                         'ppf_mf_proc_date': ppf_mf_proc_date,'ppf_mf_next_proc_date' : ppf_mf_next_proc_date, 'ppf_mf_prev_proc_date': ppf_mf_prev_proc_date,
                         'stock_proc_date': stock_proc_date,'stock_next_proc_date' : stock_next_proc_date, 'stock_prev_proc_date': stock_prev_proc_date,
-                          'message': "Successfully retrieved data from Processing Date Table", 'status': "Success"})
+                          'message': "Successfully retrieved data from PROCESSING_DATE Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -191,46 +166,51 @@ def proc_date_update():
         update_proc_date_in_processing_date_table('MF_PROC', mf_proc_date, mf_next_proc_date, mf_prev_proc_date)
         update_proc_date_in_processing_date_table('PPF_MF_PROC', ppf_mf_proc_date, ppf_mf_next_proc_date, ppf_mf_prev_proc_date)
         update_proc_date_in_processing_date_table('STOCK_PROC', stock_proc_date, stock_next_proc_date, stock_prev_proc_date)
-        return jsonify({'message': "Successfully updated Processing Date Table", 'status': "Success"})
+        return jsonify({'message': "Successfully updated PROCESSING_DATE Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/hist_price/<symbol>/<start_date>/<end_date>/', methods = ['POST'])
-def date_range_hist_price(symbol,start_date, end_date):
-    alt_symbol = request.form.get('alt_symbol')
-    alt_symbol = alt_symbol.replace(" ", "_")
-    ticker = yf.Ticker(symbol)
-    pandas_data = ticker.history(start=start_date, end=end_date)
-    for index, value in pandas_data['Close'].items():
-        date = str(index)[:10]
-        if (parser.parse(date, fuzzy = 'fuzzy')):
-            insert_into_nav_table(alt_symbol, date, round(value,4), date, '9998-12-31', 0)
-    return jsonify({'message': "Successfully inserted data into " + alt_symbol + " table", 'status': "Success"})
-
-@api.route('/api/nav_tables/dup_check/', methods = ['GET'])
-def dup_check_on_all_nav_tables():
-    table_list = get_tables_list()
-    table_list = table_list.get_json()
-    dup_tables = {}
-    for table in table_list:
-        table = str(table).replace("[","").replace("]","").replace(" ","_").replace("'","")
-        dup_check_response = dup_check_on_nav_table(table)
-        if dup_check_response:
-            dup_check_response = dup_check_response.get_json()
-            dup_tables[table] = dup_check_response['value_date']
-    if dup_tables:
-        return jsonify({'dup_tables': dup_tables,'message': 'Successfully completed Duplicate Check On All NAV table','status': 'Duplicate Issue'})
-    else:
-        return ({'message': 'Successfully completed Duplicate Check On All NAV tables','status': 'Success'})
-    
-@api.route('/api/create_portfolio_view/', methods = ['GET'])
-def create_portfolio_view():
+@api.route('/api/price_table/duplicate_check/', methods = ['GET'])
+def duplicate_check_price_table():
     try:
-        create_mf_portfolio_view_in_db()
-        create_stock_portfolio_view_in_db()
+        dup_check_response = duplicate_check_on_price_table()
+        if dup_check_response:
+            dup_check_data = dup_check_response.get_json()
+            return jsonify({'dup_check_data': dup_check_data,'message': 'Duplicates Present in PRICE_TABLE','status': 'Duplicate Issue'})
+        else:
+            return ({'message': 'Successfully completed Duplicate Check On PRICE_TABLE for All Alt Symbols','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+    
+@api.route('/api/create_portfolio_views/', methods = ['GET'])
+def create_portfolio_views():
+    try:
+        create_mf_portfolio_views_in_db()
+        create_stock_portfolio_views_in_db()
         return jsonify({'message': 'Successfully replaced Portfolio Views in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/create_managed_tables/', methods = ['GET'])
+def create_managed_tables():
+    try:
+        create_metadata_store_table()
+        create_price_table()
+        create_processing_date_table()
+        create_mf_order_table()
+        create_holiday_date_table()
+        create_working_date_table()
+        create_holiday_calendar_table()
+        create_mf_hist_returns_table()
+        create_stock_order_table()
+        create_trade_table()
+        create_fee_table()
+        create_realised_stock_hist_returns_table()
+        create_close_trades_table()
+        create_realised_swing_stock_hist_returns_table()
+        return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'}) 
     
 @api.route('/api/holiday_date/', methods = ['POST'])
 def holiday_date_entry():
@@ -241,16 +221,17 @@ def holiday_date_entry():
         holiday_name = request.form.get('holiday_name')
         holiday_day = request.form.get('holiday_day')
         insert_into_holiday_date_table(holiday_date, holiday_name, holiday_day)
-        return jsonify({'message': 'Successfully inserted holiday into Holiday Dates Table','status': 'Success'})
+        return jsonify({'message': 'Successfully inserted holiday into HOLIDAY_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
 @api.route('/api/holiday_date/', methods = ['GET'])
 def holiday_date_lookup_all():
     try:
-        data = get_holiday_date_from_holiday_date_table()
+        current_year = request.args.get('current_year') or None
+        data = get_holiday_date_from_holiday_dates_table(current_year)
         data = data.get_json()
-        return jsonify({'data': data,'message': 'Successfully retrieved from Holiday Dates Table','status': 'Success'})
+        return jsonify({'data': data,'message': 'Successfully retrieved from HOLIDAY_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -263,7 +244,7 @@ def working_date_entry():
         working_day_name = request.form.get('working_day_name')
         working_day = request.form.get('working_day')
         insert_into_working_date_table(working_date, working_day_name, working_day)
-        return jsonify({'message': 'Successfully inserted working date into Working Dates Table','status': 'Success'})
+        return jsonify({'message': 'Successfully inserted working date into WORKING_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -273,18 +254,9 @@ def working_date_lookup():
         data = get_working_date_from_holiday_date_table()
         data = data.get_json()
         if data[0]['working_date']:
-            return jsonify({'data': data,'message': 'Successfully retrieved from Working Dates Table','status': 'Success'})
+            return jsonify({'data': data,'message': 'Successfully retrieved from WORKING_DATES Table','status': 'Success'})
         else:
-            return jsonify({'data': [],'message': 'No records present in Working Dates Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-
-@api.route('/api/holiday_date/<current_year>/', methods = ['GET'])
-def holiday_date_lookup(current_year):
-    try:
-        data = get_holiday_date_from_holiday_date_table(current_year)
-        data = data.get_json()
-        return jsonify({'data': data,'message': 'Successfully retrieved from Holiday Dates Table','status': 'Success'})
+            return jsonify({'data': [],'message': 'No records present in WORKING_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -323,7 +295,7 @@ def holiday_calendar_setup():
                 
                 insert_into_holiday_calendar_table(counter_date.strftime('%Y-%m-%d'), counter_day, next_counter_date.strftime('%Y-%m-%d'), next_counter_day, prev_counter_date.strftime('%Y-%m-%d'), prev_counter_day)
             counter_date = counter_date + timedelta(days = 1)
-        return jsonify({'message': 'Successfully inserted holiday calendar into Holiday Calendar Table','status': 'Success'})
+        return jsonify({'message': 'Successfully inserted holiday calendar into HOLIDAY_CALENDAR Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -375,7 +347,7 @@ def mf_hist_returns_lookup():
     try:
         data = get_mf_hist_returns_from_mf_hist_returns_table()
         data = data.get_json()
-        return jsonify({'data': data,'message': 'Successfully retrieved from MF Hist Returns Table','status': 'Success'})
+        return jsonify({'data': data,'message': 'Successfully retrieved from MF_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -384,7 +356,7 @@ def mf_hist_returns_max_date():
     try:
         max_date = get_max_next_proc_date_from_mf_hist_returns_table()
         max_date = max_date.get_json()
-        return jsonify({'data': max_date,'message': 'Successfully retrieved Max Date from MF Hist Returns Table','status': 'Success'})
+        return jsonify({'data': max_date,'message': 'Successfully retrieved Max Date from MF_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -427,68 +399,69 @@ def process_mf_hist_returns_from_start_to_end_date(start_date, end_date):
 
 @api.route('/api/stock_order/', methods = ['POST'])
 def stock_order():
-    alt_symbol = request.form.get('alt_symbol')
-    trade_entry_date = request.form.get('trade_entry_date')
-    trade_entry_time = request.form.get('trade_entry_time')
-    trade_exit_date = request.form.get('trade_exit_date')
-    trade_exit_time = request.form.get('trade_exit_time')
-    stock_quantity = request.form.get('stock_quantity')
-    trade_type = request.form.get('trade_type')
-    leverage = request.form.get('leverage')
-    trade_position = request.form.get('trade_position')
-    stock_buy_price = request.form.get('stock_buy_price')
-    stock_sell_price = request.form.get('stock_sell_price')
-    brokerage = request.form.get('brokerage')
-    exchange_transaction_fees = request.form.get('exchange_transaction_fees')
-    igst = request.form.get('igst')
-    securities_transaction_tax = request.form.get('securities_transaction_tax')
-    sebi_turnover_fees = request.form.get('sebi_turnover_fees')
-    auto_square_off_charges = request.form.get('auto_square_off_charges')
-    depository_charges = request.form.get('depository_charges')
-    holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, trade_exit_time = None, None, None, None, None
-    net_obligation, total_fees, net_receivable, actual_p_l_w_leverage = None, None, None, None
-    if trade_exit_date:
-        trade_exit_time = request.form.get('trade_exit_time')
-        # Derived Fields
-        holding_days = request.form.get('holding_days')
-        sell_minus_buy = round(float(request.form.get('sell_minus_buy')), 4)
-        actual_p_l_w_o_leverage = round(float(request.form.get('actual_p_l_w_o_leverage')),2)
-        deployed_capital = round(float(request.form.get('deployed_capital')),4)
-        net_obligation = round(float(request.form.get('net_obligation')),4)
-        total_fees = round(float(request.form.get('total_fees')),4)
-        net_receivable = round(float(request.form.get('net_receivable')),4)
-        actual_p_l_w_leverage = round(float(request.form.get('actual_p_l_w_leverage')),2)
-
     try:
+        alt_symbol = request.form.get('alt_symbol')
+        trade_entry_date = request.form.get('trade_entry_date')
+        trade_entry_time = request.form.get('trade_entry_time')
+        trade_exit_date = request.form.get('trade_exit_date')
+        trade_exit_time = request.form.get('trade_exit_time')
+        stock_quantity = request.form.get('stock_quantity')
+        trade_type = request.form.get('trade_type')
+        leverage = request.form.get('leverage')
+        trade_position = request.form.get('trade_position')
+        stock_buy_price = request.form.get('stock_buy_price')
+        stock_sell_price = request.form.get('stock_sell_price')
+        brokerage = request.form.get('brokerage')
+        exchange_transaction_fees = request.form.get('exchange_transaction_fees')
+        igst = request.form.get('igst')
+        securities_transaction_tax = request.form.get('securities_transaction_tax')
+        sebi_turnover_fees = request.form.get('sebi_turnover_fees')
+        auto_square_off_charges = request.form.get('auto_square_off_charges')
+        depository_charges = request.form.get('depository_charges')
+        holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, trade_exit_time = None, None, None, None, None
+        net_obligation, total_fees, net_receivable, actual_p_l_w_leverage = None, None, None, None
+        if trade_exit_date:
+            trade_exit_time = request.form.get('trade_exit_time')
+            # Derived Fields
+            holding_days = request.form.get('holding_days')
+            sell_minus_buy = round(float(request.form.get('sell_minus_buy')), 4)
+            actual_p_l_w_o_leverage = round(float(request.form.get('actual_p_l_w_o_leverage')),2)
+            deployed_capital = round(float(request.form.get('deployed_capital')),4)
+            net_obligation = round(float(request.form.get('net_obligation')),4)
+            total_fees = round(float(request.form.get('total_fees')),4)
+            net_receivable = round(float(request.form.get('net_receivable')),4)
+            actual_p_l_w_leverage = round(float(request.form.get('actual_p_l_w_leverage')),2)
+
         create_stock_order_table()
         insert_stock_order_entry(alt_symbol, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, stock_quantity, trade_type, leverage, trade_position, stock_buy_price, stock_sell_price, brokerage, exchange_transaction_fees, igst, securities_transaction_tax, sebi_turnover_fees, holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, net_obligation, total_fees, net_receivable, auto_square_off_charges, depository_charges, actual_p_l_w_leverage)
-        return jsonify({'message': "Successfully inserted data into Stock Order table", 'status': "Success"})
+        return jsonify({'message': "Successfully inserted data into STOCK_ORDER table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
     
 @api.route('/api/stock_pdf/', methods = ['POST'])
 def stock_order_entry_from_pdf():
-    # Individual Trade Info
-    trade_info = {}
-    trade_list = []
-    fees_info = {}
-
-    # Remarks line number - The Next lines are usually trades info
-    remarks_line_number = 0
-
-    # Trade Agnostic Info
-    trade_entry_date = ""
-    net_obligation = ""
-    brokerage = ""
-    exc_trans_charges= ""
-    igst = ""
-    sec_trans_tax = ""
-    sebi_turn_fees = ""
-
-    # Derived Info
-    derived_trade_info = {}
-
     try:
+        # Individual Trade Info
+        trade_info = {}
+        trade_list = []
+        fees_info = {}
+
+        # Remarks line number - The Next lines are usually trades info
+        remarks_line_number = 0
+
+        # Trade Agnostic Info
+        trade_entry_date = ""
+        net_obligation = ""
+        brokerage = ""
+        exc_trans_charges= ""
+        igst = ""
+        sec_trans_tax = ""
+        sebi_turn_fees = ""
+
+        # Derived Info
+        derived_trade_info = {}
+
+
         if 'stock_pdf_file' not in request.files:
             return jsonify({'message': 'File was not Uploaded Successfully', 'status': 'Failed'})
         stock_pdf_file = request.files['stock_pdf_file']
@@ -712,7 +685,7 @@ def stock_order_entry_from_pdf():
 
         os.remove(stock_pdf_file_name_path)
         os.remove(stock_text_file_name_path)
-        return jsonify({'data': trade_list, 'fees': fees_info, 'message': 'Successfully uploaded the Stock PDF.','status': 'Success'})
+        return jsonify({'data': trade_list, 'fees': fees_info, 'message': 'Successfully uploaded the Stock PDF File and Parsed the File.','status': 'Success'})
     except Exception as e:
         return jsonify({'data': None, 'message': repr(e), 'status': 'Failed'})
     
@@ -739,7 +712,7 @@ def upsert_trade_entry():
             elif trade_type == "Swing Trading":
                 unique_fee_id = uuid5(app_namespace, str(trade['trade_entry_date']) + "Swing Trading")
                 upsert_fee_entry_in_db(unique_fee_id, trade_date, fee_data['swing_net_obligation'], fee_data['swing_brokerage'], fee_data['swing_exc_trans_charges'], fee_data['swing_igst'], fee_data['swing_sec_trans_tax'], fee_data['swing_sebi_turn_fees'], fee_data['swing_auto_square_off_charges'], fee_data['swing_depository_charges'] )
-        return jsonify({'message': 'Successfully Inserted Trade and Fee Entries into DB','status': 'Success'})
+        return jsonify({'message': 'Successfully Inserted Trade and Fee Entries into TRADES and FEE_COMPONENT Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -748,7 +721,7 @@ def realised_stock_hist_returns_lookup():
     try:
         data = get_stock_hist_returns_from_realised_stock_and_swing_stock_hist_returns_table()
         data = data.get_json()
-        return jsonify({'data': data,'message': 'Successfully retrieved from Stock Hist Returns Table','status': 'Success'})
+        return jsonify({'data': data,'message': 'Successfully retrieved from REALISED_STOCK_HIST_RETURNS and REALISED_SWING_STOCK_HIST_RETURNS Tables','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -769,7 +742,7 @@ def get_max_trade_date_from_realised_stock_hist_returns():
     try:
         max_trade_date = get_max_trade_date_from_realised_stock_hist_returns_table()
         max_trade_date = max_trade_date.get_json()
-        return jsonify({'data': max_trade_date,'message': 'Successfully retrieved Max Trade Date from Realised Stock Hist Returns Table','status': 'Success'})
+        return jsonify({'data': max_trade_date,'message': 'Successfully retrieved Max Trade Date from REALISED_STOCK_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -829,7 +802,7 @@ def get_max_trade_close_date_from_realised_swing_stock_hist_returns():
     try:
         max_trade_close_date = get_max_trade_close_date_from_realised_swing_stock_hist_returns_table()
         max_trade_close_date = max_trade_close_date.get_json()
-        return jsonify({'data': max_trade_close_date,'message': 'Successfully retrieved Max Trade Close Date from Realised Swing Stock Hist Returns Table','status': 'Success'})
+        return jsonify({'data': max_trade_close_date,'message': 'Successfully retrieved Max Trade Close Date from REALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     

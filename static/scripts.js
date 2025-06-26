@@ -3,91 +3,123 @@
 // Method : GET
 // URL    : /api/hist_price/
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (document.getElementById('index_nav')) {
-    create_mf_portfolio_view();
-    upsert_price_tables();
+    await create_managed_tables_in_db()
+    await create_portfolio_views_in_db()
+    await upsert_price_table()
+    await upsert_mf_hist_returns_table()
+    await upsert_realised_stock_hist_returns_table()
+    await upsert_realised_swing_stock_hist_returns_table()
     }
   }
 );
 
-async function create_mf_portfolio_view(){
+// Create Managed Tables in DB
 
-const view_response=  await fetch ('/api/create_portfolio_view/', {
+async function create_managed_tables_in_db(){
+
+const create_table_response=  await fetch ('/api/create_managed_tables/', {
   method: 'GET'
 })
 
-const view_data = await view_response.json();
+const create_table_data_from_response = await create_table_response.json();
 
 const resultDiv = document.getElementById('result')
 
-if(view_data.status === "Success"){
-    resultDiv.innerHTML += `<strong>${view_data.message}</strong></br>`
+if(create_table_data_from_response.status === "Success"){
+    resultDiv.innerHTML += `<strong>${create_table_data_from_response.message}</strong></br>`
 }
 else{
-    resultDiv.innerHTML += `<strong>${view_data.message}</strong></br>`
+    resultDiv.innerHTML += `<strong>${create_table_data_from_response.message}</strong></br>`
 }
 }
 
-async function upsert_price_tables(){
+// Create Portfolio Views in DB
 
-const max_date_response = await fetch ('/api/price_tables/max_date/', {
+async function create_portfolio_views_in_db(){
+
+const replace_view_response=  await fetch ('/api/create_portfolio_views/', {
   method: 'GET'
 })
 
-const max_date_data = await max_date_response.json();
+const replace_view_data = await replace_view_response.json();
 
-for (table_name in max_date_data.max_date_from_tables){
-const max_start_date = max_date_data.max_date_from_tables[table_name]
-const alt_symbol = String(table_name).replaceAll('_', ' ').replaceAll("'", "")
+const resultDiv = document.getElementById('result')
 
-const symbol_response = await fetch(`/api/symbol/${alt_symbol}/`, {
-method: 'GET'
-})
+if(replace_view_data.status === "Success"){
+    resultDiv.innerHTML += `<strong>${replace_view_data.message}</strong></br>`
+}
+else{
+    resultDiv.innerHTML += `<strong>${replace_view_data.message}</strong></br>`
+}
+}
 
-const symbol_data = await symbol_response.json();
-const symbol = symbol_data.symbol_list[0]
-
-const start_date = max_start_date
+async function upsert_price_table(){
 
 const today = new Date();
-const year = today.getFullYear();
+const year  = today.getFullYear();
 const month = String(today.getMonth() + 1).padStart(2, '0');
-const day = String(today.getDate()).padStart(2, '0');
+const day   = String(today.getDate()).padStart(2, '0');
 
-const end_date = `${year}-${month}-${day}`
+const end_date = `${year}-${month}-${day}` // Today in YYYY-MM-DD Format
+
+const max_value_date_response = await fetch ('/api/price_table/max_value_date?process_flag=1', {
+  method: 'GET'
+})
+
+const max_value_date_data_from_response = await max_value_date_response.json();
+
+max_value_date_data_from_response.max_value_date_data.forEach(async element=> {
+const alt_symbol      = element.alt_symbol
+let start_date        = ""
+if(element.max_value_date){
+start_date      = element.max_value_date
+}
+else{
+const week_before = new Date();
+week_before.setDate(week_before.getDate() - 7);
+const week_before_year  = week_before.getFullYear();
+const week_before_month = String(week_before.getMonth() + 1).padStart(2, '0');
+const week_before_day   = String(week_before.getDate()).padStart(2, '0');
+
+const week_before_date = `${week_before_year}-${week_before_month}-${week_before_day}`
+start_date             = week_before_date
+}
+const yahoo_symbol    = element.yahoo_symbol
+const exchange_symbol = element.exchange_symbol
+const portfolio_type  = element.portfolio_type
+
 const formData = new FormData();
 formData.append('alt_symbol', alt_symbol);
+formData.append('yahoo_symbol', yahoo_symbol);
+formData.append('exchange_symbol', exchange_symbol);
+formData.append('portfolio_type', portfolio_type);
 
-await fetch(`/api/hist_price/${symbol}/${start_date}/${end_date}`, {
+await fetch(`/api/price_table/close_price/${alt_symbol}?start_from=${start_date}&end_till=${end_date}`, {
 method: 'POST',
 body: formData
 })
+})
 
-//end of for loop
-}
-
-const dup_check_response = await fetch(`/api/nav_tables/dup_check/`, {
+const dup_check_response = await fetch(`/api/price_table/duplicate_check/`, {
 method: 'GET'
 })
 
-const dup_check_data = await dup_check_response.json();
+const dup_check_data_from_response = await dup_check_response.json();
 
 const resultDiv = document.getElementById('result')
-if(dup_check_data.status === "Success"){
-    resultDiv.innerHTML += `<strong>${dup_check_data.message}</strong></br>`
-    resultDiv.innerHTML += `<strong>${dup_check_data.status}</strong></br>`
+if(dup_check_data_from_response.status === "Success"){
+    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.message}</strong></br>`
+    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.status}</strong></br>`
 }
 else{
-    resultDiv.innerHTML += `<strong>${dup_check_data.message}</strong></br>`
-    for (dup_table in dup_check_data.dup_tables){
-    resultDiv.innerHTML += `<strong>${dup_check_data.status}</strong></br>`
-      resultDiv.innerHTML += `<strong>${dup_table} ---> ${dup_check_data.dup_tables[dup_table]} Value Date</strong></br>`
+    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.message}</strong></br>`
+    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.status}</strong></br>`
+    dup_check_data_from_response.dup_check_data.forEach( element => {
+    resultDiv.innerHTML += `<strong>Alt Symbol ${element.alt_symbol} is having ${element.count} entries for ${element.value_date} Date</strong></br>`
+    })
     }
-}
-upsert_mf_hist_returns_table();
-upsert_realised_stock_hist_returns_table();
-upsert_realised_swing_stock_hist_returns_table();
 }
 
 // GET /api/mf_hist_returns/max_date/
@@ -102,24 +134,32 @@ const max_next_proc_date_in_mf_hist_returns = mf_hist_max_next_proc_date_data.da
 
 // Get the Max of all Nav tables and get the minimum out of the those
 
-const nav_max_date_response = await fetch ('/api/all_price_tables/max_date/', {
+const price_table_max_date_response = await fetch ('/api/price_table/max_value_date?consider_for_hist_returns=1', {
   method: 'GET'
 })
 
-const nav_max_date_data = await nav_max_date_response.json();
+const price_table_max_date_data = await price_table_max_date_response.json();
 
-let min_nav_date = new Date()
+let min_value_date = new Date()
+let null_counter = 0
 
-Object.values(nav_max_date_data.max_date_from_tables).forEach(date => {
-  date = new Date(date)
-  if ( date < min_nav_date){
-    min_nav_date = date
-  }
+price_table_max_date_data.max_value_date_data.forEach(async element=> {
+if (element.max_value_date){
+const max_value_date = new Date(element.max_value_date)
+if(max_value_date < min_value_date){
+  min_value_date = max_value_date
+}
+}
+else{
+  null_counter += 1
+}
 })
 
-const year = min_nav_date.getFullYear();
-const month = String(min_nav_date.getMonth() + 1).padStart(2, '0');
-const day = String(min_nav_date.getDate()).padStart(2, '0');
+if (null_counter == 0){
+
+const year = min_value_date.getFullYear();
+const month = String(min_value_date.getMonth() + 1).padStart(2, '0');
+const day = String(min_value_date.getDate()).padStart(2, '0');
 
 const end_date = `${year}-${month}-${day}` // Least date present in all NAV Tables
 
@@ -132,6 +172,13 @@ const data = await response.json();
 const resultDiv = document.getElementById('result')
 resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
 resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+}
+else
+{
+const resultDiv = document.getElementById('result')
+resultDiv.innerHTML += '<strong>Partial Load in the PRICE_TABLE</strong></br>'
+resultDiv.innerHTML += '<strong>Error since ALT_SYMBOL(s) not present in PRICE_TABLE table</strong></br>'
+}
 
 }
 

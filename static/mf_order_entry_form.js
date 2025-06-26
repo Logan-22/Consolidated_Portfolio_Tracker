@@ -4,68 +4,89 @@
 // URL    : /api/mf_order/
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('alt_symbol')) {
+  if (document.getElementById('exchange_symbol')) {
     init_alt_symbol_dropdown();
   }
 });
 
+let mutual_fund_symbol_data = {}
+
 async function init_alt_symbol_dropdown(){
-const response = await fetch ('/api/mf_name_list/', {
+const mutual_fund_symbol_response = await fetch ('/api/metadata_store/symbols?portfolio_type=Mutual+Fund', {
   method: 'GET'
 })
 
-const data = await response.json();
-const name_input = document.getElementById('alt_symbol')
-data.name_list.forEach(element => {
-  name_input.innerHTML += `<option id = "options">${element}</option>`
+mutual_fund_symbol_data = await mutual_fund_symbol_response.json();
+
+const exchange_symbol = document.getElementById('exchange_symbol')
+const alt_symbol      = document.getElementById('alt_symbol')
+mutual_fund_symbol_data.all_symbols_list.forEach((element, index) => {
+exchange_symbol.innerHTML += `<option id = "options">${element.exchange_symbol}</option>`
+if(index == 0){
+alt_symbol.value = element.alt_symbol
+  }
 });
 }
+
+document.getElementById('exchange_symbol').addEventListener('change', e => {
+const exchange_symbol = document.getElementById('exchange_symbol').value
+const alt_symbol      = document.getElementById('alt_symbol')
+mutual_fund_symbol_data.all_symbols_list.forEach(element => {
+if(exchange_symbol == element.exchange_symbol){
+alt_symbol.value = element.alt_symbol
+  }
+});
+})
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 document.getElementById('mf_order_entry_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-
-const alt_symbol = document.getElementById('alt_symbol').value;
-const purchase_date = document.getElementById('purchase_date').value;
+const exchange_symbol = document.getElementById('exchange_symbol').value;
+const alt_symbol      = document.getElementById('alt_symbol').value;
+const purchase_date   = document.getElementById('purchase_date').value;
 const invested_amount = document.getElementById('invested_amount').value;
-const amc_amount = document.getElementById('amc_amount').value;
+const amc_amount      = document.getElementById('amc_amount').value;
 
-const table_name = alt_symbol.replace(/ /g,"_");
-
-
-const nav_lookup_response = await fetch(`/api/nav_lookup/${table_name}/${purchase_date}`, {
+const price_lookup_response = await fetch(`/api/price_table/close_price/?alt_symbol=${alt_symbol}&purchase_date=${purchase_date}`, {
 method: 'GET'
 })
 
-const nav_lookup_data = await nav_lookup_response.json();
-const nav_during_purchase = nav_lookup_data.nav
+const price_lookup_data = await price_lookup_response.json();
+const resultDiv = document.getElementById('result')
+if (price_lookup_data.price_data.length > 1){
+resultDiv.innerHTML = `<strong>Duplicate Price fetched for ${alt_symbol} on ${purchase_date} from PRICE_TABLE</strong>`
+}else if (! price_lookup_data.price_data[0].price){
+resultDiv.innerHTML = `<strong>No Price fetched for ${alt_symbol} on ${purchase_date} from PRICE_TABLE</strong>`
+}
+else{
+const price_during_purchase = price_lookup_data.price_data[0].price
 
-const units = amc_amount/nav_during_purchase
+const units = amc_amount/price_during_purchase
 
 const formData = new FormData();
-formData.append('alt_symbol', alt_symbol);
+formData.append('exchange_symbol', exchange_symbol);
 formData.append('purchase_date', purchase_date);
 formData.append('invested_amount', invested_amount);
 formData.append('amc_amount', amc_amount);
-formData.append('nav_during_purchase', nav_during_purchase);
+formData.append('price_during_purchase', price_during_purchase);
 formData.append('units', units);
 
-const response = await fetch(`/api/mf_order/`, {
+const mf_order_response = await fetch(`/api/mf_order/`, {
 method: 'POST',
 body: formData
 })
 
-const data = await response.json();
-const resultDiv = document.getElementById('result')
+const mf_order_data = await mf_order_response.json();
 
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
+if(mf_order_data.status === "Success"){
+    resultDiv.innerHTML = `<strong>${mf_order_data.message}</strong>`
     document.getElementById("mf_order_entry_form").reset();
 }
 else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
+    resultDiv.innerHTML = `<strong>${mf_order_data.message}</strong>`
+}
 }
 })
 

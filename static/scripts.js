@@ -258,7 +258,6 @@ const price_table_max_date_response = await fetch ('/api/price_table/max_value_d
 })
 
 const price_table_max_date_data = await price_table_max_date_response.json();
-console.log(price_table_max_date_data)
 let min_value_date = new Date()
 let null_counter = 0
 

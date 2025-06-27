@@ -25,7 +25,6 @@ def get_max_value_date_from_price_table():
         process_flag              = request.args.get('process_flag') or None
         consider_for_hist_returns = request.args.get('consider_for_hist_returns') or None
         portfolio_type            = request.args.get('portfolio_type') or None
-        print(portfolio_type)
         max_value_date_data = get_max_value_date_for_alt_symbol(process_flag, consider_for_hist_returns, portfolio_type)
         max_value_date_data = max_value_date_data.get_json()
         return jsonify({'max_value_date_data':max_value_date_data, 'message': "Successfully retrieved Maximum Value Date data from PRICE_TABLE table", 'status': "Success"})

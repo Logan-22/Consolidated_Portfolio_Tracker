@@ -6,7 +6,7 @@ import os
 from json import loads
 from uuid import NAMESPACE_URL,uuid5
 
-from utils.sql_utils.sql_utils import create_price_table, delete_alt_symbol_from_price_table, upsert_into_price_table, create_metadata_store_table, insert_metadata_store_entry, get_price_from_price_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_max_value_date_for_alt_symbol, duplicate_check_on_price_table, create_mf_portfolio_views_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_dates_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_mf_hist_returns_table , create_mf_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table, create_stock_order_table, insert_stock_order_entry, get_all_symbols_list_from_metadata_store, upsert_trade_entry_in_db, create_trade_table, create_fee_table, upsert_fee_entry_in_db, get_all_tables_list, create_stock_portfolio_views_in_db, get_stock_hist_returns_from_realised_stock_and_swing_stock_hist_returns_table, truncate_realised_stock_hist_returns_table, create_realised_stock_hist_returns_table, insert_into_realised_stock_hist_returns, get_max_trade_date_from_realised_stock_hist_returns_table, get_open_trades_from_trades_table, create_close_trades_table, insert_into_close_trades_table, truncate_realised_swing_stock_hist_returns_table, create_realised_swing_stock_hist_returns_table, insert_into_realised_swing_stock_hist_returns, get_max_trade_close_date_from_realised_swing_stock_hist_returns_table
+from utils.sql_utils.sql_utils import create_price_table, delete_alt_symbol_from_price_table, upsert_into_price_table, create_metadata_store_table, insert_metadata_store_entry, get_price_from_price_table, create_mf_order_table, insert_mf_order_entry, get_proc_date_from_processing_date_table, update_proc_date_in_processing_date_table, create_processing_date_table, get_max_value_date_for_alt_symbol, duplicate_check_on_price_table, create_mf_portfolio_views_in_db, create_holiday_date_table, insert_into_holiday_date_table, get_holiday_date_from_holiday_dates_table, truncate_holiday_calendar_table, create_holiday_calendar_table, insert_into_holiday_calendar_table, create_working_date_table, insert_into_working_date_table, get_working_date_from_holiday_date_table, get_first_purchase_date_from_mf_order_date_table, truncate_mf_hist_returns_table , create_mf_hist_returns_table, get_date_setup_from_holiday_calendar, get_metrics_from_fin_mutual_fund_portfolio_view, insert_into_mf_hist_returns, get_mf_hist_returns_from_mf_hist_returns_table, get_max_next_proc_date_from_mf_hist_returns_table, create_stock_order_table, insert_stock_order_entry, get_all_symbols_list_from_metadata_store, upsert_trade_entry_in_db, create_trade_table, create_fee_table, upsert_fee_entry_in_db, get_all_tables_list, create_stock_portfolio_views_in_db, get_stock_hist_returns_from_realised_stock_and_swing_stock_hist_returns_table, truncate_realised_stock_hist_returns_table, create_realised_stock_hist_returns_table, insert_into_realised_stock_hist_returns, get_max_trade_date_from_realised_stock_hist_returns_table, get_open_trades_from_trades_table, create_close_trades_table, insert_into_close_trades_table, truncate_realised_swing_stock_hist_returns_table, create_realised_swing_stock_hist_returns_table, insert_into_realised_swing_stock_hist_returns, get_max_trade_close_date_from_realised_swing_stock_hist_returns_table, truncate_unrealised_swing_stock_hist_returns_table, create_unrealised_swing_stock_hist_returns_table, get_first_swing_trade_date_from_trades_table, get_metrics_from_fin_stock_swing_unrealised_portfolio_view, insert_into_unrealised_swing_stock_hist_returns, get_stock_hist_returns_from_unrealised_stock_hist_returns_table
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
 # Folders
@@ -22,9 +22,11 @@ app_namespace = uuid5(NAMESPACE_URL,"Consolidated_Portfolio_Tracker") # Change L
 @api.route('/api/price_table/max_value_date/', methods = ['GET'])
 def get_max_value_date_from_price_table():
     try:
-        process_flag = request.args.get('process_flag') or None
+        process_flag              = request.args.get('process_flag') or None
         consider_for_hist_returns = request.args.get('consider_for_hist_returns') or None
-        max_value_date_data = get_max_value_date_for_alt_symbol(process_flag, consider_for_hist_returns)
+        portfolio_type            = request.args.get('portfolio_type') or None
+        print(portfolio_type)
+        max_value_date_data = get_max_value_date_for_alt_symbol(process_flag, consider_for_hist_returns, portfolio_type)
         max_value_date_data = max_value_date_data.get_json()
         return jsonify({'max_value_date_data':max_value_date_data, 'message': "Successfully retrieved Maximum Value Date data from PRICE_TABLE table", 'status': "Success"})
     except Exception as e:
@@ -208,6 +210,7 @@ def create_managed_tables():
         create_realised_stock_hist_returns_table()
         create_close_trades_table()
         create_realised_swing_stock_hist_returns_table()
+        create_unrealised_swing_stock_hist_returns_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'}) 
@@ -322,7 +325,7 @@ def process_mf_hist_returns():
 
             update_proc_date_in_processing_date_table('MF_PROC', processing_date, next_processing_date, prev_processing_date)
             update_proc_date_in_processing_date_table('PPF_MF_PROC', processing_date, next_processing_date, prev_processing_date)
-            
+
             hist_returns_data = get_metrics_from_fin_mutual_fund_portfolio_view()
             hist_returns_data = hist_returns_data.get_json()
             total_p_l = hist_returns_data[0]['total_p_l']
@@ -811,5 +814,108 @@ def insert_into_realised_swing_stock_hist_returns_table(start_date, end_date):
     try:
         insert_into_realised_swing_stock_hist_returns(start_date, end_date)
         return jsonify({'message': f'Successfully inserted historic returns in to REALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/process_unrealised_stock_hist_returns/', methods = ['GET'])
+def process_unrealised_swing_stock_hist_returns():
+    try:
+        truncate_unrealised_swing_stock_hist_returns_table()
+        create_unrealised_swing_stock_hist_returns_table()
+        
+        first_swing_trade_data = get_first_swing_trade_date_from_trades_table()
+        first_swing_trade_data = first_swing_trade_data.get_json()
+        first_swing_trade_date = first_swing_trade_data['first_trade_date']
+
+        counter_date = datetime.strptime(first_swing_trade_date,'%Y-%m-%d')
+        first_swing_trade_date = datetime.strptime(first_swing_trade_date,'%Y-%m-%d')
+
+        while(counter_date <= datetime.today() + timedelta(days = -2)):
+            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
+            holiday_calendar_data = holiday_calendar_data.get_json()
+            processing_date = holiday_calendar_data[0]['processing_date']
+            next_processing_date = holiday_calendar_data[0]['next_processing_date']
+            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
+
+            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
+
+            hist_returns_data = get_metrics_from_fin_stock_swing_unrealised_portfolio_view()
+            hist_returns_data = hist_returns_data.get_json()
+
+            fin_invested_amount       = hist_returns_data[0]['fin_invested_amount']
+            fin_total_fees            = hist_returns_data[0]['fin_total_fees']
+            fin_total_invested_amount = hist_returns_data[0]['fin_total_invested_amount']
+            fin_current_value         = hist_returns_data[0]['fin_current_value']
+            fin_previous_value        = hist_returns_data[0]['fin_previous_value']
+            fin_p_l                   = hist_returns_data[0]['fin_p_l']
+            perc_fin_p_l              = hist_returns_data[0]['perc_fin_p_l']
+            fin_net_p_l               = hist_returns_data[0]['fin_net_p_l']
+            perc_fin_net_p_l          = hist_returns_data[0]['perc_fin_net_p_l']
+            fin_day_p_l               = hist_returns_data[0]['fin_day_p_l']
+            perc_fin_day_p_l          = hist_returns_data[0]['perc_fin_day_p_l']
+
+            insert_into_unrealised_swing_stock_hist_returns(processing_date, next_processing_date, prev_processing_date, fin_invested_amount, fin_total_fees, fin_total_invested_amount, fin_current_value, fin_previous_value, fin_p_l, perc_fin_p_l, fin_net_p_l, perc_fin_net_p_l, fin_day_p_l, perc_fin_day_p_l)
+
+            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
+
+        return jsonify({'message': 'Successfully inserted historic returns in to UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+    
+@api.route('/api/unrealised_stock_hist_returns/', methods = ['GET'])
+def unrealised_stock_hist_returns_lookup():
+    try:
+        data = get_stock_hist_returns_from_unrealised_stock_hist_returns_table()
+        data = data.get_json()
+        return jsonify({'data': data,'message': 'Successfully retrieved Historic Returns from UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/unrealised_swing_stock_hist_returns/max_next_proc_date/', methods = ['GET'])
+def unrealised_hist_returns_max_date():
+    try:
+        max_date = get_max_next_proc_date_from_mf_hist_returns_table()
+        max_date = max_date.get_json()
+        return jsonify({'data': max_date,'message': 'Successfully retrieved Max Date from UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/unrealised_stock_hist_returns/<start_date>/<end_date>/', methods = ['GET'])
+def process_unrealised_stock_hist_returns_from_start_to_end_date(start_date, end_date):
+    try:
+        start_date = datetime.strptime(start_date,'%Y-%m-%d')
+        end_date = datetime.strptime(end_date,'%Y-%m-%d')
+        counter_date = start_date
+        log_date = []
+
+        while(counter_date <= end_date):
+
+            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
+            holiday_calendar_data = holiday_calendar_data.get_json()
+            processing_date = holiday_calendar_data[0]['processing_date']
+            next_processing_date = holiday_calendar_data[0]['next_processing_date']
+            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
+
+            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
+
+            hist_returns_data = get_metrics_from_fin_stock_swing_unrealised_portfolio_view()
+            hist_returns_data = hist_returns_data.get_json()
+
+            fin_invested_amount       = hist_returns_data[0]['fin_invested_amount']
+            fin_total_fees            = hist_returns_data[0]['fin_total_fees']
+            fin_total_invested_amount = hist_returns_data[0]['fin_total_invested_amount']
+            fin_current_value         = hist_returns_data[0]['fin_current_value']
+            fin_previous_value        = hist_returns_data[0]['fin_previous_value']
+            fin_p_l                   = hist_returns_data[0]['fin_p_l']
+            perc_fin_p_l              = hist_returns_data[0]['perc_fin_p_l']
+            fin_net_p_l               = hist_returns_data[0]['fin_net_p_l']
+            perc_fin_net_p_l          = hist_returns_data[0]['perc_fin_net_p_l']
+            fin_day_p_l               = hist_returns_data[0]['fin_day_p_l']
+            perc_fin_day_p_l          = hist_returns_data[0]['perc_fin_day_p_l']
+
+            insert_into_unrealised_swing_stock_hist_returns(processing_date, next_processing_date, prev_processing_date, fin_invested_amount, fin_total_fees, fin_total_invested_amount, fin_current_value, fin_previous_value, fin_p_l, perc_fin_p_l, fin_net_p_l, perc_fin_net_p_l, fin_day_p_l, perc_fin_day_p_l)
+            log_date.append(processing_date)
+            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
+        return jsonify({'message': f'Successfully inserted historic returns for {str(log_date)} in to UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})

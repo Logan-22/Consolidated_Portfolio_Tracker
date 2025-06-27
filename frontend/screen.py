@@ -49,3 +49,7 @@ def additional_links():
 @frontend.route('/close_trades/')
 def close_trades():
     return render_template('close_trades.html')
+
+@frontend.route('/process_unrealised_stock_hist_returns/')
+def process_unrealised_stock_hist_returns():
+    return render_template('process_unrelalised_stock_hist_returns.html')

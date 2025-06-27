@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await upsert_mf_hist_returns_table()
     await upsert_realised_stock_hist_returns_table()
     await upsert_realised_swing_stock_hist_returns_table()
+    await upsert_unrealised_swing_stock_hist_returns_table()
     }
   }
 );
@@ -134,7 +135,7 @@ const max_next_proc_date_in_mf_hist_returns = mf_hist_max_next_proc_date_data.da
 
 // Get the Max of all Nav tables and get the minimum out of the those
 
-const price_table_max_date_response = await fetch ('/api/price_table/max_value_date?consider_for_hist_returns=1', {
+const price_table_max_date_response = await fetch ('/api/price_table/max_value_date?consider_for_hist_returns=1&portfolio_type=Mutual+Fund', {
   method: 'GET'
 })
 
@@ -237,6 +238,65 @@ const data = await response.json();
 const resultDiv = document.getElementById('result')
 resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
 resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+
+}
+
+// GET /api/realised_swing_stock_hist_returns/max_next_proc_date/
+
+async function upsert_unrealised_swing_stock_hist_returns_table(){
+const unrealised_returns_max_next_proc_date_response = await fetch ('/api/unrealised_swing_stock_hist_returns/max_next_proc_date/', {
+  method: 'GET'
+})
+
+const unrealised_returns_max_next_proc_date_data = await unrealised_returns_max_next_proc_date_response.json();
+const max_next_proc_date_in_unrealised_returns = unrealised_returns_max_next_proc_date_data.data.max_next_processing_date
+
+// Get the Max of all Nav tables and get the minimum out of the those
+
+const price_table_max_date_response = await fetch ('/api/price_table/max_value_date?consider_for_hist_returns=1&portfolio_type=Stock', {
+  method: 'GET'
+})
+
+const price_table_max_date_data = await price_table_max_date_response.json();
+console.log(price_table_max_date_data)
+let min_value_date = new Date()
+let null_counter = 0
+
+price_table_max_date_data.max_value_date_data.forEach(async element=> {
+if (element.max_value_date){
+const max_value_date = new Date(element.max_value_date)
+if(max_value_date < min_value_date){
+  min_value_date = max_value_date
+}
+}
+else{
+  null_counter += 1
+}
+})
+
+if (null_counter == 0){
+const year = min_value_date.getFullYear();
+const month = String(min_value_date.getMonth() + 1).padStart(2, '0');
+const day = String(min_value_date.getDate()).padStart(2, '0');
+
+const end_date = `${year}-${month}-${day}` // Least date present in all NAV Tables
+
+const response = await fetch (`/api/unrealised_stock_hist_returns/${max_next_proc_date_in_unrealised_returns}/${end_date}`, {
+  method: 'GET'
+})
+
+const data = await response.json();
+
+const resultDiv = document.getElementById('result')
+resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
+resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+}
+else
+{
+const resultDiv = document.getElementById('result')
+resultDiv.innerHTML += '<strong>Partial Load in the PRICE_TABLE</strong></br>'
+resultDiv.innerHTML += '<strong>Error since ALT_SYMBOL(s) not present in PRICE_TABLE table</strong></br>'
+}
 
 }
 

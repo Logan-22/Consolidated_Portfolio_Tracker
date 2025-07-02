@@ -13,6 +13,9 @@ from utils.sql_utils.views.FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW import FIN_ST
 from utils.sql_utils.views.STOCK_SWING_UNREALISED_PORTFOLIO_VIEW import STOCK_SWING_UNREALISED_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW import AGG_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW import FIN_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW
+from utils.sql_utils.views.CONSOLIDATED_PORTFOLIO_VIEW import CONSOLIDATED_PORTFOLIO_VIEW
+from utils.sql_utils.views.AGG_CONSOLIDATED_PORTFOLIO_VIEW import AGG_CONSOLIDATED_PORTFOLIO_VIEW
+from utils.sql_utils.views.FIN_CONSOLIDATED_PORTFOLIO_VIEW import FIN_CONSOLIDATED_PORTFOLIO_VIEW
 
 db_path = os.path.join(os.getcwd(), "databases", "consolidated_portfolio.db")
 
@@ -314,6 +317,20 @@ def create_stock_portfolio_views_in_db():
     cursor.execute("DROP VIEW IF EXISTS FIN_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW;")
     cursor.execute(FIN_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW)
     
+    conn.commit()
+    conn.close()
+
+def create_consolidated_portfolio_views_in_db():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("DROP VIEW IF EXISTS CONSOLIDATED_PORTFOLIO_VIEW;")
+    cursor.execute(CONSOLIDATED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS AGG_CONSOLIDATED_PORTFOLIO_VIEW;")
+    cursor.execute(AGG_CONSOLIDATED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS FIN_CONSOLIDATED_PORTFOLIO_VIEW;")
+    cursor.execute(FIN_CONSOLIDATED_PORTFOLIO_VIEW)
+
     conn.commit()
     conn.close()
 
@@ -684,16 +701,16 @@ def upsert_fee_entry_in_db(fee_id, trade_date, net_obligation, brokerage, exc_tr
         conn.commit()
     conn.close()
 
-def truncate_realised_stock_hist_returns_table():
+def truncate_realised_intraday_stock_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('DROP TABLE IF EXISTS REALISED_STOCK_HIST_RETURNS')
+    cursor.execute('DROP TABLE IF EXISTS REALISED_INTRADAY_STOCK_HIST_RETURNS')
 
-def create_realised_stock_hist_returns_table():
+def create_realised_intraday_stock_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS REALISED_STOCK_HIST_RETURNS (
+        CREATE TABLE IF NOT EXISTS REALISED_INTRADAY_STOCK_HIST_RETURNS (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
             TRADE_DATE DATE,
             TRADE_TYPE VARCHAR(20),
@@ -723,15 +740,15 @@ def create_realised_stock_hist_returns_table():
             RECORD_DELETED_FLAG INTEGER
         )''')
     
-def insert_into_realised_stock_hist_returns(start_date = '1900-01-01', end_date = '9998-12-31'):
+def insert_into_realised_intraday_stock_hist_returns(start_date = '1900-01-01', end_date = '9998-12-31'):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f'''INSERT INTO REALISED_STOCK_HIST_RETURNS (TRADE_DATE, TRADE_TYPE, FEE_ID, PERCEIVED_DEPLOYED_CAPITAL, ACTUAL_DEPLOYED_CAPITAL, "TOTAL_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "TOTAL_P/L_VS_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCLUDING_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCLUDING_CHARGES", START_DATE, END_DATE, RECORD_DELETED_FLAG) 
+    cursor.execute(f'''INSERT INTO REALISED_INTRADAY_STOCK_HIST_RETURNS (TRADE_DATE, TRADE_TYPE, FEE_ID, PERCEIVED_DEPLOYED_CAPITAL, ACTUAL_DEPLOYED_CAPITAL, "TOTAL_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "TOTAL_P/L_VS_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCLUDING_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCLUDING_CHARGES", START_DATE, END_DATE, RECORD_DELETED_FLAG) 
                    SELECT TRADE_DATE, TRADE_TYPE, FEE_ID, AGG_PERCEIVED_DEPLOYED_CAPITAL, AGG_ACTUAL_DEPLOYED_CAPITAL, "AGG_P/L", "%_P/L_WITHOUT_LEVERAGE", "%_P/L_WITH_LEVERAGE", NET_OBLIGATION, "AGG_P/L_NET_OBLIGATION_MATCH_STATUS", BROKERAGE, EXCHANGE_TRANSACTION_CHARGES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURN_OVER_FEES, TOTAL_FEES, "NET_P/L", "NET_%_P/L_WITHOUT_LEVERAGE", "NET_%_P/L_WITH_LEVERAGE", TOTAL_CHARGES, "NET_P/L_MINUS_CHARGES", "NET_%_P/L_WITHOUT_LEVERAGE_INCL_CHARGES", "NET_%_P/L_WITH_LEVERAGE_INCL_CHARGES", TRADE_DATE, '9998-12-31', 0 FROM FIN_STOCK_INTRADAY_REALISED_PORTFOLIO_VIEW WHERE TRADE_DATE > '{start_date}' AND TRADE_DATE <= '{end_date}';''')
     conn.commit()
     conn.close()
 
-def get_stock_hist_returns_from_realised_stock_and_swing_stock_hist_returns_table():
+def get_stock_hist_returns_from_realised_intraday_stock_and_swing_stock_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(f'''SELECT * FROM
@@ -740,7 +757,7 @@ SELECT
     RSHR.TRADE_DATE                    AS TRADE_DATE
     ,RSHR."%_P/L_WITH_LEVERAGE"        AS "NET_%_P/L"
 FROM
-    REALISED_STOCK_HIST_RETURNS RSHR
+    REALISED_INTRADAY_STOCK_HIST_RETURNS RSHR
 WHERE
     RSHR.RECORD_DELETED_FLAG = 0 
 UNION ALL
@@ -762,10 +779,10 @@ ORDER BY TRADE_DATE, "NET_%_P/L"
     data = [{'trade_date': None, 'perc_p_l_with_leverage': None} for row in rows]
     return jsonify(data)
 
-def get_max_trade_date_from_realised_stock_hist_returns_table():
+def get_max_trade_date_from_realised_intraday_stock_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f'SELECT MAX(TRADE_DATE) FROM REALISED_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0;')
+    cursor.execute(f'SELECT MAX(TRADE_DATE) FROM REALISED_INTRADAY_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0;')
     rows = cursor.fetchall()
     conn.close()
     if rows:
@@ -942,7 +959,7 @@ def insert_into_unrealised_swing_stock_hist_returns(processing_date, next_proces
     conn.commit()
     conn.close()
 
-def get_stock_hist_returns_from_unrealised_stock_hist_returns_table():
+def get_stock_hist_returns_from_unrealised_swing_stock_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(f'SELECT PROCESSING_DATE, "%_NET_P/L", "%_DAY_P/L" FROM UNREALISED_SWING_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
@@ -954,7 +971,7 @@ def get_stock_hist_returns_from_unrealised_stock_hist_returns_table():
     data = [{'processing_date': None, 'perc_net_p_l': None, 'perc_day_p_l': None}]
     return jsonify(data)
 
-def get_max_next_proc_date_from_mf_hist_returns_table():
+def get_max_next_proc_date_from_unrealised_swing_stock_hist_returns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(f'SELECT MAX(NEXT_PROCESSING_DATE) FROM UNREALISED_SWING_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0;')
@@ -965,3 +982,144 @@ def get_max_next_proc_date_from_mf_hist_returns_table():
         return jsonify(data)
     data = {'max_next_processing_date': None}
     return jsonify(data)
+
+def truncate_consolidated_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS CONSOLIDATED_HIST_RETURNS;')
+
+def create_consolidated_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS CONSOLIDATED_HIST_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROCESSING_DATE DATE,
+            PREV_PROCESSING_DATE DATE,
+            AMOUNT_INVESTED_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            CURRENT_VALUE NUMBER(10,4),
+            PREVIOUS_VALUE NUMBER(10,4),
+            "P/L" NUMBER(10,4),
+            "%_P/L" NUMBER(10,4),
+            "DAY_P/L" NUMBER(10,4),
+            "%_DAY_P/L" NUMBER(10,4),
+            NEXT_PROCESSING_DATE DATE,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        );''')
+    
+def truncate_agg_consolidated_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS AGG_CONSOLIDATED_HIST_RETURNS;')
+
+def create_agg_consolidated_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_CONSOLIDATED_HIST_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PORTFOLIO_TYPE VARCHAR(100),
+            PROCESSING_DATE DATE,
+            PREV_PROCESSING_DATE DATE,
+            AMOUNT_INVESTED_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            CURRENT_VALUE NUMBER(10,4),
+            PREVIOUS_VALUE NUMBER(10,4),
+            "P/L" NUMBER(10,4),
+            "%_P/L" NUMBER(10,4),
+            "DAY_P/L" NUMBER(10,4),
+            "%_DAY_P/L" NUMBER(10,4),
+            NEXT_PROCESSING_DATE DATE,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        );''')
+
+
+def get_first_purchase_date_from_all_portfolios():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT MIN(SUB.FIRST_PURCHASE_DATE) FROM (SELECT MIN(MF.PURCHASED_ON) AS FIRST_PURCHASE_DATE FROM MF_ORDER MF UNION ALL SELECT MIN(TRD.TRADE_DATE)  AS FIRST_PURCHASE_DATE FROM TRADES TRD) SUB")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'first_purchase_date': rows[0][0]}
+        return jsonify(data)
+    return
+
+def get_metrics_from_fin_consolidated_portfolio_view():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, FIN_INVESTED_AMOUNT, FIN_CURRENT_VALUE, FIN_PREVIOUS_VALUE, "FIN_TOTAL_P/L", "FIN_DAY_P/L", "%_FIN_TOTAL_P/L", "%_FIN_DAY_P/L" FROM FIN_CONSOLIDATED_PORTFOLIO_VIEW;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'fin_day_p_l': row[7], 'perc_fin_total_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in rows]
+        return jsonify(data)
+    data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_total_p_l': None, 'perc_fin_day_p_l': None}]
+    return jsonify(data)
+
+def get_metrics_from_agg_consolidated_portfolio_view():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT PORTFOLIO_TYPE, PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, AGG_INVESTED_AMOUNT, AGG_CURRENT_VALUE, AGG_PREVIOUS_VALUE, "AGG_TOTAL_P/L", "AGG_DAY_P/L", "%_AGG_TOTAL_P/L", "%_AGG_DAY_P/L" FROM AGG_CONSOLIDATED_PORTFOLIO_VIEW;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'portfolio_type': row[0],'processing_date': row[1], 'prev_processing_date': row[2], 'next_processing_date': row[3], 'agg_invested_amount': row[4], 'agg_current_value': row[5], 'agg_previous_value': row[6], 'agg_total_p_l': row[7], 'agg_day_p_l': row[8], 'perc_agg_total_p_l': row[9], 'perc_agg_day_p_l': row[10]} for row in rows]
+        return jsonify(data)
+    data = [{'portfolio_type': None,'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'agg_invested_amount': None, 'agg_current_value': None, 'agg_previous_value': None, 'agg_total_p_l': None, 'agg_day_p_l': None, 'perc_agg_total_p_l': None, 'perc_agg_day_p_l': None}]
+    return jsonify(data)
+
+def insert_into_consolidated_hist_returns(processing_date_from_fin, prev_processing_date_from_fin, next_processing_date_from_fin, fin_invested_amount, fin_current_value, fin_previous_value, fin_total_p_l, fin_day_p_l, perc_fin_total_p_l, perc_fin_day_p_l):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO CONSOLIDATED_HIST_RETURNS (PROCESSING_DATE, PREV_PROCESSING_DATE, AMOUNT_INVESTED_AS_ON_PROCESSING_DATE, CURRENT_VALUE, PREVIOUS_VALUE, "P/L", "%_P/L", "DAY_P/L", "%_DAY_P/L", NEXT_PROCESSING_DATE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   (processing_date_from_fin, prev_processing_date_from_fin, fin_invested_amount, fin_current_value, fin_previous_value, fin_total_p_l, perc_fin_total_p_l, fin_day_p_l, perc_fin_day_p_l, next_processing_date_from_fin, processing_date_from_fin, '9998-12-31', 0))
+    conn.commit()
+    conn.close()
+
+def insert_into_agg_consolidated_hist_returns(portfolio_type, processing_date_from_agg, prev_processing_date_from_agg, next_processing_date_from_agg, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, agg_day_p_l, perc_agg_total_p_l, perc_agg_day_p_l):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO AGG_CONSOLIDATED_HIST_RETURNS (PORTFOLIO_TYPE, PROCESSING_DATE, PREV_PROCESSING_DATE, AMOUNT_INVESTED_AS_ON_PROCESSING_DATE, CURRENT_VALUE, PREVIOUS_VALUE, "P/L", "%_P/L", "DAY_P/L", "%_DAY_P/L", NEXT_PROCESSING_DATE, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   (portfolio_type, processing_date_from_agg, prev_processing_date_from_agg, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, perc_agg_total_p_l, agg_day_p_l, perc_agg_day_p_l, next_processing_date_from_agg, processing_date_from_agg, '9998-12-31', 0))
+    conn.commit()
+    conn.close()
+
+def get_consolidated_hist_returns_from_consolidated_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT PROCESSING_DATE, "%_P/L", "%_DAY_P/L" FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'processing_date': row[0], 'perc_total_p_l': row[1], 'perc_day_p_l': row[2]} for row in rows]
+        return jsonify(data)
+    data = [{'processing_date': None, 'perc_total_p_l': None, 'perc_day_p_l': None}]
+    return jsonify(data)
+
+def get_max_next_proc_date_from_consolidated_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT MAX(NEXT_PROCESSING_DATE) FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'max_next_processing_date': rows[0][0]}
+        return jsonify(data)
+    data = {'max_next_processing_date': None}
+    return jsonify(data)
+
+def get_max_proc_date_from_all_hist_tables():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT MIN(SUB.PROCESSING_DATE) FROM (SELECT MAX(MF.PROCESSING_DATE)  AS PROCESSING_DATE  FROM MF_HIST_RETURNS MF UNION ALL\
+                                                          SELECT MAX(UR.PROCESSING_DATE)  AS PROCESSING_DATE  FROM UNREALISED_SWING_STOCK_HIST_RETURNS UR) SUB;")
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        min_of_max_proc_date_from_hist_tables = {'min_of_max_proc_date_from_hist_tables': rows[0][0]}
+        return jsonify(min_of_max_proc_date_from_hist_tables)
+    return jsonify({'min_of_max_proc_date_from_hist_tables' : None})

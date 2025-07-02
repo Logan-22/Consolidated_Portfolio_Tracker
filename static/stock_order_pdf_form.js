@@ -176,7 +176,6 @@ fee_table.innerHTML = `
 }
 else{
     resultDiv.innerHTML = `<strong>${data.message}</strong>`
-    console.error(data.message)
 }
 })
 

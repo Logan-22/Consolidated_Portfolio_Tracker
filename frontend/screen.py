@@ -53,3 +53,7 @@ def close_trades():
 @frontend.route('/process_unrealised_stock_hist_returns/')
 def process_unrealised_stock_hist_returns():
     return render_template('process_unrelalised_stock_hist_returns.html')
+
+@frontend.route('/process_consolidated_hist_returns')
+def process_consolidated_hist_returns():
+    return render_template('process_consolidated_hist_returns.html')

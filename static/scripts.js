@@ -9,9 +9,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await create_portfolio_views_in_db()
     await upsert_price_table()
     await upsert_mf_hist_returns_table()
-    await upsert_realised_stock_hist_returns_table()
+    await upsert_realised_intraday_stock_hist_returns_table()
     await upsert_realised_swing_stock_hist_returns_table()
     await upsert_unrealised_swing_stock_hist_returns_table()
+    await upsert_consolidated_hist_returns()
     }
   }
 );
@@ -183,10 +184,10 @@ resultDiv.innerHTML += '<strong>Error since ALT_SYMBOL(s) not present in PRICE_T
 
 }
 
-// GET /api/realised_stock_hist_returns/max_trade_date/
+// GET /api/realised_intraday_stock_hist_returns/max_trade_date/
 
-async function upsert_realised_stock_hist_returns_table(){
-const realised_stock_hist_max_trade_date_response = await fetch ('/api/realised_stock_hist_returns/max_trade_date/', {
+async function upsert_realised_intraday_stock_hist_returns_table(){
+const realised_stock_hist_max_trade_date_response = await fetch ('/api/realised_intraday_stock_hist_returns/max_trade_date/', {
   method: 'GET'
 })
 
@@ -200,7 +201,7 @@ const day = String(today.getDate()).padStart(2, '0');
 
 const end_date = `${year}-${month}-${day}`
 
-const response = await fetch (`/api/realised_stock_hist_returns/${realised_stock_hist_max_trade_date}/${end_date}`, {
+const response = await fetch (`/api/realised_intraday_stock_hist_returns/${realised_stock_hist_max_trade_date}/${end_date}`, {
   method: 'GET'
 })
 
@@ -297,6 +298,44 @@ resultDiv.innerHTML += '<strong>Partial Load in the PRICE_TABLE</strong></br>'
 resultDiv.innerHTML += '<strong>Error since ALT_SYMBOL(s) not present in PRICE_TABLE table</strong></br>'
 }
 
+}
+
+async function upsert_consolidated_hist_returns(){
+const consolidated_returns_max_next_proc_date_response = await fetch ('/api/consolidated_hist_returns/max_next_proc_date/', {
+  method: 'GET'
+})
+
+const consolidated_returns_max_next_proc_date_data = await consolidated_returns_max_next_proc_date_response.json();
+const max_next_proc_date_in_consolidated_returns = consolidated_returns_max_next_proc_date_data.data.max_next_processing_date
+
+// Get the Max of all Hist Returns tables and get the minimum out of the those
+
+const min_date_from_hist_returns_table_max_date_response = await fetch ('/api/hist_returns_tables/max_processing_date/', {
+  method: 'GET'
+})
+
+const min_date_from_hist_returns_table_max_date_data = await min_date_from_hist_returns_table_max_date_response.json();
+const min_date_from_hist_returns_table_max_date = min_date_from_hist_returns_table_max_date_data.max_proc_date_data.min_of_max_proc_date_from_hist_tables
+
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, '0');
+const day = String(today.getDate()).padStart(2, '0');
+
+let end_date = `${year}-${month}-${day}`
+if(min_date_from_hist_returns_table_max_date){
+end_date = min_date_from_hist_returns_table_max_date
+}
+
+const process_consolidated_returns_response = await fetch (`/api/consolidated_stock_hist_returns/${max_next_proc_date_in_consolidated_returns}/${end_date}`, {
+  method: 'GET'
+})
+
+const process_consolidated_returns_data = await process_consolidated_returns_response.json();
+
+const resultDiv = document.getElementById('result')
+resultDiv.innerHTML += `<strong>${process_consolidated_returns_data.message}</strong></br>`
+resultDiv.innerHTML += `<strong>${process_consolidated_returns_data.status}</strong></br>`
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

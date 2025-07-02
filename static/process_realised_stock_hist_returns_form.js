@@ -1,5 +1,5 @@
-// GET /api/process_realised_stock_hist_returns/
-// Inserts data into REALISED_STOCK_HIST_RETURNS table
+// GET /api/process_realised_intraday_stock_hist_returns/
+// Inserts data into REALISED_INTRADAY_STOCK_HIST_RETURNS table
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('navChart')) {
@@ -15,7 +15,7 @@ if (chart){
   chart.destroy()
 }
 
-const response = await fetch (`/api/realised_stock_hist_returns/`, {
+const response = await fetch (`/api/realised_intraday_stock_hist_returns/`, {
   method: 'GET'
 })
 
@@ -101,7 +101,7 @@ else{
 document.getElementById('process_realised_stock_hist_returns_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const response = await fetch(`/api/process_realised_stock_hist_returns/`, {
+const response = await fetch(`/api/process_realised_intraday_stock_hist_returns/`, {
 method: 'GET'
 })
 

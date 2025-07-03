@@ -77,7 +77,8 @@ create_agg_consolidated_hist_returns_table,\
 insert_into_agg_consolidated_hist_returns,\
 get_consolidated_hist_returns_from_consolidated_hist_returns_table,\
 get_max_next_proc_date_from_consolidated_hist_returns_table,\
-get_max_proc_date_from_all_hist_tables
+get_max_proc_date_from_all_hist_tables,\
+get_all_from_consolidated_hist_returns_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -1023,19 +1024,17 @@ def process_consolidated_hist_returns():
 
             agg_hist_returns_data = get_metrics_from_agg_consolidated_portfolio_view()
             agg_hist_returns_data = agg_hist_returns_data.get_json()
-            portfolio_type                = agg_hist_returns_data[0]['portfolio_type']
-            processing_date_from_agg      = agg_hist_returns_data[0]['processing_date']
-            prev_processing_date_from_agg = agg_hist_returns_data[0]['prev_processing_date']
-            next_processing_date_from_agg = agg_hist_returns_data[0]['next_processing_date']
-            agg_invested_amount           = agg_hist_returns_data[0]['agg_invested_amount']
-            agg_current_value             = agg_hist_returns_data[0]['agg_current_value']
-            agg_previous_value            = agg_hist_returns_data[0]['agg_previous_value']
-            agg_total_p_l                 = agg_hist_returns_data[0]['agg_total_p_l']
-            agg_day_p_l                   = agg_hist_returns_data[0]['agg_day_p_l']
-            perc_agg_total_p_l            = agg_hist_returns_data[0]['perc_agg_total_p_l']
-            perc_agg_day_p_l              = agg_hist_returns_data[0]['perc_agg_day_p_l']
+            for agg_hist_returns_data_pf in agg_hist_returns_data:
+                portfolio_type                = agg_hist_returns_data_pf['portfolio_type']
+                agg_invested_amount           = agg_hist_returns_data_pf['agg_invested_amount']
+                agg_current_value             = agg_hist_returns_data_pf['agg_current_value']
+                agg_previous_value            = agg_hist_returns_data_pf['agg_previous_value']
+                agg_total_p_l                 = agg_hist_returns_data_pf['agg_total_p_l']
+                agg_day_p_l                   = agg_hist_returns_data_pf['agg_day_p_l']
+                perc_agg_total_p_l            = agg_hist_returns_data_pf['perc_agg_total_p_l']
+                perc_agg_day_p_l              = agg_hist_returns_data_pf['perc_agg_day_p_l']
 
-            insert_into_agg_consolidated_hist_returns(portfolio_type, processing_date_from_agg, prev_processing_date_from_agg, next_processing_date_from_agg, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, agg_day_p_l, perc_agg_total_p_l, perc_agg_day_p_l)
+                insert_into_agg_consolidated_hist_returns(portfolio_type, processing_date, prev_processing_date, next_processing_date, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, agg_day_p_l, perc_agg_total_p_l, perc_agg_day_p_l)
 
             fin_hist_returns_data = get_metrics_from_fin_consolidated_portfolio_view()
             fin_hist_returns_data = fin_hist_returns_data.get_json()
@@ -1138,5 +1137,14 @@ def process_consolidated_hist_returns_from_start_date_to_end_date(start_date, en
             counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
 
         return jsonify({'message': f'Successfully inserted historic returns for {str(log_date)} in to CONSOLIDATED_HIST_RETURNS Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/consolidated_hist_returns/all/', methods = ['GET'])
+def consolidated_hist_returns_fetch_all():
+    try:
+        data = get_all_from_consolidated_hist_returns_table()
+        data = data.get_json()
+        return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS and AGG_CONSOLIDATED_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})

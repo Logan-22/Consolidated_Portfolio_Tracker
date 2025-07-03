@@ -3,6 +3,11 @@
 // Method : GET
 // URL    : /api/hist_price/
 
+// Global
+let latest_consolidated_returns_data;
+let latest_agg_returns_data;
+let processing_date_value;
+
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.getElementById('index_nav')) {
     await create_managed_tables_in_db()
@@ -13,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await upsert_realised_swing_stock_hist_returns_table()
     await upsert_unrealised_swing_stock_hist_returns_table()
     await upsert_consolidated_hist_returns()
+    await get_consolidated_hist_returns()
     }
   }
 );
@@ -336,6 +342,108 @@ const process_consolidated_returns_data = await process_consolidated_returns_res
 const resultDiv = document.getElementById('result')
 resultDiv.innerHTML += `<strong>${process_consolidated_returns_data.message}</strong></br>`
 resultDiv.innerHTML += `<strong>${process_consolidated_returns_data.status}</strong></br>`
+}
+
+async function get_consolidated_hist_returns(){
+const consolidated_returns_response = await fetch ('/api/consolidated_hist_returns/all/', {
+  method: 'GET'
+})
+
+const consolidated_returns_data = await consolidated_returns_response.json();
+console.log(consolidated_returns_data)
+
+const total_invested_amount = document.getElementById("total_invested_amount")
+const current_value         = document.getElementById("current_value")
+const previous_value        = document.getElementById("previous_value")
+const p_l                   = document.getElementById("p_l")
+const perc_p_l              = document.getElementById("perc_p_l")
+const day_p_l               = document.getElementById("day_p_l")
+const perc_day_p_l          = document.getElementById("perc_day_p_l")
+
+const mf_invested_amount                = document.getElementById("mf_invested_amount")
+const mf_current_value                  = document.getElementById("mf_current_value")
+const mf_previous_value                 = document.getElementById("mf_previous_value")
+const mf_p_l                            = document.getElementById("mf_p_l")
+const mf_perc_p_l                       = document.getElementById("mf_perc_p_l")
+const mf_day_p_l                        = document.getElementById("mf_day_p_l")
+const mf_perc_day_p_l                   = document.getElementById("mf_perc_day_p_l")
+
+const unrealised_swing_invested_amount  = document.getElementById("unrealised_swing_invested_amount")
+const unrealised_swing_current_value    = document.getElementById("unrealised_swing_current_value")
+const unrealised_swing_previous_value   = document.getElementById("unrealised_swing_previous_value")
+const unrealised_swing_p_l              = document.getElementById("unrealised_swing_p_l")
+const unrealised_swing_perc_p_l         = document.getElementById("unrealised_swing_perc_p_l")
+const unrealised_swing_day_p_l          = document.getElementById("unrealised_swing_day_p_l")
+const unrealised_swing_perc_day_p_l     = document.getElementById("unrealised_swing_perc_day_p_l")
+
+const realised_swing_invested_amount    = document.getElementById("realised_swing_invested_amount")
+const realised_swing_current_value      = document.getElementById("realised_swing_current_value")
+const realised_swing_previous_value     = document.getElementById("realised_swing_previous_value")
+const realised_swing_p_l                = document.getElementById("realised_swing_p_l")
+const realised_swing_perc_p_l           = document.getElementById("realised_swing_perc_p_l")
+
+const realised_intraday_invested_amount = document.getElementById("realised_intraday_invested_amount")
+const realised_intraday_current_value   = document.getElementById("realised_intraday_current_value")
+const realised_intraday_previous_value  = document.getElementById("realised_intraday_previous_value")
+const realised_intraday_p_l             = document.getElementById("realised_intraday_p_l")
+const realised_intraday_perc_p_l        = document.getElementById("realised_intraday_perc_p_l")
+
+if(consolidated_returns_data.data.latest_cons_data){
+latest_consolidated_returns_data = consolidated_returns_data.data.latest_cons_data[0]
+
+total_invested_amount.textContent = latest_consolidated_returns_data.fin_invested_amount
+current_value.textContent         = latest_consolidated_returns_data.fin_current_value
+previous_value.textContent        = latest_consolidated_returns_data.fin_previous_value
+p_l.textContent                   = latest_consolidated_returns_data.fin_total_p_l
+perc_p_l.textContent              = latest_consolidated_returns_data.perc_fin_total_p_l
+day_p_l.textContent               = latest_consolidated_returns_data.fin_day_p_l
+perc_day_p_l.textContent          = latest_consolidated_returns_data.perc_fin_day_p_l
+}
+
+if(consolidated_returns_data.data.latest_agg_data){
+latest_agg_returns_data = consolidated_returns_data.data.latest_agg_data
+
+latest_agg_returns_data.forEach(element => {
+if(element.portfolio_type == "Mutual Funds"){
+mf_invested_amount.textContent                     = element.agg_total_invested_amount
+mf_current_value.textContent                       = element.agg_current_value
+mf_previous_value.textContent                      = element.agg_previous_value
+mf_p_l.textContent                                 = element.agg_total_p_l
+mf_perc_p_l.textContent                            = element.perc_agg_total_p_l
+mf_day_p_l.textContent                             = element.agg_day_p_l
+mf_perc_day_p_l.textContent                        = element.perc_agg_day_p_l
+}
+else if(element.portfolio_type == "Unrealised Swing Stocks"){
+unrealised_swing_invested_amount.textContent       = element.agg_total_invested_amount
+unrealised_swing_current_value.textContent         = element.agg_current_value
+unrealised_swing_previous_value.textContent        = element.agg_previous_value
+unrealised_swing_p_l.textContent                   = element.agg_total_p_l
+unrealised_swing_perc_p_l.textContent              = element.perc_agg_total_p_l
+unrealised_swing_day_p_l.textContent               = element.agg_day_p_l
+unrealised_swing_perc_day_p_l.textContent          = element.perc_agg_day_p_l
+}
+else if(element.portfolio_type == "Realised Swing Stocks"){
+realised_swing_invested_amount.textContent         = element.agg_total_invested_amount
+realised_swing_current_value.textContent           = element.agg_current_value
+realised_swing_previous_value.textContent          = element.agg_previous_value
+realised_swing_p_l.textContent                     = element.agg_total_p_l
+realised_swing_perc_p_l.textContent                = element.perc_agg_total_p_l
+}
+else if(element.portfolio_type == "Intraday Stocks"){
+realised_intraday_invested_amount.textContent      = element.agg_total_invested_amount
+realised_intraday_current_value.textContent        = element.agg_current_value
+realised_intraday_previous_value.textContent       = element.agg_previous_value
+realised_intraday_p_l.textContent                  = element.agg_total_p_l
+realised_intraday_perc_p_l.textContent             = element.perc_agg_total_p_l
+}
+})
+}
+
+// Reveal Processing Date Picker
+
+const processing_date = document.getElementsByName("processing_date")
+processing_date.forEach(element => element.classList = "")
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

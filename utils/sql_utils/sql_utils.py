@@ -1123,3 +1123,36 @@ def get_max_proc_date_from_all_hist_tables():
         min_of_max_proc_date_from_hist_tables = {'min_of_max_proc_date_from_hist_tables': rows[0][0]}
         return jsonify(min_of_max_proc_date_from_hist_tables)
     return jsonify({'min_of_max_proc_date_from_hist_tables' : None})
+
+def get_all_from_consolidated_hist_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT PORTFOLIO_TYPE, PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2) FROM AGG_CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
+    agg_rows = cursor.fetchall()
+    if agg_rows:
+        agg_data = [{'portfolio_type': row[0],'processing_date': row[1], 'prev_processing_date': row[2], 'next_processing_date': row[3], 'agg_total_invested_amount': row[4], 'agg_current_value': row[5], 'agg_previous_value': row[6], 'agg_total_p_l': row[7], 'perc_agg_total_p_l': row[8], 'agg_day_p_l': row[9], 'perc_agg_day_p_l': row[10]} for row in agg_rows]
+    else:
+        agg_data = [{'portfolio_type': None,'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'agg_total_invested_amount': None, 'agg_current_value': None, 'agg_previous_value': None, 'agg_total_p_l': None, 'perc_agg_total_p_l': None, 'agg_day_p_l': None, 'perc_agg_day_p_l': None}]
+    cursor.execute('SELECT PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2)  FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
+    cons_rows = cursor.fetchall()
+    if cons_rows:
+        cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'fin_day_p_l': row[7], 'perc_fin_total_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in cons_rows]
+    else:
+        cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_total_p_l': None, 'perc_fin_day_p_l': None}]
+
+    # Latest Data Fetch
+    cursor.execute('SELECT PORTFOLIO_TYPE, PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2) FROM AGG_CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0  AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM AGG_CONSOLIDATED_HIST_RETURNS);')
+    latest_agg_rows = cursor.fetchall()
+    if latest_agg_rows:
+        latest_agg_data = [{'portfolio_type': row[0],'processing_date': row[1], 'prev_processing_date': row[2], 'next_processing_date': row[3], 'agg_total_invested_amount': row[4], 'agg_current_value': row[5], 'agg_previous_value': row[6], 'agg_total_p_l': row[7], 'perc_agg_total_p_l': row[8], 'agg_day_p_l': row[9], 'perc_agg_day_p_l': row[10]} for row in latest_agg_rows]
+    else:
+        latest_agg_data = [{'portfolio_type': None,'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'agg_total_invested_amount': None, 'agg_current_value': None, 'agg_previous_value': None, 'agg_total_p_l': None, 'perc_agg_total_p_l': None, 'agg_day_p_l': None, 'perc_agg_day_p_l': None}]
+    cursor.execute('SELECT PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2)  FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM CONSOLIDATED_HIST_RETURNS);')
+    latest_cons_rows = cursor.fetchall()
+    if latest_cons_rows:
+        latest_cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'fin_day_p_l': row[7], 'perc_fin_total_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in latest_cons_rows]
+    else:
+        latest_cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_total_p_l': None, 'perc_fin_day_p_l': None}]
+    conn.close()
+    data = {'agg_data': agg_data, 'cons_data': cons_data, 'latest_agg_data': latest_agg_data, 'latest_cons_data' : latest_cons_data}
+    return jsonify(data)

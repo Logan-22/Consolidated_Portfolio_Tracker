@@ -9,7 +9,7 @@
 
 body {
   margin: 0;
-  font-family: 'Cambria','Segoe UI', sans-serif;
+  font-family: Cambria,'Segoe UI', sans-serif;
   background-color: var(--bg-light);
   color: var(--text-light);
   transition: background-color 0.3s, color 0.3s;
@@ -95,11 +95,11 @@ select {
 }
 
 input::-webkit-input-placeholder {
-  font-family: 'Cambria', Arial, Helvetica, sans-serif;
+  font-family: Cambria, Arial, Helvetica, sans-serif;
 }
 
 input[type="file"]::-webkit-file-upload-button {
-  font-family: 'Cambria', Arial, Helvetica, sans-serif;
+  font-family: Cambria, Arial, Helvetica, sans-serif;
   background-color: var(--primary-color);
   color: white;
   border: none;
@@ -115,12 +115,12 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 input[type="date"]::-webkit-input-placeholder {
   /*  Targeting the calendar icon in Chrome */
-  font-family: 'Cambria', Arial, Helvetica, sans-serif;
+  font-family: Cambria, Arial, Helvetica, sans-serif;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   /*  Targeting the calendar icon in Chrome */
-  font-family: 'Cambria', Arial, Helvetica, sans-serif;
+  font-family: Cambria, Arial, Helvetica, sans-serif;
 }
 
 body.dark-mode {

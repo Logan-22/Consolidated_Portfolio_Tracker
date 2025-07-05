@@ -1104,19 +1104,17 @@ def process_consolidated_hist_returns_from_start_date_to_end_date(start_date, en
 
             agg_hist_returns_data = get_metrics_from_agg_consolidated_portfolio_view()
             agg_hist_returns_data = agg_hist_returns_data.get_json()
-            portfolio_type                = agg_hist_returns_data[0]['portfolio_type']
-            processing_date_from_agg      = agg_hist_returns_data[0]['processing_date']
-            prev_processing_date_from_agg = agg_hist_returns_data[0]['prev_processing_date']
-            next_processing_date_from_agg = agg_hist_returns_data[0]['next_processing_date']
-            agg_invested_amount           = agg_hist_returns_data[0]['agg_invested_amount']
-            agg_current_value             = agg_hist_returns_data[0]['agg_current_value']
-            agg_previous_value            = agg_hist_returns_data[0]['agg_previous_value']
-            agg_total_p_l                 = agg_hist_returns_data[0]['agg_total_p_l']
-            agg_day_p_l                   = agg_hist_returns_data[0]['agg_day_p_l']
-            perc_agg_total_p_l            = agg_hist_returns_data[0]['perc_agg_total_p_l']
-            perc_agg_day_p_l              = agg_hist_returns_data[0]['perc_agg_day_p_l']
+            for agg_hist_returns_data_pf in agg_hist_returns_data:
+                portfolio_type                = agg_hist_returns_data_pf['portfolio_type']
+                agg_invested_amount           = agg_hist_returns_data_pf['agg_invested_amount']
+                agg_current_value             = agg_hist_returns_data_pf['agg_current_value']
+                agg_previous_value            = agg_hist_returns_data_pf['agg_previous_value']
+                agg_total_p_l                 = agg_hist_returns_data_pf['agg_total_p_l']
+                agg_day_p_l                   = agg_hist_returns_data_pf['agg_day_p_l']
+                perc_agg_total_p_l            = agg_hist_returns_data_pf['perc_agg_total_p_l']
+                perc_agg_day_p_l              = agg_hist_returns_data_pf['perc_agg_day_p_l']
 
-            insert_into_agg_consolidated_hist_returns(portfolio_type, processing_date_from_agg, prev_processing_date_from_agg, next_processing_date_from_agg, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, agg_day_p_l, perc_agg_total_p_l, perc_agg_day_p_l)
+                insert_into_agg_consolidated_hist_returns(portfolio_type, processing_date, prev_processing_date, next_processing_date, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, agg_day_p_l, perc_agg_total_p_l, perc_agg_day_p_l)
 
             fin_hist_returns_data = get_metrics_from_fin_consolidated_portfolio_view()
             fin_hist_returns_data = fin_hist_returns_data.get_json()

@@ -9,6 +9,8 @@ import { create_notification } from './create_notification.js'
 // Global
 let latest_consolidated_returns_data;
 let latest_agg_returns_data;
+let cons_returns_data;
+let agg_returns_data;
 let processing_date_value;
 let create_table_status;
 let create_view_status;
@@ -19,6 +21,42 @@ let realised_swing_hist_status;
 let unrealised_swing_hist_status;
 let process_consolidated_hist_status;
 let get_consolidated_hist_status;
+
+const total_invested_amount             = document.getElementById("total_invested_amount")
+const current_value                     = document.getElementById("current_value")
+const previous_value                    = document.getElementById("previous_value")
+const p_l                               = document.getElementById("p_l")
+const perc_p_l                          = document.getElementById("perc_p_l")
+const day_p_l                           = document.getElementById("day_p_l")
+const perc_day_p_l                      = document.getElementById("perc_day_p_l")
+
+const mf_invested_amount                = document.getElementById("mf_invested_amount")
+const mf_current_value                  = document.getElementById("mf_current_value")
+const mf_previous_value                 = document.getElementById("mf_previous_value")
+const mf_p_l                            = document.getElementById("mf_p_l")
+const mf_perc_p_l                       = document.getElementById("mf_perc_p_l")
+const mf_day_p_l                        = document.getElementById("mf_day_p_l")
+const mf_perc_day_p_l                   = document.getElementById("mf_perc_day_p_l")
+
+const unrealised_swing_invested_amount  = document.getElementById("unrealised_swing_invested_amount")
+const unrealised_swing_current_value    = document.getElementById("unrealised_swing_current_value")
+const unrealised_swing_previous_value   = document.getElementById("unrealised_swing_previous_value")
+const unrealised_swing_p_l              = document.getElementById("unrealised_swing_p_l")
+const unrealised_swing_perc_p_l         = document.getElementById("unrealised_swing_perc_p_l")
+const unrealised_swing_day_p_l          = document.getElementById("unrealised_swing_day_p_l")
+const unrealised_swing_perc_day_p_l     = document.getElementById("unrealised_swing_perc_day_p_l")
+
+const realised_swing_invested_amount    = document.getElementById("realised_swing_invested_amount")
+const realised_swing_current_value      = document.getElementById("realised_swing_current_value")
+const realised_swing_previous_value     = document.getElementById("realised_swing_previous_value")
+const realised_swing_p_l                = document.getElementById("realised_swing_p_l")
+const realised_swing_perc_p_l           = document.getElementById("realised_swing_perc_p_l")
+
+const realised_intraday_invested_amount = document.getElementById("realised_intraday_invested_amount")
+const realised_intraday_current_value   = document.getElementById("realised_intraday_current_value")
+const realised_intraday_previous_value  = document.getElementById("realised_intraday_previous_value")
+const realised_intraday_p_l             = document.getElementById("realised_intraday_p_l")
+const realised_intraday_perc_p_l        = document.getElementById("realised_intraday_perc_p_l")
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.getElementById('container')) {
@@ -353,58 +391,22 @@ const consolidated_returns_response = await fetch ('/api/consolidated_hist_retur
 })
 
 const consolidated_returns_data = await consolidated_returns_response.json();
-
+console.log(consolidated_returns_data)
 get_consolidated_hist_status = consolidated_returns_data.status
 if(get_consolidated_hist_status != "Success"){
 create_notification(consolidated_returns_data.message, consolidated_returns_data.status)
 }
 
-const total_invested_amount = document.getElementById("total_invested_amount")
-const current_value         = document.getElementById("current_value")
-const previous_value        = document.getElementById("previous_value")
-const p_l                   = document.getElementById("p_l")
-const perc_p_l              = document.getElementById("perc_p_l")
-const day_p_l               = document.getElementById("day_p_l")
-const perc_day_p_l          = document.getElementById("perc_day_p_l")
-
-const mf_invested_amount                = document.getElementById("mf_invested_amount")
-const mf_current_value                  = document.getElementById("mf_current_value")
-const mf_previous_value                 = document.getElementById("mf_previous_value")
-const mf_p_l                            = document.getElementById("mf_p_l")
-const mf_perc_p_l                       = document.getElementById("mf_perc_p_l")
-const mf_day_p_l                        = document.getElementById("mf_day_p_l")
-const mf_perc_day_p_l                   = document.getElementById("mf_perc_day_p_l")
-
-const unrealised_swing_invested_amount  = document.getElementById("unrealised_swing_invested_amount")
-const unrealised_swing_current_value    = document.getElementById("unrealised_swing_current_value")
-const unrealised_swing_previous_value   = document.getElementById("unrealised_swing_previous_value")
-const unrealised_swing_p_l              = document.getElementById("unrealised_swing_p_l")
-const unrealised_swing_perc_p_l         = document.getElementById("unrealised_swing_perc_p_l")
-const unrealised_swing_day_p_l          = document.getElementById("unrealised_swing_day_p_l")
-const unrealised_swing_perc_day_p_l     = document.getElementById("unrealised_swing_perc_day_p_l")
-
-const realised_swing_invested_amount    = document.getElementById("realised_swing_invested_amount")
-const realised_swing_current_value      = document.getElementById("realised_swing_current_value")
-const realised_swing_previous_value     = document.getElementById("realised_swing_previous_value")
-const realised_swing_p_l                = document.getElementById("realised_swing_p_l")
-const realised_swing_perc_p_l           = document.getElementById("realised_swing_perc_p_l")
-
-const realised_intraday_invested_amount = document.getElementById("realised_intraday_invested_amount")
-const realised_intraday_current_value   = document.getElementById("realised_intraday_current_value")
-const realised_intraday_previous_value  = document.getElementById("realised_intraday_previous_value")
-const realised_intraday_p_l             = document.getElementById("realised_intraday_p_l")
-const realised_intraday_perc_p_l        = document.getElementById("realised_intraday_perc_p_l")
-
 if(consolidated_returns_data.data.latest_cons_data){
 latest_consolidated_returns_data = consolidated_returns_data.data.latest_cons_data[0]
 
-total_invested_amount.textContent = latest_consolidated_returns_data.fin_invested_amount.toLocaleString('en-IN')
-current_value.textContent         = latest_consolidated_returns_data.fin_current_value.toLocaleString('en-IN')
-previous_value.textContent        = latest_consolidated_returns_data.fin_previous_value.toLocaleString('en-IN')
-p_l.textContent                   = latest_consolidated_returns_data.fin_total_p_l.toLocaleString('en-IN')
-perc_p_l.textContent              = latest_consolidated_returns_data.perc_fin_total_p_l
-day_p_l.textContent               = latest_consolidated_returns_data.fin_day_p_l.toLocaleString('en-IN')
-perc_day_p_l.textContent          = latest_consolidated_returns_data.perc_fin_day_p_l
+total_invested_amount.textContent = `₹ ${latest_consolidated_returns_data.fin_invested_amount.toLocaleString('en-IN')}`
+current_value.textContent         = `₹ ${latest_consolidated_returns_data.fin_current_value.toLocaleString('en-IN')}`
+previous_value.textContent        = `₹ ${latest_consolidated_returns_data.fin_previous_value.toLocaleString('en-IN')}`
+p_l.textContent                   = `₹ ${latest_consolidated_returns_data.fin_total_p_l.toLocaleString('en-IN')}`
+perc_p_l.textContent              = `${latest_consolidated_returns_data.perc_fin_total_p_l} %`
+day_p_l.textContent               = `₹ ${latest_consolidated_returns_data.fin_day_p_l.toLocaleString('en-IN')}`
+perc_day_p_l.textContent          = `${latest_consolidated_returns_data.perc_fin_day_p_l} %`
 }
 
 if(consolidated_returns_data.data.latest_agg_data){
@@ -412,44 +414,226 @@ latest_agg_returns_data = consolidated_returns_data.data.latest_agg_data
 
 latest_agg_returns_data.forEach(element => {
 if(element.portfolio_type == "Mutual Funds"){
-mf_invested_amount.textContent                     = element.agg_total_invested_amount.toLocaleString('en-IN')
-mf_current_value.textContent                       = element.agg_current_value.toLocaleString('en-IN')
-mf_previous_value.textContent                      = element.agg_previous_value.toLocaleString('en-IN')
-mf_p_l.textContent                                 = element.agg_total_p_l.toLocaleString('en-IN')
-mf_perc_p_l.textContent                            = element.perc_agg_total_p_l
-mf_day_p_l.textContent                             = element.agg_day_p_l.toLocaleString('en-IN')
-mf_perc_day_p_l.textContent                        = element.perc_agg_day_p_l
+mf_invested_amount.textContent                     = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+mf_current_value.textContent                       = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+mf_previous_value.textContent                      = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+mf_p_l.textContent                                 = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+mf_perc_p_l.textContent                            = `${element.perc_agg_total_p_l} %`
+mf_day_p_l.textContent                             = `₹ ${element.agg_day_p_l.toLocaleString('en-IN')}`
+mf_perc_day_p_l.textContent                        = `${element.perc_agg_day_p_l} %`
 }
 else if(element.portfolio_type == "Unrealised Swing Stocks"){
-unrealised_swing_invested_amount.textContent       = element.agg_total_invested_amount.toLocaleString('en-IN')
-unrealised_swing_current_value.textContent         = element.agg_current_value.toLocaleString('en-IN')
-unrealised_swing_previous_value.textContent        = element.agg_previous_value.toLocaleString('en-IN')
-unrealised_swing_p_l.textContent                   = element.agg_total_p_l.toLocaleString('en-IN')
-unrealised_swing_perc_p_l.textContent              = element.perc_agg_total_p_l
-unrealised_swing_day_p_l.textContent               = element.agg_day_p_l.toLocaleString('en-IN')
-unrealised_swing_perc_day_p_l.textContent          = element.perc_agg_day_p_l
+unrealised_swing_invested_amount.textContent       = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+unrealised_swing_current_value.textContent         = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+unrealised_swing_previous_value.textContent        = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+unrealised_swing_p_l.textContent                   = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+unrealised_swing_perc_p_l.textContent              = `${element.perc_agg_total_p_l} %`
+unrealised_swing_day_p_l.textContent               = `₹ ${element.agg_day_p_l.toLocaleString('en-IN')}`
+unrealised_swing_perc_day_p_l.textContent          = `${element.perc_agg_day_p_l} %`
 }
 else if(element.portfolio_type == "Realised Swing Stocks"){
-realised_swing_invested_amount.textContent         = element.agg_total_invested_amount.toLocaleString('en-IN')
-realised_swing_current_value.textContent           = element.agg_current_value.toLocaleString('en-IN')
-realised_swing_previous_value.textContent          = element.agg_previous_value.toLocaleString('en-IN')
-realised_swing_p_l.textContent                     = element.agg_total_p_l.toLocaleString('en-IN')
-realised_swing_perc_p_l.textContent                = element.perc_agg_total_p_l
+realised_swing_invested_amount.textContent         = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+realised_swing_current_value.textContent           = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+realised_swing_previous_value.textContent          = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+realised_swing_p_l.textContent                     = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+realised_swing_perc_p_l.textContent                = `${element.perc_agg_total_p_l} %`
 }
 else if(element.portfolio_type == "Intraday Stocks"){
-realised_intraday_invested_amount.textContent      = element.agg_total_invested_amount.toLocaleString('en-IN')
-realised_intraday_current_value.textContent        = element.agg_current_value.toLocaleString('en-IN')
-realised_intraday_previous_value.textContent       = element.agg_previous_value.toLocaleString('en-IN')
-realised_intraday_p_l.textContent                  = element.agg_total_p_l.toLocaleString('en-IN')
-realised_intraday_perc_p_l.textContent             = element.perc_agg_total_p_l
+realised_intraday_invested_amount.textContent      = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+realised_intraday_current_value.textContent        = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+realised_intraday_previous_value.textContent       = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+realised_intraday_p_l.textContent                  = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+realised_intraday_perc_p_l.textContent             = `${element.perc_agg_total_p_l} %`
 }
 })
+}
+
+if(consolidated_returns_data.data.agg_data){
+agg_returns_data = consolidated_returns_data.data.agg_data
+}
+
+if(consolidated_returns_data.data.cons_data){
+cons_returns_data = consolidated_returns_data.data.cons_data
 }
 
 // Reveal Processing Date Picker
 
 const processing_date = document.getElementsByName("processing_date")
 processing_date.forEach(element => element.classList = "")
+
+const processing_date_input = document.getElementById("processing_date")
+processing_date_input.value = latest_consolidated_returns_data.processing_date
+
+await add_class_list_based_on_value();
+
+processing_date_input.addEventListener("change", e => change_processing_date(e))
+
+}
+
+async function add_class_list_based_on_value(){
+
+const p_l_value = Number(p_l.textContent.split(" ")[1].replaceAll(",",""))
+if (p_l_value > 0){
+p_l.classList = "color-profit"
+} else if (p_l_value < 0){
+p_l.classList = "color-loss"
+} else{
+p_l.classList = "color-neutral"
+}
+
+const perc_p_l_value = Number(perc_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (perc_p_l_value > 0){
+perc_p_l.classList = "color-profit"
+} else if (perc_p_l_value < 0){
+perc_p_l.classList = "color-loss"
+} else{
+perc_p_l.classList = "color-neutral"
+}
+
+const day_p_l_value = Number(day_p_l.textContent.split(" ")[1].replaceAll(",",""))
+if (day_p_l_value > 0){
+day_p_l.classList = "color-profit"
+} else if (day_p_l_value < 0){
+day_p_l.classList = "color-loss"
+} else{
+day_p_l.classList = "color-neutral"
+}
+
+const perc_day_p_l_value = Number(perc_day_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (perc_day_p_l_value > 0){
+perc_day_p_l.classList = "color-profit"
+} else if (perc_day_p_l_value < 0){
+perc_day_p_l.classList = "color-loss"
+} else{
+perc_day_p_l.classList = "color-neutral"
+}
+
+const mf_p_l_value = Number(mf_p_l.textContent.split(" ")[1].replaceAll(",",""))
+const mf_card      = document.getElementById("mf_card")
+if (mf_p_l_value > 0){
+mf_p_l.classList  = "color-profit"
+mf_card.classList += " border-left-profit"
+} else if (mf_p_l_value < 0){
+mf_p_l.classList  = "color-loss"
+mf_card.classList += " border-left-loss"
+} else{
+mf_p_l.classList  = "color-neutral"
+mf_card.classList += " border-left-neutral"
+}
+
+const mf_perc_p_l_value = Number(mf_perc_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (mf_perc_p_l_value > 0){
+mf_perc_p_l.classList  = "color-profit"
+} else if (mf_perc_p_l_value < 0){
+mf_perc_p_l.classList  = "color-loss"
+} else{
+mf_perc_p_l.classList  = "color-neutral"
+}
+
+const mf_day_p_l_value = Number(mf_day_p_l.textContent.split(" ")[1].replaceAll(",",""))
+if (mf_day_p_l_value > 0){
+mf_day_p_l.classList  = "color-profit"
+} else if (mf_day_p_l_value < 0){
+mf_day_p_l.classList  = "color-loss"
+} else{
+mf_day_p_l.classList  = "color-neutral"
+}
+
+const mf_perc_day_p_l_value = Number(mf_perc_day_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (mf_perc_day_p_l_value > 0){
+mf_perc_day_p_l.classList  = "color-profit"
+} else if (mf_perc_day_p_l_value < 0){
+mf_perc_day_p_l.classList  = "color-loss"
+} else{
+mf_perc_day_p_l.classList  = "color-neutral"
+}
+
+
+const unrealised_swing_p_l_value = Number(unrealised_swing_p_l.textContent.split(" ")[1].replaceAll(",",""))
+const unrealised_swing_card      = document.getElementById("unrealised_swing_card")
+if (unrealised_swing_p_l_value > 0){
+unrealised_swing_p_l.classList  = "color-profit"
+unrealised_swing_card.classList += " border-left-profit"
+} else if (unrealised_swing_p_l_value < 0){
+unrealised_swing_p_l.classList  = "color-loss"
+unrealised_swing_card.classList += " border-left-loss"
+} else{
+unrealised_swing_p_l.classList  = "color-neutral"
+unrealised_swing_card.classList += " border-left-neutral"
+}
+
+const unrealised_swing_perc_p_l_value = Number(unrealised_swing_perc_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (unrealised_swing_perc_p_l_value > 0){
+unrealised_swing_perc_p_l.classList  = "color-profit"
+} else if (unrealised_swing_perc_p_l_value < 0){
+unrealised_swing_perc_p_l.classList  = "color-loss"
+} else{
+unrealised_swing_perc_p_l.classList  = "color-neutral"
+}
+
+const unrealised_swing_day_p_l_value = Number(unrealised_swing_day_p_l.textContent.split(" ")[1].replaceAll(",",""))
+if (unrealised_swing_day_p_l_value > 0){
+unrealised_swing_day_p_l.classList  = "color-profit"
+} else if (unrealised_swing_day_p_l_value < 0){
+unrealised_swing_day_p_l.classList  = "color-loss"
+} else{
+unrealised_swing_day_p_l.classList  = "color-neutral"
+}
+
+const unrealised_swing_perc_day_p_l_value = Number(unrealised_swing_perc_day_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (unrealised_swing_perc_day_p_l_value > 0){
+unrealised_swing_perc_day_p_l.classList  = "color-profit"
+} else if (unrealised_swing_perc_day_p_l_value < 0){
+unrealised_swing_perc_day_p_l.classList  = "color-loss"
+} else{
+unrealised_swing_perc_day_p_l.classList  = "color-neutral"
+}
+
+
+const realised_swing_p_l_value = Number(realised_swing_p_l.textContent.split(" ")[1].replaceAll(",",""))
+const realised_swing_card      = document.getElementById("realised_swing_card")
+if (realised_swing_p_l_value > 0){
+realised_swing_p_l.classList  = "color-profit"
+realised_swing_card.classList += " border-left-profit"
+} else if (realised_swing_p_l_value < 0){
+realised_swing_p_l.classList  = "color-loss"
+realised_swing_card.classList += " border-left-loss"
+} else{
+realised_swing_p_l.classList  = "color-neutral"
+realised_swing_card.classList += " border-left-neutral"
+}
+
+const realised_swing_perc_p_l_value = Number(realised_swing_perc_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (realised_swing_perc_p_l_value > 0){
+realised_swing_perc_p_l.classList  = "color-profit"
+} else if (realised_swing_perc_p_l_value < 0){
+realised_swing_perc_p_l.classList  = "color-loss"
+} else{
+realised_swing_perc_p_l.classList  = "color-neutral"
+}
+
+
+const realised_intraday_p_l_value = Number(realised_intraday_p_l.textContent.split(" ")[1].replaceAll(",",""))
+const realised_intraday_card      = document.getElementById("realised_intraday_card")
+if (realised_intraday_p_l_value > 0){
+realised_intraday_p_l.classList  = "color-profit"
+realised_intraday_card.classList += " border-left-profit"
+} else if (realised_intraday_p_l_value < 0){
+realised_intraday_p_l.classList  = "color-loss"
+realised_intraday_card.classList += " border-left-loss"
+} else{
+realised_intraday_p_l.classList  = "color-neutral"
+realised_intraday_card.classList += " border-left-neutral"
+}
+
+const realised_intraday_perc_p_l_value = Number(realised_intraday_perc_p_l.textContent.split(" ")[0].replaceAll(",",""))
+if (realised_intraday_perc_p_l_value > 0){
+realised_intraday_perc_p_l.classList  = "color-profit"
+} else if (realised_intraday_perc_p_l_value < 0){
+realised_intraday_perc_p_l.classList  = "color-loss"
+} else{
+realised_intraday_perc_p_l.classList  = "color-neutral"
+}
 }
 
 async function create_consolidated_notification(){
@@ -464,4 +648,106 @@ if (create_table_status              == "Success" &&
     get_consolidated_hist_status     == "Success"){
     create_notification('All scheduled background processes executed successfully.', 'success')
     }
+}
+
+async function change_processing_date(e){
+e.preventDefault();
+processing_date_value = document.getElementById("processing_date").value
+
+let found_cons_data = 0
+
+cons_returns_data.forEach(element => {
+if(element.processing_date == processing_date_value || (processing_date_value > element.processing_date && processing_date_value < element.next_processing_date)){
+total_invested_amount.textContent = `₹ ${element.fin_invested_amount.toLocaleString('en-IN')}`
+current_value.textContent         = `₹ ${element.fin_current_value.toLocaleString('en-IN')}`
+previous_value.textContent        = `₹ ${element.fin_previous_value.toLocaleString('en-IN')}`
+p_l.textContent                   = `₹ ${element.fin_total_p_l.toLocaleString('en-IN')}`
+perc_p_l.textContent              = `${element.perc_fin_total_p_l} %`
+day_p_l.textContent               = `₹ ${element.fin_day_p_l.toLocaleString('en-IN')}`
+perc_day_p_l.textContent          = `${element.perc_fin_day_p_l} %`
+found_cons_data                   = 1
+}
+})
+
+if (found_cons_data == 0) {
+total_invested_amount.textContent = "₹ 0"
+current_value.textContent         = "₹ 0"
+previous_value.textContent        = "₹ 0"
+p_l.textContent                   = "₹ 0"
+perc_p_l.textContent              = "0 %"
+day_p_l.textContent               = "₹ 0"
+perc_day_p_l.textContent          = "0 %"
+}
+
+let found_agg_data = 0
+
+agg_returns_data.forEach(element => {
+if(element.processing_date == processing_date_value || (processing_date_value > element.processing_date && processing_date_value < element.next_processing_date)){
+found_agg_data = 1
+if(element.portfolio_type == "Mutual Funds"){
+mf_invested_amount.textContent                     = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+mf_current_value.textContent                       = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+mf_previous_value.textContent                      = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+mf_p_l.textContent                                 = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+mf_perc_p_l.textContent                            = `${element.perc_agg_total_p_l} %`
+mf_day_p_l.textContent                             = `₹ ${element.agg_day_p_l.toLocaleString('en-IN')}`
+mf_perc_day_p_l.textContent                        = `${element.perc_agg_day_p_l} %`
+}
+else if(element.portfolio_type == "Unrealised Swing Stocks"){
+unrealised_swing_invested_amount.textContent       = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+unrealised_swing_current_value.textContent         = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+unrealised_swing_previous_value.textContent        = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+unrealised_swing_p_l.textContent                   = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+unrealised_swing_perc_p_l.textContent              = `${element.perc_agg_total_p_l} %`
+unrealised_swing_day_p_l.textContent               = `₹ ${element.agg_day_p_l.toLocaleString('en-IN')}`
+unrealised_swing_perc_day_p_l.textContent          = `${element.perc_agg_day_p_l} %`
+}
+else if(element.portfolio_type == "Realised Swing Stocks"){
+realised_swing_invested_amount.textContent         = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+realised_swing_current_value.textContent           = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+realised_swing_previous_value.textContent          = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+realised_swing_p_l.textContent                     = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+realised_swing_perc_p_l.textContent                = `${element.perc_agg_total_p_l} %`
+}
+else if(element.portfolio_type == "Intraday Stocks"){
+realised_intraday_invested_amount.textContent      = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
+realised_intraday_current_value.textContent        = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
+realised_intraday_previous_value.textContent       = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
+realised_intraday_p_l.textContent                  = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+realised_intraday_perc_p_l.textContent             = `${element.perc_agg_total_p_l} %`
+}
+}
+})
+
+if(found_agg_data == 0){
+mf_invested_amount.textContent                     = "₹ 0"
+mf_current_value.textContent                       = "₹ 0"
+mf_previous_value.textContent                      = "₹ 0"
+mf_p_l.textContent                                 = "₹ 0"
+mf_perc_p_l.textContent                            = "0 %"
+mf_day_p_l.textContent                             = "₹ 0"
+mf_perc_day_p_l.textContent                        = "0 %"
+
+unrealised_swing_invested_amount.textContent       = "₹ 0"
+unrealised_swing_current_value.textContent         = "₹ 0"
+unrealised_swing_previous_value.textContent        = "₹ 0"
+unrealised_swing_p_l.textContent                   = "₹ 0"
+unrealised_swing_perc_p_l.textContent              = "0 %"
+unrealised_swing_day_p_l.textContent               = "₹ 0"
+unrealised_swing_perc_day_p_l.textContent          = "0 %"
+
+realised_swing_invested_amount.textContent         = "₹ 0"
+realised_swing_current_value.textContent           = "₹ 0"
+realised_swing_previous_value.textContent          = "₹ 0"
+realised_swing_p_l.textContent                     = "₹ 0"
+realised_swing_perc_p_l.textContent                = "0 %"
+
+realised_intraday_invested_amount.textContent      = "₹ 0"
+realised_intraday_current_value.textContent        = "₹ 0"
+realised_intraday_previous_value.textContent       = "₹ 0"
+realised_intraday_p_l.textContent                  = "₹ 0"
+realised_intraday_perc_p_l.textContent             = "0 %"
+}
+
+add_class_list_based_on_value()
 }

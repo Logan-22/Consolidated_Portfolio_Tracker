@@ -1,3 +1,6 @@
+import { create_notification } from './create_notification.js'
+//create_notification(message, type, duration)
+
 // Insert into corresponding NAV Table when the site loads
 
 // Method : GET
@@ -7,9 +10,18 @@
 let latest_consolidated_returns_data;
 let latest_agg_returns_data;
 let processing_date_value;
+let create_table_status;
+let create_view_status;
+let dup_check_status;
+let mf_hist_status;
+let realised_intraday_hist_status;
+let realised_swing_hist_status;
+let unrealised_swing_hist_status;
+let process_consolidated_hist_status;
+let get_consolidated_hist_status;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  if (document.getElementById('index_nav')) {
+  if (document.getElementById('container')) {
     await create_managed_tables_in_db()
     await create_portfolio_views_in_db()
     await upsert_price_table()
@@ -19,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await upsert_unrealised_swing_stock_hist_returns_table()
     await upsert_consolidated_hist_returns()
     await get_consolidated_hist_returns()
+    await create_consolidated_notification()
     }
   }
 );
@@ -31,36 +44,30 @@ const create_table_response=  await fetch ('/api/create_managed_tables/', {
   method: 'GET'
 })
 
-const create_table_data_from_response = await create_table_response.json();
+const create_table_data = await create_table_response.json();
 
-const resultDiv = document.getElementById('result')
+create_table_status = create_table_data.status
+if(create_table_status != "Success"){
+create_notification(create_table_data.message, create_table_data.status)
+}
 
-if(create_table_data_from_response.status === "Success"){
-    resultDiv.innerHTML += `<strong>${create_table_data_from_response.message}</strong></br>`
-}
-else{
-    resultDiv.innerHTML += `<strong>${create_table_data_from_response.message}</strong></br>`
-}
 }
 
 // Create Portfolio Views in DB
 
 async function create_portfolio_views_in_db(){
 
-const replace_view_response=  await fetch ('/api/create_portfolio_views/', {
+const create_view_response=  await fetch ('/api/create_portfolio_views/', {
   method: 'GET'
 })
 
-const replace_view_data = await replace_view_response.json();
+const create_view_data = await create_view_response.json();
 
-const resultDiv = document.getElementById('result')
+create_view_status = create_view_data.status
+if(create_view_status != "Success"){
+create_notification(create_view_data.message, create_view_data.status)
+}
 
-if(replace_view_data.status === "Success"){
-    resultDiv.innerHTML += `<strong>${replace_view_data.message}</strong></br>`
-}
-else{
-    resultDiv.innerHTML += `<strong>${replace_view_data.message}</strong></br>`
-}
 }
 
 async function upsert_price_table(){
@@ -116,18 +123,12 @@ method: 'GET'
 
 const dup_check_data_from_response = await dup_check_response.json();
 
-const resultDiv = document.getElementById('result')
-if(dup_check_data_from_response.status === "Success"){
-    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.message}</strong></br>`
-    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.status}</strong></br>`
-}
-else{
-    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.message}</strong></br>`
-    resultDiv.innerHTML += `<strong>${dup_check_data_from_response.status}</strong></br>`
-    dup_check_data_from_response.dup_check_data.forEach( element => {
-    resultDiv.innerHTML += `<strong>Alt Symbol ${element.alt_symbol} is having ${element.count} entries for ${element.value_date} Date</strong></br>`
-    })
-    }
+dup_check_status = dup_check_data_from_response.status
+if(dup_check_status != "Success"){
+dup_check_data_from_response.dup_check_data.forEach( duplicate => {
+create_notification(`Symbol ${duplicate.alt_symbol} is having ${duplicate.count} entries for ${duplicate.value_date} Date`, dup_check_data_from_response.status)
+})}
+
 }
 
 // GET /api/mf_hist_returns/max_date/
@@ -171,23 +172,22 @@ const day = String(min_value_date.getDate()).padStart(2, '0');
 
 const end_date = `${year}-${month}-${day}` // Least date present in all NAV Tables
 
-const response = await fetch (`/api/mf_hist_returns/${max_next_proc_date_in_mf_hist_returns}/${end_date}`, {
+const mf_hist_returns_response = await fetch (`/api/mf_hist_returns/${max_next_proc_date_in_mf_hist_returns}/${end_date}`, {
   method: 'GET'
 })
 
-const data = await response.json();
+const mf_hist_returns_data = await mf_hist_returns_response.json();
 
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
-resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+mf_hist_status = mf_hist_returns_data.status
+if(mf_hist_status != "Success"){
+create_notification(mf_hist_returns_data.message, mf_hist_returns_data.status)
+}
+
 }
 else
 {
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML += '<strong>Partial Load in the PRICE_TABLE</strong></br>'
-resultDiv.innerHTML += '<strong>Error since ALT_SYMBOL(s) not present in PRICE_TABLE table</strong></br>'
+create_notification('Partial Load in the PRICE_TABLE', 'error')
 }
-
 }
 
 // GET /api/realised_intraday_stock_hist_returns/max_trade_date/
@@ -207,15 +207,16 @@ const day = String(today.getDate()).padStart(2, '0');
 
 const end_date = `${year}-${month}-${day}`
 
-const response = await fetch (`/api/realised_intraday_stock_hist_returns/${realised_stock_hist_max_trade_date}/${end_date}`, {
+const realised_intraday_hist_returns_response = await fetch (`/api/realised_intraday_stock_hist_returns/${realised_stock_hist_max_trade_date}/${end_date}`, {
   method: 'GET'
 })
 
-const data = await response.json();
+const realised_intraday_hist_returns_data = await realised_intraday_hist_returns_response.json();
 
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
-resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+realised_intraday_hist_status = realised_intraday_hist_returns_data.status
+if(realised_intraday_hist_status != "Success"){
+create_notification(realised_intraday_hist_returns_data.message, realised_intraday_hist_returns_data.status)
+}
 
 }
 
@@ -236,15 +237,16 @@ const day = String(today.getDate()).padStart(2, '0');
 
 const end_date = `${year}-${month}-${day}`
 
-const response = await fetch (`/api/realised_swing_stock_hist_returns/${realised_swing_stock_hist_max_trade_close_date}/${end_date}`, {
+const realised_swing_hist_returns_response = await fetch (`/api/realised_swing_stock_hist_returns/${realised_swing_stock_hist_max_trade_close_date}/${end_date}`, {
   method: 'GET'
 })
 
-const data = await response.json();
+const realised_swing_hist_returns_data = await realised_swing_hist_returns_response.json();
 
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
-resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+realised_swing_hist_status = realised_swing_hist_returns_data.status
+if(realised_swing_hist_status != "Success"){
+create_notification(realised_swing_hist_returns_data.message, realised_swing_hist_returns_data.status)
+}
 
 }
 
@@ -287,23 +289,22 @@ const day = String(min_value_date.getDate()).padStart(2, '0');
 
 const end_date = `${year}-${month}-${day}` // Least date present in all NAV Tables
 
-const response = await fetch (`/api/unrealised_stock_hist_returns/${max_next_proc_date_in_unrealised_returns}/${end_date}`, {
+const unrealised_swing_returns_response = await fetch (`/api/unrealised_stock_hist_returns/${max_next_proc_date_in_unrealised_returns}/${end_date}`, {
   method: 'GET'
 })
 
-const data = await response.json();
+const unrealised_swing_returns_data = await unrealised_swing_returns_response.json();
 
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML += `<strong>${data.message}</strong></br>`
-resultDiv.innerHTML += `<strong>${data.status}</strong></br>`
+unrealised_swing_hist_status = unrealised_swing_returns_data.status
+if(unrealised_swing_hist_status != "Success"){
+create_notification(unrealised_swing_returns_data.message, unrealised_swing_returns_data.status)
+}
+
 }
 else
 {
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML += '<strong>Partial Load in the PRICE_TABLE</strong></br>'
-resultDiv.innerHTML += '<strong>Error since ALT_SYMBOL(s) not present in PRICE_TABLE table</strong></br>'
+create_notification('Partial Load in the PRICE_TABLE', 'error')
 }
-
 }
 
 async function upsert_consolidated_hist_returns(){
@@ -339,9 +340,11 @@ const process_consolidated_returns_response = await fetch (`/api/consolidated_st
 
 const process_consolidated_returns_data = await process_consolidated_returns_response.json();
 
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML += `<strong>${process_consolidated_returns_data.message}</strong></br>`
-resultDiv.innerHTML += `<strong>${process_consolidated_returns_data.status}</strong></br>`
+process_consolidated_hist_status = process_consolidated_returns_data.status
+if(process_consolidated_hist_status != "Success"){
+create_notification(process_consolidated_returns_data.message, process_consolidated_returns_data.status)
+}
+
 }
 
 async function get_consolidated_hist_returns(){
@@ -350,7 +353,11 @@ const consolidated_returns_response = await fetch ('/api/consolidated_hist_retur
 })
 
 const consolidated_returns_data = await consolidated_returns_response.json();
-console.log(consolidated_returns_data)
+
+get_consolidated_hist_status = consolidated_returns_data.status
+if(get_consolidated_hist_status != "Success"){
+create_notification(consolidated_returns_data.message, consolidated_returns_data.status)
+}
 
 const total_invested_amount = document.getElementById("total_invested_amount")
 const current_value         = document.getElementById("current_value")
@@ -391,12 +398,12 @@ const realised_intraday_perc_p_l        = document.getElementById("realised_intr
 if(consolidated_returns_data.data.latest_cons_data){
 latest_consolidated_returns_data = consolidated_returns_data.data.latest_cons_data[0]
 
-total_invested_amount.textContent = latest_consolidated_returns_data.fin_invested_amount
-current_value.textContent         = latest_consolidated_returns_data.fin_current_value
-previous_value.textContent        = latest_consolidated_returns_data.fin_previous_value
-p_l.textContent                   = latest_consolidated_returns_data.fin_total_p_l
+total_invested_amount.textContent = latest_consolidated_returns_data.fin_invested_amount.toLocaleString('en-IN')
+current_value.textContent         = latest_consolidated_returns_data.fin_current_value.toLocaleString('en-IN')
+previous_value.textContent        = latest_consolidated_returns_data.fin_previous_value.toLocaleString('en-IN')
+p_l.textContent                   = latest_consolidated_returns_data.fin_total_p_l.toLocaleString('en-IN')
 perc_p_l.textContent              = latest_consolidated_returns_data.perc_fin_total_p_l
-day_p_l.textContent               = latest_consolidated_returns_data.fin_day_p_l
+day_p_l.textContent               = latest_consolidated_returns_data.fin_day_p_l.toLocaleString('en-IN')
 perc_day_p_l.textContent          = latest_consolidated_returns_data.perc_fin_day_p_l
 }
 
@@ -405,35 +412,35 @@ latest_agg_returns_data = consolidated_returns_data.data.latest_agg_data
 
 latest_agg_returns_data.forEach(element => {
 if(element.portfolio_type == "Mutual Funds"){
-mf_invested_amount.textContent                     = element.agg_total_invested_amount
-mf_current_value.textContent                       = element.agg_current_value
-mf_previous_value.textContent                      = element.agg_previous_value
-mf_p_l.textContent                                 = element.agg_total_p_l
+mf_invested_amount.textContent                     = element.agg_total_invested_amount.toLocaleString('en-IN')
+mf_current_value.textContent                       = element.agg_current_value.toLocaleString('en-IN')
+mf_previous_value.textContent                      = element.agg_previous_value.toLocaleString('en-IN')
+mf_p_l.textContent                                 = element.agg_total_p_l.toLocaleString('en-IN')
 mf_perc_p_l.textContent                            = element.perc_agg_total_p_l
-mf_day_p_l.textContent                             = element.agg_day_p_l
+mf_day_p_l.textContent                             = element.agg_day_p_l.toLocaleString('en-IN')
 mf_perc_day_p_l.textContent                        = element.perc_agg_day_p_l
 }
 else if(element.portfolio_type == "Unrealised Swing Stocks"){
-unrealised_swing_invested_amount.textContent       = element.agg_total_invested_amount
-unrealised_swing_current_value.textContent         = element.agg_current_value
-unrealised_swing_previous_value.textContent        = element.agg_previous_value
-unrealised_swing_p_l.textContent                   = element.agg_total_p_l
+unrealised_swing_invested_amount.textContent       = element.agg_total_invested_amount.toLocaleString('en-IN')
+unrealised_swing_current_value.textContent         = element.agg_current_value.toLocaleString('en-IN')
+unrealised_swing_previous_value.textContent        = element.agg_previous_value.toLocaleString('en-IN')
+unrealised_swing_p_l.textContent                   = element.agg_total_p_l.toLocaleString('en-IN')
 unrealised_swing_perc_p_l.textContent              = element.perc_agg_total_p_l
-unrealised_swing_day_p_l.textContent               = element.agg_day_p_l
+unrealised_swing_day_p_l.textContent               = element.agg_day_p_l.toLocaleString('en-IN')
 unrealised_swing_perc_day_p_l.textContent          = element.perc_agg_day_p_l
 }
 else if(element.portfolio_type == "Realised Swing Stocks"){
-realised_swing_invested_amount.textContent         = element.agg_total_invested_amount
-realised_swing_current_value.textContent           = element.agg_current_value
-realised_swing_previous_value.textContent          = element.agg_previous_value
-realised_swing_p_l.textContent                     = element.agg_total_p_l
+realised_swing_invested_amount.textContent         = element.agg_total_invested_amount.toLocaleString('en-IN')
+realised_swing_current_value.textContent           = element.agg_current_value.toLocaleString('en-IN')
+realised_swing_previous_value.textContent          = element.agg_previous_value.toLocaleString('en-IN')
+realised_swing_p_l.textContent                     = element.agg_total_p_l.toLocaleString('en-IN')
 realised_swing_perc_p_l.textContent                = element.perc_agg_total_p_l
 }
 else if(element.portfolio_type == "Intraday Stocks"){
-realised_intraday_invested_amount.textContent      = element.agg_total_invested_amount
-realised_intraday_current_value.textContent        = element.agg_current_value
-realised_intraday_previous_value.textContent       = element.agg_previous_value
-realised_intraday_p_l.textContent                  = element.agg_total_p_l
+realised_intraday_invested_amount.textContent      = element.agg_total_invested_amount.toLocaleString('en-IN')
+realised_intraday_current_value.textContent        = element.agg_current_value.toLocaleString('en-IN')
+realised_intraday_previous_value.textContent       = element.agg_previous_value.toLocaleString('en-IN')
+realised_intraday_p_l.textContent                  = element.agg_total_p_l.toLocaleString('en-IN')
 realised_intraday_perc_p_l.textContent             = element.perc_agg_total_p_l
 }
 })
@@ -443,30 +450,18 @@ realised_intraday_perc_p_l.textContent             = element.perc_agg_total_p_l
 
 const processing_date = document.getElementsByName("processing_date")
 processing_date.forEach(element => element.classList = "")
-
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
+async function create_consolidated_notification(){
+if (create_table_status              == "Success" &&
+    create_view_status               == "Success" &&
+    dup_check_status                 == "Success" &&
+    mf_hist_status                   == "Success" &&
+    realised_intraday_hist_status    == "Success" &&
+    realised_swing_hist_status       == "Success" &&
+    unrealised_swing_hist_status     == "Success" &&
+    process_consolidated_hist_status == "Success" &&
+    get_consolidated_hist_status     == "Success"){
+    create_notification('All scheduled background processes executed successfully.', 'success')
+    }
 }
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

@@ -1,291 +1,73 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8" />
-    <title>Consolidated Protfolio Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    
-</head>
-<header>
-    <nav id = "index_nav">
-        <a href = "/">Home</a>
-        <a href = "/hist_price">Historic Price</a>
-        <a href = "/metadata">Metadata Entry</a>
-        <a href = "/mf_order">Mutual Funds Order Entry</a>
-        <a href = "/stock_order_pdf">Stock Order PDF</a>
-        <a href = "/additional_links">Additional Links</a>
-        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
-    </nav>
-</header>
+{% extends "base.html" %}
 
-<body>
-<h1>Consolidated Portfolio Tracker</h1>
+{% block title %}Consolidated Portfolio Tracker{% endblock %}
 
-
-<div class = "container">
-    <section class="consolidated_returns">
-        <div>
-            <label for = "processing_date">
-            <b name = "processing_date" class="hidden">Processing Date</b></label></br>
-            <input type = "date" id = "processing_date" name = "processing_date" class="hidden" placeholder="Enter the Processing Date" autocomplete="off"></br>
-        </div>
-        <div class = "summary_card">
-            <div class = "card">
-                <p>Total Invested Amount</p>
-                <h2 id ="total_invested_amount" class="neutral">
-                    ₹...
-                </h2>
-            </div>
-            <div class = "card">
-                <p>Current Value</p>
-                <h2 id ="current_value" class="neutral">
-                    ₹...
-                </h2>
-            </div>
-            <div class = "card">
-                <p>Previous Value</p>
-                <h2 id ="previous_value" class="neutral">
-                    ₹...
-                </h2>
-            </div>
-            <div class = "card">
-                <p>Profit/Loss</p>
-                <h2 id ="p_l" class="neutral">
-                    ₹...
-                </h2>
-            </div>
-            <div class = "card">
-                <p>Profit/Loss %</p>
-                <h2 id ="perc_p_l" class="neutral">
-                    %...
-                </h2>
-            </div>
-            <div class = "card">
-                <p> Day P/L</p>
-                <h2 id ="day_p_l" class="neutral">
-                    ₹...
-                </h2>
-            </div>
-            <div class = "card">
-                <p>Day P/L %</p>
-                <h2 id ="perc_day_p_l" class="neutral">
-                    %...
-                </h2>
-            </div>            
-        </div>
-    </section>
-    <section class="individual_returns">
-        <div class="returns_card" id="mf_card">
-            <h3>Mutual Funds Returns</h3>
-            <div class="return_row">
-                <span>
-                    Total Invested:
-                </span>
-                <span id ="mf_invested_amount" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Current Value:
-                </span>
-                <span id ="mf_current_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Previous Value:
-                </span>
-                <span id ="mf_previous_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss:
-                </span>
-                <span id ="mf_p_l" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss %:
-                </span>
-                <span id ="mf_perc_p_l" class="neutral">
-                    %...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Day P/L:
-                </span>
-                <span id ="mf_day_p_l" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Day P/L %:
-                </span>
-                <span id ="mf_perc_day_p_l" class="neutral">
-                    %...
-                </span>
-            </div>
-        </div>
-
-        <div class="returns_card" id="unrealised_swing_card">
-            <h3>Unrealised Swing Stock Returns</h3>
-            <div class="return_row">
-                <span>
-                    Total Invested:
-                </span>
-                <span id ="unrealised_swing_invested_amount" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Current Value:
-                </span>
-                <span id ="unrealised_swing_current_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Previous Value:
-                </span>
-                <span id ="unrealised_swing_previous_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss:
-                </span>
-                <span id ="unrealised_swing_p_l" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss %:
-                </span>
-                <span id ="unrealised_swing_perc_p_l" class="neutral">
-                    %...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Day P/L:
-                </span>
-                <span id ="unrealised_swing_day_p_l" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Day P/L %:
-                </span>
-                <span id ="unrealised_swing_perc_day_p_l" class="neutral">
-                    %...
-                </span>
-            </div>
-        </div>
-
-        <div class="returns_card" id="realised_swing_card">
-            <h3>Realised Swing Stock Returns</h3>
-            <div class="return_row">
-                <span>
-                    Total Invested:
-                </span>
-                <span id ="realised_swing_invested_amount" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Current Value:
-                </span>
-                <span id ="realised_swing_current_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Previous Value:
-                </span>
-                <span id ="realised_swing_previous_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss:
-                </span>
-                <span id ="realised_swing_p_l" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss %:
-                </span>
-                <span id ="realised_swing_perc_p_l" class="neutral">
-                    %...
-                </span>
-            </div>
-        </div>
-
-        <div class="returns_card" id="realised_intraday_card">
-            <h3>Realised Intraday Stock Returns</h3>
-            <div class="return_row">
-                <span>
-                    Total Invested:
-                </span>
-                <span id ="realised_intraday_invested_amount" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Current Value:
-                </span>
-                <span id ="realised_intraday_current_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Previous Value:
-                </span>
-                <span id ="realised_intraday_previous_value" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss:
-                </span>
-                <span id ="realised_intraday_p_l" class="neutral">
-                    ₹...
-                </span>
-            </div>
-            <div class="return_row">
-                <span>
-                    Profit/Loss %:
-                </span>
-                <span id ="realised_intraday_perc_p_l" class="neutral">
-                    %...
-                </span>
-            </div>
-        </div>
-    </section>
+{% block content %}
+<div class="center-flex">
+    <h1 id="title">📈 Consolidated Portfolio Tracker</h1>
 </div>
 
-<div id = "result"></div>
-<script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
-</body>
-</html>
+<div class="container" id="container">
+<section class="consolidated_returns">
+    <div class="right-flex">
+        <div>
+            <label for="processing_date">
+            <b name="processing_date" class="hidden">Processing Date</b></label><br/>
+            <input type="date" id="processing_date" name="processing_date" class="hidden" placeholder="Enter the Processing Date" autocomplete="off"><br/>
+        </div>
+    </div>
+    <div class="summary_card">
+        {% for id, label, unit in [
+            ("total_invested_amount", "Total Invested Amount", "₹"),
+            ("current_value", "Current Value", "₹"),
+            ("previous_value", "Previous Value", "₹"),
+            ("p_l", "Profit/Loss", "₹"),
+            ("perc_p_l", "Profit/Loss %", "%"),
+            ("day_p_l", "Day P/L", "₹"),
+            ("perc_day_p_l", "Day P/L %", "%")
+        ] %}
+        <div class="card center-flex">
+            <div>
+                <h5 class="card-title">{{ label }}</h5>
+                <h2 id="{{ id }}" class="neutral">{{ unit }}...</h2>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="individual_returns">
+    {% for section in [
+        ("mf", "Mutual Funds Returns"),
+        ("unrealised_swing", "Unrealised Swing Stock Returns"),
+        ("realised_swing", "Realised Swing Stock Returns"),
+        ("realised_intraday", "Realised Intraday Stock Returns")
+    ] %}
+    <div class="returns_card" id="{{ section[0] }}_card">
+        <h3>{{ section[1] }}</h3>
+        {% for suffix, label, unit in [
+            ("invested_amount", "Total Invested", "₹"),
+            ("current_value", "Current Value", "₹"),
+            ("previous_value", "Previous Value", "₹"),
+            ("p_l", "Profit/Loss", "₹"),
+            ("perc_p_l", "Profit/Loss %", "%"),
+            ("day_p_l", "Day P/L", "₹"),
+            ("perc_day_p_l", "Day P/L %", "%")
+        ] %}
+            {% set full_id = section[0] + "_" + suffix %}
+            {% if full_id != "realised_swing_day_p_l" and full_id != "realised_swing_perc_day_p_l" and full_id != "realised_intraday_day_p_l" and full_id != "realised_intraday_perc_day_p_l" %}
+            <div class="return_row">
+                <span>{{ label }}:</span>
+                <span id="{{ full_id }}" class="neutral">{{ unit }}...</span>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type = "module" src="{{ url_for('static', filename='scripts.js') }}" defer></script>
+{% endblock %}

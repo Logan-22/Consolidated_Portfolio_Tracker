@@ -1,22 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8" />
-    <title>Consolidated Protfolio Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<header>
-    <nav>
-        <a href = "/">Home</a>
-        <a href = "/hist_price">Historic Price</a>
-        <a href = "/metadata">Metadata Entry</a>
-        <a href = "/mf_order">Mutual Funds Order Entry</a>
-        <a href = "/stock_order_pdf">Stock Order PDF</a>
-        <a href = "/additional_links">Additional Links</a>
-        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
-    </nav>
-</header>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Stocks Order Entry{% endblock %}
+
+{% block content %}
     <div>
     <form id = "stock_order_entry_form">
 
@@ -102,6 +88,8 @@
     </form>
     </div>
     <div id = "result"></div>
+{% endblock %}
+
+{% block scripts %}
 <script src="{{ url_for('static', filename='stock_order_entry_form.js') }}" defer></script>
-</body>
-</html>
+{% endblock %}

@@ -1,24 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8" />
-    <title>Consolidated Protfolio Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-     <!-- Link to Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<header>
-    <nav>
-        <a href = "/">Home</a>
-        <a href = "/hist_price">Historic Price</a>
-        <a href = "/metadata">Metadata Entry</a>
-        <a href = "/mf_order">Mutual Funds Order Entry</a>
-        <a href = "/stock_order_pdf">Stock Order PDF</a>
-        <a href = "/additional_links">Additional Links</a>
-        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
-    </nav>
-</header>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Process Mutual Funds Historic Returns{% endblock %}
+
+{% block content %}
     <div>
     <form id = "process_mf_hist_returns_form">
 
@@ -30,7 +14,8 @@
     <div>
         <canvas id="navChart"></canvas>
     </div>
-    <div id = "result"></div>
-<script src="{{ url_for('static', filename='process_mf_hist_returns_form.js') }}" defer></script>
-</body>
-</html>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='process_mf_hist_returns_form.js') }}" defer></script>
+{% endblock %}

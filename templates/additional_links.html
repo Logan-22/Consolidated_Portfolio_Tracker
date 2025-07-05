@@ -1,24 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8" />
-    <title>Consolidated Protfolio Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    
-</head>
-<header>
-    <nav id = "index_nav">
-        <a href = "/">Home</a>
-        <a href = "/hist_price">Historic Price</a>
-        <a href = "/metadata">Metadata Entry</a>
-        <a href = "/mf_order">Mutual Funds Order Entry</a>
-        <a href = "/stock_order_pdf">Stock Order PDF</a>
-        <a href = "/additional_links">Additional Links</a>
-        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
-    </nav>
-</header>
+{% extends "base.html" %}
 
-<body>
+{% block title %}Additional Links{% endblock %}
+
+{% block content %}
 <h2><i>Additional Links</i></h2>
     <h3><a href = "/stock_order">Stocks Order Entry</a></h3>
     <h3><a href = "/processing_date">Processing Date</a></h3>
@@ -28,6 +12,4 @@
     <h3><a href = "/process_consolidated_hist_returns">Process Consolidated Historic Returns</a></h3>
     <h3><a href = "/holiday_calendar_setup">Setup Holiday Calendar</a></h3>
     <h3><a href = "/close_trades">Close Trades</a></h3>
-<script src="{{ url_for('static', filename='additonal_links.js') }}" defer></script>
-</body>
-</html>
+{% endblock %}

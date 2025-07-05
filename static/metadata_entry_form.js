@@ -1,3 +1,5 @@
+import { create_notification } from './create_notification.js'
+
 // Metadata Entry into Metadata Table
 
 // Method : POST
@@ -70,42 +72,12 @@ formData.append('fund_manager', fund_manager);
 formData.append('fund_manager_started_on', fund_manager_started_on);
 formData.append('isin', isin);
 
-const response = await fetch(`/api/metadata_store/`, {
+const metadata_post_response = await fetch(`/api/metadata_store/`, {
 method: 'POST',
 body: formData
 })
 
-const data = await response.json();
-const resultDiv = document.getElementById('result')
+const metadata_post_data = await metadata_post_response.json();
 
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-    document.getElementById("metadata_entry_form").reset();
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
+create_notification(metadata_post_data.message, metadata_post_data.status)
 })
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

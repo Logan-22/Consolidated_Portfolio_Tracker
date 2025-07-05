@@ -348,7 +348,7 @@ def create_holiday_date_table():
             RECORD_DELETED_FLAG INTEGER
         )''')
     
-def insert_into_holiday_date_table(holiday_date, holiday_name, holiday_day):
+def insert_into_holiday_dates_table(holiday_date, holiday_name, holiday_day):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("INSERT INTO HOLIDAY_DATES (HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY,  START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?)",
@@ -359,13 +359,17 @@ def insert_into_holiday_date_table(holiday_date, holiday_name, holiday_day):
 def get_holiday_date_from_holiday_dates_table(current_year = '1900'):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY FROM HOLIDAY_DATES WHERE RECORD_DELETED_FLAG = 0 AND START_DATE >= '{current_year}-01-01';")
+    if current_year:
+        cursor.execute(f"SELECT HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY FROM HOLIDAY_DATES WHERE RECORD_DELETED_FLAG = 0 AND START_DATE >= '{current_year}-01-01' ORDER BY HOLIDAY_DATE;")
+    else:
+        cursor.execute(f"SELECT HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY FROM HOLIDAY_DATES WHERE RECORD_DELETED_FLAG = 0 ORDER BY HOLIDAY_DATE;")
     rows = cursor.fetchall()
     conn.close()
     if rows:
         data = [{'holiday_date': row[0], 'holiday_name': row[1], 'holiday_day': row[2]} for row in rows]
         return jsonify(data)
-    return
+    data = [{'holiday_date': None, 'holiday_name': None, 'holiday_day': None}]
+    return jsonify(data)
 
 def truncate_holiday_calendar_table():
     conn = sqlite3.connect(db_path)
@@ -419,10 +423,13 @@ def insert_into_working_date_table(working_date, working_day_name, working_day):
     conn.commit()
     conn.close()
 
-def get_working_date_from_holiday_date_table(current_year = '1900'):
+def get_working_date_from_working_dates_table(current_year = '1900'):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT WORKING_DATE, WORKING_DAY_NAME, WORKING_DAY FROM WORKING_DATES WHERE RECORD_DELETED_FLAG = 0 AND START_DATE >= '{current_year}-01-01';")
+    if current_year:
+        cursor.execute(f"SELECT WORKING_DATE, WORKING_DAY_NAME, WORKING_DAY FROM WORKING_DATES WHERE RECORD_DELETED_FLAG = 0 AND START_DATE >= '{current_year}-01-01' ORDER BY WORKING_DATE;")
+    else:
+        cursor.execute(f"SELECT WORKING_DATE, WORKING_DAY_NAME, WORKING_DAY FROM WORKING_DATES WHERE RECORD_DELETED_FLAG = 0 ORDER BY WORKING_DATE;")
     rows = cursor.fetchall()
     conn.close()
     if rows:
@@ -430,7 +437,6 @@ def get_working_date_from_holiday_date_table(current_year = '1900'):
         return jsonify(data)
     data = [{'working_date': None, 'working_day_name': None, 'working_day': None}]
     return jsonify(data)
-
 
 def truncate_mf_hist_returns_table():
     conn = sqlite3.connect(db_path)

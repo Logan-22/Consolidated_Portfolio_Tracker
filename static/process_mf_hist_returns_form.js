@@ -1,26 +1,34 @@
+import { create_notification } from './create_notification.js'
+
 // GET /api/process_hist_returns/
 // Inserts data into MF_HIST_RETURNS table
 
+let chart;
+
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('navChart')) {
-    init_returns_chart();
+    init_mf_hist_returns_chart();
   }
 });
 
-async function init_returns_chart(){
+async function init_mf_hist_returns_chart(){
 
-const response = await fetch (`/api/mf_hist_returns/`, {
+if(chart){
+  chart.destroy();
+}
+
+const get_mf_hist_returns_response = await fetch (`/api/mf_hist_returns/`, {
   method: 'GET'
 })
 
-const data = await response.json();
-const resultDiv = document.getElementById('result')
+const get_mf_hist_returns_data = await get_mf_hist_returns_response.json();
+console.log(get_mf_hist_returns_data)
 
 const processing_date_array = []
 const perc_total_p_l_array = []
 const perc_day_p_l_array = []
 
-data.data.forEach(mf_hist_return => {
+get_mf_hist_returns_data.data.forEach(mf_hist_return => {
   processing_date_array.push(mf_hist_return.processing_date)
   perc_total_p_l_array.push(mf_hist_return.perc_total_p_l)
   perc_day_p_l_array.push(mf_hist_return.perc_day_p_l)
@@ -28,7 +36,7 @@ data.data.forEach(mf_hist_return => {
 
 const ctx = document.getElementById('navChart').getContext('2d');
 
-new Chart(ctx, {type: 'line',
+chart = new Chart(ctx, {type: 'line',
         data: {labels: processing_date_array,  // Dates on the X-axis
         datasets: [
           {
@@ -80,12 +88,7 @@ new Chart(ctx, {type: 'line',
       });
 
 
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
+create_notification(get_mf_hist_returns_data.message, get_mf_hist_returns_data.status)
 }
 
 
@@ -94,41 +97,15 @@ else{
 document.getElementById('process_mf_hist_returns_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const response = await fetch(`/api/process_mf_hist_returns/`, {
+const mf_hist_returns_response = await fetch(`/api/process_mf_hist_returns/`, {
 method: 'GET'
 })
 
-const data = await response.json();
-const resultDiv = document.getElementById('result')
+const mf_hist_returns_data = await mf_hist_returns_response.json();
 
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-    init_returns_chart()
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
+create_notification(mf_hist_returns_data.message, mf_hist_returns_data.status)
+
+if(mf_hist_returns_data.status === "Success"){
+    init_mf_hist_returns_chart()
 }
 })
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

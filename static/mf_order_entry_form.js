@@ -1,3 +1,5 @@
+import { create_notification } from './create_notification.js'
+
 // MF Order Entry into MF Order Table
 
 // Method : POST
@@ -54,11 +56,10 @@ method: 'GET'
 })
 
 const price_lookup_data = await price_lookup_response.json();
-const resultDiv = document.getElementById('result')
 if (price_lookup_data.price_data.length > 1){
-resultDiv.innerHTML = `<strong>Duplicate Price fetched for ${alt_symbol} on ${purchase_date} from PRICE_TABLE</strong>`
+create_notification(`Duplicate Price Entries present for ${alt_symbol} on ${purchase_date} in PRICE_TABLE`, 'duplicate_issue')
 }else if (! price_lookup_data.price_data[0].price){
-resultDiv.innerHTML = `<strong>No Price fetched for ${alt_symbol} on ${purchase_date} from PRICE_TABLE</strong>`
+create_notification(`No Price Entries present for ${alt_symbol} on ${purchase_date} in PRICE_TABLE`, 'error')
 }
 else{
 const price_during_purchase = price_lookup_data.price_data[0].price
@@ -80,35 +81,6 @@ body: formData
 
 const mf_order_data = await mf_order_response.json();
 
-if(mf_order_data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${mf_order_data.message}</strong>`
-    document.getElementById("mf_order_entry_form").reset();
-}
-else{
-    resultDiv.innerHTML = `<strong>${mf_order_data.message}</strong>`
-}
+create_notification(mf_order_data.message, mf_order_data.status)
 }
 })
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

@@ -1,7 +1,7 @@
-// Historical data fetch
+import { create_notification } from './create_notification.js'
 
 // Method : POST
-// URL    : /get_hist_price/${symbol}
+// URL    : /api/close_trade/
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('opening_trade_id')) {
@@ -34,6 +34,8 @@ const open_trades_response = await fetch ('/api/trades/open/', {
 })
 
 open_trades_data = await open_trades_response.json();
+
+create_notification(open_trades_data.message, open_trades_data.status)
 
 open_trades_data.data.forEach((element,index) => {
   opening_trade_id.innerHTML        += `<option id = "options">${element.trade_id}</option>`
@@ -140,12 +142,11 @@ document.getElementById('close_trades_submit').addEventListener('click', async f
 e.preventDefault();
 let errors_in_close_trade_entries = 0
 const close_trades_data_array = []
-const resultDiv = document.getElementById('result')
 
 const closed_trade_entry_table       = document.getElementById('closed_trade_entry_table')
 const closed_trade_entry_table_child = closed_trade_entry_table.children
 
-for(i = 1; i <= closed_trades_entry_count; i++ ){
+for(let i = 1; i <= closed_trades_entry_count; i++ ){
 
 const close_trades_data = {}
 
@@ -173,25 +174,25 @@ const closing_trade_date_object    = new Date(closing_trade_date)
 if(opening_trade_id == closing_trade_id){
 errors_in_close_trade_entries += 1
 closed_trade_entry_tr.classList = "error"
-resultDiv.innerHTML += `<strong>Opening Trade Id and Closing Trade ID cannot be same</strong><br/>`
+create_notification('Opening Trade Id and Closing Trade ID cannot be same', 'warning')
 }
 
 if(opening_alt_symbol != closing_alt_symbol){
 errors_in_close_trade_entries += 1
 closed_trade_entry_tr.classList = "error"
-resultDiv.innerHTML += `<strong>Opening Stock Symbol and Closing Stock Symbol should be same</strong><br/>`
+create_notification('Opening Stock Symbol and Closing Stock Symbol should be same', 'warning')
 }
 
 if(opening_trade_date_object > closing_trade_date_object){
 errors_in_close_trade_entries += 1
 closed_trade_entry_tr.classList = "error"
-resultDiv.innerHTML += `<strong>Opening Trade Date cannot be greater than Closing Trade Date</strong><br/>`
+create_notification('Opening Trade Date cannot be greater than Closing Trade Date', 'warning')
 }
 
 if(opening_trade_buy_or_sell ==  closing_trade_buy_or_sell){
 errors_in_close_trade_entries += 1
 closed_trade_entry_tr.classList = "error"
-resultDiv.innerHTML += `<strong>Opening Trade and Closing Trade cannot be of the same Buy Or Sell Type</strong><br/>`
+create_notification('Opening Trade and Closing Trade cannot be of the same Buy Or Sell Type', 'warning')
 }
 
 if(errors_in_close_trade_entries == 0){
@@ -217,44 +218,13 @@ if(errors_in_close_trade_entries == 0){
 const formData = new FormData();
 formData.append('close_trades_data_array', JSON.stringify(close_trades_data_array));
 
-const response = await fetch(`/api/close_trade/`, {
+const post_close_trade_response = await fetch(`/api/close_trade/`, {
 method: 'POST',
 body: formData
 })
 
-const data = await response.json();
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-    document.getElementById("close_trades_form").reset();
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
-}
+const post_close_trade_data = await post_close_trade_response.json();
 
+create_notification(post_close_trade_data.message, post_close_trade_data.status)
+}
 })
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

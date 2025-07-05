@@ -22,14 +22,14 @@ get_max_value_date_for_alt_symbol,\
 duplicate_check_on_price_table,\
 create_mf_portfolio_views_in_db,\
 create_holiday_date_table,\
-insert_into_holiday_date_table,\
+insert_into_holiday_dates_table,\
 get_holiday_date_from_holiday_dates_table,\
 truncate_holiday_calendar_table,\
 create_holiday_calendar_table,\
 insert_into_holiday_calendar_table,\
 create_working_date_table,\
 insert_into_working_date_table,\
-get_working_date_from_holiday_date_table,\
+get_working_date_from_working_dates_table,\
 get_first_purchase_date_from_mf_order_date_table,\
 truncate_mf_hist_returns_table,\
 create_mf_hist_returns_table,\
@@ -298,13 +298,13 @@ def holiday_date_entry():
         holiday_date = request.form.get('holiday_date')
         holiday_name = request.form.get('holiday_name')
         holiday_day = request.form.get('holiday_day')
-        insert_into_holiday_date_table(holiday_date, holiday_name, holiday_day)
+        insert_into_holiday_dates_table(holiday_date, holiday_name, holiday_day)
         return jsonify({'message': 'Successfully inserted holiday into HOLIDAY_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
 @api.route('/api/holiday_date/', methods = ['GET'])
-def holiday_date_lookup_all():
+def holiday_date_lookup():
     try:
         current_year = request.args.get('current_year') or None
         data = get_holiday_date_from_holiday_dates_table(current_year)
@@ -329,7 +329,7 @@ def working_date_entry():
 @api.route('/api/working_date/', methods = ['GET'])
 def working_date_lookup():
     try:
-        data = get_working_date_from_holiday_date_table()
+        data = get_working_date_from_working_dates_table()
         data = data.get_json()
         if data[0]['working_date']:
             return jsonify({'data': data,'message': 'Successfully retrieved from WORKING_DATES Table','status': 'Success'})
@@ -349,7 +349,6 @@ def holiday_calendar_setup():
         holiday_dates = holiday_data.replace("[","").replace("]","").replace('"','').split(",")
         working_dates = working_day_data.replace("[","").replace("]","").replace('"','').split(",")
 
-        truncate_holiday_calendar_table()
         create_holiday_calendar_table()
 
         counter_date = datetime.strptime(holiday_calendar_start_date,'%Y-%m-%d')
@@ -794,7 +793,7 @@ def upsert_trade_entry():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/realised_intraday_stock_hist_returns/', methods = ['GET'])
+@api.route('/api/realised_intraday_and_swing_stock_hist_returns/', methods = ['GET'])
 def realised_stock_hist_returns_lookup():
     try:
         data = get_stock_hist_returns_from_realised_intraday_stock_and_swing_stock_hist_returns_table()

@@ -1,15 +1,17 @@
+import { create_notification } from './create_notification.js'
+
 // GET /api/process_consolidated_hist_returns/
 // Inserts data into CONSOLIDATED_HIST_RETURNS table
 
+let chart;
+
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('navChart')) {
-    init_returns_chart();
+    init_consolidated_hist_returns_chart();
   }
 });
 
-let chart;
-
-async function init_returns_chart(){
+async function init_consolidated_hist_returns_chart(){
 
 if (chart){
   chart.destroy()
@@ -20,7 +22,6 @@ const get_consolidated_hist_returns_response = await fetch (`/api/consolidated_h
 })
 
 const get_consolidated_hist_returns_data = await get_consolidated_hist_returns_response.json();
-const resultDiv = document.getElementById('result')
 
 const processing_date_array = []
 const perc_total_p_l_array = []
@@ -88,55 +89,23 @@ chart = new Chart(ctx, {type: 'line',
       });
 }
 
-if(get_consolidated_hist_returns_data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${get_consolidated_hist_returns_data.message}</strong>`
+create_notification(get_consolidated_hist_returns_data.message, get_consolidated_hist_returns_data.status)
 }
-else{
-    resultDiv.innerHTML = `<strong>${get_consolidated_hist_returns_data.message}</strong>`
-}
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 document.getElementById('process_consolidated_hist_returns_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const consolidated_hist_returns_response = await fetch(`/api/process_consolidated_hist_returns/`, {
+const process_consolidated_hist_returns_response = await fetch(`/api/process_consolidated_hist_returns/`, {
 method: 'GET'
 })
 
-const consolidated_hist_returns_data = await consolidated_hist_returns_response.json();
-const resultDiv = document.getElementById('result')
+const process_consolidated_hist_returns_data = await process_consolidated_hist_returns_response.json();
 
-if(consolidated_hist_returns_data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${consolidated_hist_returns_data.message}</strong>`
-    init_returns_chart()
+if(process_consolidated_hist_returns_data.status === "Success"){
+    init_consolidated_hist_returns_chart()
 }
-else{
-    resultDiv.innerHTML = `<strong>${consolidated_hist_returns_data.message}</strong>`
-}
+
+create_notification(process_consolidated_hist_returns_data.message, process_consolidated_hist_returns_data.status)
 })
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

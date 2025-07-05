@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+     <!-- Link to Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<header class="navbar">
+    <nav id="index-nav" class="top-nav">
+        <a href="/">Home</a>
+        <a href="/hist_price">Historic Price</a>
+        <a href="/metadata">Metadata Entry</a>
+        <a href="/mf_order">Mutual Funds Order Entry</a>
+        <a href="/stock_order_pdf">Stock Order PDF</a>
+        <a href="/additional_links">Additional Links</a>
+        <select id="change-theme">
+            <option id ="light-theme-option">Light Theme</option>
+            <option id ="dark-theme-option">Dark Theme</option>
+            <option id ="zerodha-theme-option">Zerodha Theme</option>
+        </select>
+    </nav>
+</header>
+    {% block content %}{% endblock %}
+
+    <!-- Shared theme toggle script -->
+    <script type="module" src="{{ url_for('static', filename='change_theme.js') }}" defer></script>
+
+    <!-- Page-specific scripts -->
+    {% block scripts %}{% endblock %}
+<div id="notification-container" class="notification-container"></div>
+</body>
+</html>

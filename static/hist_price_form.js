@@ -1,3 +1,5 @@
+import { create_notification } from './create_notification.js'
+
 // Historical data fetch
 
 // Method : POST
@@ -73,39 +75,6 @@ body: formData
 
 const price_table_refresh_data = await price_table_refresh_response.json();
 
-const resultDiv = document.getElementById('result')
-
-if(price_table_refresh_data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${price_table_refresh_data.message}</strong>`
-    document.getElementById("hist_price_form").reset();
-}
-else{
-    resultDiv.innerHTML = `<strong>${price_table_refresh_data.message}</strong>`
-}
+create_notification(price_table_refresh_data.message, price_table_refresh_data.status)
 }
 )
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

@@ -1,3 +1,5 @@
+import { create_notification } from './create_notification.js'
+
 // Proc Date Insert/Update into Processing Date Table
 
 // Method : GET
@@ -10,17 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function init_processing_date(){
-const response = await fetch ('/api/processing_date/', {
+const processing_date_response = await fetch ('/api/processing_date/', {
   method: 'GET'
 })
 
-const data = await response.json();
+const processing_date_data = await processing_date_response.json();
 
-if (data.status === 'Failed'){
-const resultDiv = document.getElementById('result')
-resultDiv.innerHTML = `<strong>${data.message}</strong>`
-return
-}
+create_notification(processing_date_data.message, processing_date_data.status)
 
 const mf_proc_date          = document.getElementById('mf_proc_date');
 const mf_next_proc_date     = document.getElementById('mf_next_proc_date');
@@ -34,17 +32,17 @@ const stock_proc_date       = document.getElementById('stock_proc_date');
 const stock_next_proc_date  = document.getElementById('stock_next_proc_date');
 const stock_prev_proc_date  = document.getElementById('stock_prev_proc_date');
 
-mf_proc_date.value      = data.mf_proc_date
-mf_next_proc_date.value = data.mf_next_proc_date
-mf_prev_proc_date.value = data.mf_prev_proc_date
+mf_proc_date.value          = processing_date_data.mf_proc_date
+mf_next_proc_date.value     = processing_date_data.mf_next_proc_date
+mf_prev_proc_date.value     = processing_date_data.mf_prev_proc_date
 
-ppf_mf_proc_date.value      = data.ppf_mf_proc_date
-ppf_mf_next_proc_date.value = data.ppf_mf_next_proc_date
-ppf_mf_prev_proc_date.value = data.ppf_mf_prev_proc_date
+ppf_mf_proc_date.value      = processing_date_data.ppf_mf_proc_date
+ppf_mf_next_proc_date.value = processing_date_data.ppf_mf_next_proc_date
+ppf_mf_prev_proc_date.value = processing_date_data.ppf_mf_prev_proc_date
 
-stock_proc_date.value      = data.stock_proc_date
-stock_next_proc_date.value = data.stock_next_proc_date
-stock_prev_proc_date.value = data.stock_prev_proc_date
+stock_proc_date.value       = processing_date_data.stock_proc_date
+stock_next_proc_date.value  = processing_date_data.stock_next_proc_date
+stock_prev_proc_date.value  = processing_date_data.stock_prev_proc_date
 
 }
 
@@ -79,41 +77,12 @@ formData.append('stock_proc_date', stock_proc_date);
 formData.append('stock_next_proc_date', stock_next_proc_date);
 formData.append('stock_prev_proc_date', stock_prev_proc_date);
 
-const response = await fetch(`/api/processing_date/`, {
+const post_processing_date_response = await fetch(`/api/processing_date/`, {
 method: 'POST',
 body: formData
 })
 
-const data = await response.json();
-const resultDiv = document.getElementById('result')
+const post_processing_date_data = await post_processing_date_response.json();
 
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
+create_notification(post_processing_date_data.message, post_processing_date_data.status)
 })
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

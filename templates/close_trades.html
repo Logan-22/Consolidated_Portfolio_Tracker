@@ -1,70 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8" />
-    <title>Consolidated Protfolio Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    
-</head>
-<header>
-    <nav>
-        <a href = "/">Home</a>
-        <a href = "/hist_price">Historic Price</a>
-        <a href = "/metadata">Metadata Entry</a>
-        <a href = "/mf_order">Mutual Funds Order Entry</a>
-        <a href = "/stock_order_pdf">Stock Order PDF</a>
-        <a href = "/additional_links">Additional Links</a>
-        <button class="theme-toggle" id="themeToggle">Toggle Mode</button>
-    </nav>
-</header>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Close Trades{% endblock %}
+
+{% block content %}
 <form id="close_trades_form">
 <div id ="close_trades_form_div_parent" class="div_grid_parent">
     <div id ="opening_trades" class="div_child">
     <label for = "opening_trade_id">
-    <b>Opening Trade ID</b></label>
+    <b>Opening Trade ID</b></label><br/>
     <select id = "opening_trade_id" name = "opening_trade_id" placeholder="Select an Opening Trade ID" required></select></br>
 
     <label for = "opening_alt_symbol">
-    <b>Opening Stock Symbol</b>
+    <b>Opening Stock Symbol</b><br/><br/>
     <input type = "text" id = "opening_alt_symbol" name = "opening_alt_symbol" placeholder = "Select an Opening Trade ID to Continue" readonly>
 
     <label for = "opening_trade_date">
-    <b>Opening Trade Date</b>
+    <b>Opening Trade Date</b><br/><br/>
     <input type = "date" id = "opening_trade_date" name="opening_trade_date" placeholder = "Select an Opening Trade ID to Continue" readonly>
 
     <label for = "opening_trade_stock_quantity">
-    <b>Opening Trade Stock Quantity</b>
+    <b>Opening Trade Stock Quantity</b><br/><br/>
     <input type = "number" id = "opening_trade_stock_quantity" name="opening_trade_stock_quantity" placeholder = "Select an Opening Trade ID to Continue" readonly>
 
     <label for = "opening_trade_buy_or_sell">
-    <b>Opening Trade Buy Or Sell</b>
+    <b>Opening Trade Buy Or Sell</b><br/><br/>
     <input type = "text" id = "opening_trade_buy_or_sell" name="opening_trade_buy_or_sell" placeholder = "Select an Opening Trade ID to Continue" readonly>
     </div>
 
     <div id="closing_trades" class="div_child">
     <label for = "closing_trade_id">
-    <b>Closing Trade ID</b></label>
+    <b>Closing Trade ID</b></label><br/>
     <select id = "closing_trade_id" name = "closing_trade_id" placeholder="Select an Closing Trade ID" required></select></br>
 
     <label for = "closing_alt_symbol">
-    <b>Closing Stock Symbol</b>
+    <b>Closing Stock Symbol</b><br/><br/>
     <input type = "text" id = "closing_alt_symbol" name = "closing_alt_symbol" placeholder = "Select an Opening Trade ID to Continue" readonly>
 
     <label for = "closing_trade_date">
-    <b>Closing Trade Date</b>
+    <b>Closing Trade Date</b><br/><br/>
     <input type = "date" id = "closing_trade_date" name="closing_trade_date" placeholder = "Select an Opening Trade ID to Continue" readonly>
 
     <label for = "closing_trade_stock_quantity">
-    <b>Closing Trade Stock Quantity</b>
+    <b>Closing Trade Stock Quantity</b><br/><br/>
     <input type = "number" id = "closing_trade_stock_quantity" name="closing_trade_stock_quantity" placeholder = "Select an Opening Trade ID to Continue" readonly>
 
     <label for = "closing_trade_buy_or_sell">
-    <b>Closing Trade Buy Or Sell</b>
+    <b>Closing Trade Buy Or Sell</b><br/><br/>
     <input type = "text" id = "closing_trade_buy_or_sell" name="closing_trade_buy_or_sell" placeholder = "Select an Opening Trade ID to Continue" readonly>
     </div>
-    <br/>
-
 </div>
 <button type = "submit" class="submit">Add</button>
 </form>
@@ -72,23 +55,23 @@
 <div id="closed_trade_entry">
     <table id="closed_trade_entry_table">
         <tr>
-            <th>Opening Trade ID</th>
-            <th>Opening Stock Symbol</th>
-            <th>Opening Trade Date</th>
-            <th>Opening Stock Quantity</th>
-            <th>Opening Buy Or Sell</th>
-            <th>Closing Trade ID</th>
-            <th>Closing Stock Symbol</th>
-            <th>Closing Trade Date</th>
-            <th>Closing Stock Quantity</th>
-            <th>Closing Buy Or Sell</th>
+            <th class="color-accent">Opening Trade ID</th>
+            <th class="color-accent">Opening Stock Symbol</th>
+            <th class="color-accent">Opening Trade Date</th>
+            <th class="color-accent">Opening Stock Quantity</th>
+            <th class="color-accent">Opening Buy Or Sell</th>
+            <th class="color-accent">Closing Trade ID</th>
+            <th class="color-accent">Closing Stock Symbol</th>
+            <th class="color-accent">Closing Trade Date</th>
+            <th class="color-accent">Closing Stock Quantity</th>
+            <th class="color-accent">Closing Buy Or Sell</th>
         </tr>
     </table>
 </div></br>
 
 <button type = "submit" class="submit" id = "close_trades_submit">Submit</button>
+{% endblock %}
 
-<div id = "result"></div>
-<script src="{{ url_for('static', filename='close_trades.js') }}" defer></script>
-</body>
-</html>
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='close_trades.js') }}" defer></script>
+{% endblock %}

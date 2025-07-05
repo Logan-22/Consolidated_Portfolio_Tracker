@@ -1,31 +1,32 @@
+import { create_notification } from './create_notification.js'
+
 // GET /api/process_realised_intraday_stock_hist_returns/
 // Inserts data into REALISED_INTRADAY_STOCK_HIST_RETURNS table
 
+let chart;
+
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('navChart')) {
-    init_returns_chart();
+    init_realised_intraday_and_swing_stock_hist_returns_chart();
   }
 });
 
-let chart;
-
-async function init_returns_chart(){
+async function init_realised_intraday_and_swing_stock_hist_returns_chart(){
 
 if (chart){
   chart.destroy()
 }
 
-const response = await fetch (`/api/realised_intraday_stock_hist_returns/`, {
+const get_realised_intraday_and_swing_hist_returns_response = await fetch (`/api/realised_intraday_and_swing_stock_hist_returns/`, {
   method: 'GET'
 })
 
-const data = await response.json();
-const resultDiv = document.getElementById('result')
+const get_realised_intraday_and_swing_hist_returns_data = await get_realised_intraday_and_swing_hist_returns_response.json();
 
 const trade_date_array = []
 const perc_p_l_with_leverage_array = []
 
-data.data.forEach(realised_stock_hist_return => {
+get_realised_intraday_and_swing_hist_returns_data.data.forEach(realised_stock_hist_return => {
   trade_date_array.push(realised_stock_hist_return.trade_date)
   perc_p_l_with_leverage_array.push(realised_stock_hist_return.perc_p_l_with_leverage)
 });
@@ -88,12 +89,7 @@ chart = new Chart(ctx, {
   }
 })
 
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
+create_notification(get_realised_intraday_and_swing_hist_returns_data.message, get_realised_intraday_and_swing_hist_returns_data.status)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -101,59 +97,23 @@ else{
 document.getElementById('process_realised_stock_hist_returns_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const response = await fetch(`/api/process_realised_intraday_stock_hist_returns/`, {
+const process_realised_intraday_hist_returns_response = await fetch(`/api/process_realised_intraday_stock_hist_returns/`, {
 method: 'GET'
 })
 
+const process_realised_intraday_hist_returns_data = await process_realised_intraday_hist_returns_response.json();
 
-const data = await response.json();
-const resultDiv = document.getElementById('result')
+create_notification(process_realised_intraday_hist_returns_data.message, process_realised_intraday_hist_returns_data.status)
 
-if(data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
-
-const swing_response = await fetch(`/api/process_realised_swing_stock_hist_returns/`, {
+const process_realised_swing_hist_returns_response = await fetch(`/api/process_realised_swing_stock_hist_returns/`, {
 method: 'GET'
 })
 
-const swing_data = await swing_response.json();
+const process_realised_swing_hist_returns_data = await process_realised_swing_hist_returns_response.json();
 
-if(swing_data.status === "Success"){
-    resultDiv.innerHTML += `<strong>${data.message}</strong>`
-}
-else{
-    resultDiv.innerHTML = `<strong>${data.message}</strong>`
-}
+create_notification(process_realised_swing_hist_returns_data.message, process_realised_swing_hist_returns_data.status)
 
-if(swing_data.status === "Success" && data.status === "Success"){
-  init_returns_chart()
+if(process_realised_intraday_hist_returns_data.status === "Success" && process_realised_swing_hist_returns_data.status === "Success"){
+  init_realised_intraday_and_swing_stock_hist_returns_chart()
 }
-
 })
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

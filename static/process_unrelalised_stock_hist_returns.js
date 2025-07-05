@@ -1,15 +1,17 @@
+import { create_notification } from './create_notification.js'
+
 // GET /api/process_unrealised_stock_hist_returns/
 // Inserts data into UNREALISED_STOCK_HIST_RETURNS table
 
+let chart;
+
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('navChart')) {
-    init_returns_chart();
+    init_unrealised_swing_stock_hist_returns_chart();
   }
 });
 
-let chart;
-
-async function init_returns_chart(){
+async function init_unrealised_swing_stock_hist_returns_chart(){
 
 if (chart){
   chart.destroy()
@@ -20,7 +22,6 @@ const unrealised_stock_hist_returns_response = await fetch ('/api/unrealised_sto
 })
 
 const unrealised_stock_hist_returns_data = await unrealised_stock_hist_returns_response.json();
-const resultDiv = document.getElementById('result')
 
 const processing_date_array = []
 const perc_net_p_l_array = []
@@ -85,15 +86,8 @@ chart = new Chart(ctx, {type: 'line',
         }
       });
 
-
-if(unrealised_stock_hist_returns_data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${unrealised_stock_hist_returns_data.message}</strong>`
+create_notification(unrealised_stock_hist_returns_data.message, unrealised_stock_hist_returns_data.status)
 }
-else{
-    resultDiv.innerHTML = `<strong>${unrealised_stock_hist_returns_data.message}</strong>`
-}
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -105,36 +99,6 @@ method: 'GET'
 })
 
 const unrealised_returns_process_data = await unrealised_returns_process_response.json();
-const resultDiv = document.getElementById('result')
 
-if(unrealised_returns_process_data.status === "Success"){
-    resultDiv.innerHTML = `<strong>${unrealised_returns_process_data.message}</strong>`
-    init_returns_chart()
-}
-else{
-    resultDiv.innerHTML = `<strong>${unrealised_returns_process_data.message}</strong>`
-}
+create_notification(unrealised_returns_process_data.message, unrealised_returns_process_data.status)
 })
-
-// Mode Switch
-
-const toggle = document.getElementById('themeToggle');
-
-  // Load theme from localStorage
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'dark') {
-document.body.classList.add('dark-mode');
-}
-
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-
-      // Save theme choice
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-      } else {
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }

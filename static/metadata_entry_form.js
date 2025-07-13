@@ -46,6 +46,7 @@ e.preventDefault();
 const exchange_symbol         = document.getElementById('exchange_symbol').value;
 const yahoo_symbol            = document.getElementById('yahoo_symbol').value;
 const alt_symbol              = document.getElementById('alt_symbol').value;
+const allocation_category     = document.getElementById('allocation_category').value;
 const portfolio_type          = document.getElementById('portfolio_type').value;
 const amc                     = document.getElementById('amc').value
 const type                    = document.getElementById('type').value
@@ -61,6 +62,7 @@ const formData = new FormData();
 formData.append('exchange_symbol', exchange_symbol);
 formData.append('yahoo_symbol', yahoo_symbol);
 formData.append('alt_symbol', alt_symbol);
+formData.append('allocation_category', allocation_category);
 formData.append('portfolio_type', portfolio_type);
 formData.append('amc', amc);
 formData.append('type', type);

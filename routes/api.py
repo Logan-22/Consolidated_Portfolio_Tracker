@@ -78,7 +78,19 @@ insert_into_agg_consolidated_hist_returns,\
 get_consolidated_hist_returns_from_consolidated_hist_returns_table,\
 get_max_next_proc_date_from_consolidated_hist_returns_table,\
 get_max_proc_date_from_all_hist_tables,\
-get_all_from_consolidated_hist_returns_table
+get_all_from_consolidated_hist_returns_table,\
+get_max_next_proc_date_from_consolidated_hist_allocation_table,\
+truncate_consolidated_hist_allocation_table,\
+create_consolidated_hist_allocation_table,\
+truncate_agg_consolidated_hist_allocation_table,\
+create_agg_consolidated_hist_allocation_table,\
+truncate_consolidated_hist_allocation_portfolio_table,\
+create_consolidated_hist_allocation_portfolio_table,\
+get_metrics_from_agg_consolidated_allocation_view_and_insert_into_agg_consolidated_allocation_table,\
+get_metrics_from_fin_consolidated_allocation_view_and_insert_into_fin_consolidated_allocation_table,\
+get_metrics_from_fin_consolidated_allocation_portfolio_view_and_insert_into_fin_consolidated_allocation_portfolio_table,\
+get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table,\
+get_all_from_consolidated_hist_allocation_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -137,6 +149,7 @@ def metadata_entry():
         exchange_symbol         = request.form.get('exchange_symbol')
         yahoo_symbol            = request.form.get('yahoo_symbol')
         alt_symbol              = request.form.get('alt_symbol')
+        allocation_category     = request.form.get('allocation_category')
         portfolio_type          = request.form.get('portfolio_type')
         amc                     = request.form.get('amc') or None
         mf_type                 = request.form.get('type') or None
@@ -148,7 +161,7 @@ def metadata_entry():
         fund_manager_started_on = request.form.get('fund_manager_started_on') or None
         isin                    = request.form.get('isin') or None
         create_metadata_store_table()
-        insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin)
+        insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin)
         return jsonify({'message': "Successfully inserted metadata into METADATA_STORE table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
@@ -286,6 +299,9 @@ def create_managed_tables():
         create_unrealised_swing_stock_hist_returns_table()
         create_consolidated_hist_returns_table()
         create_agg_consolidated_hist_returns_table()
+        create_consolidated_hist_allocation_table()
+        create_agg_consolidated_hist_allocation_table()
+        create_consolidated_hist_allocation_portfolio_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'}) 
@@ -1143,5 +1159,79 @@ def consolidated_hist_returns_fetch_all():
         data = get_all_from_consolidated_hist_returns_table()
         data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS and AGG_CONSOLIDATED_RETURNS Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+    
+@api.route('/api/consolidated_hist_allocation/max_next_proc_date/', methods = ['GET'])
+def consolidated_hist_allocation_max_next_proc_date():
+    try:
+        max_proc_date = get_max_next_proc_date_from_consolidated_hist_allocation_table()
+        max_proc_date = max_proc_date.get_json()
+        return jsonify({'data': max_proc_date,'message': 'Successfully retrieved Max Processing Date from CONSOLIDATED_ALLOCATION_RETURNS Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/process_consolidated_hist_allocation/', methods = ['GET'])
+def process_consolidated_hist_allocation():
+    try:
+        start_date = request.args.get('start_date') or None
+        end_date = request.args.get('end_date') or None
+        if not start_date and not end_date:
+            truncate_consolidated_hist_allocation_table()
+            truncate_consolidated_hist_allocation_portfolio_table()
+            truncate_agg_consolidated_hist_allocation_table()
+
+        create_consolidated_hist_allocation_table()
+        create_consolidated_hist_allocation_portfolio_table()
+        create_agg_consolidated_hist_allocation_table()
+
+        if not start_date:
+            first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios()
+            first_purchase_data_across_portfolio_type = first_purchase_data_across_portfolio_type.get_json()
+            start_date = first_purchase_data_across_portfolio_type['first_purchase_date']
+
+        if end_date:
+            end_date = datetime.strptime(end_date,'%Y-%m-%d')
+        else:
+            end_date = datetime.today() + timedelta(days = -5)
+
+        counter_date = datetime.strptime(start_date,'%Y-%m-%d')
+
+        while(counter_date <= end_date):
+
+            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
+            holiday_calendar_data = holiday_calendar_data.get_json()
+            processing_date = holiday_calendar_data[0]['processing_date']
+            next_processing_date = holiday_calendar_data[0]['next_processing_date']
+            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
+
+            update_proc_date_in_processing_date_table('MF_PROC', processing_date, next_processing_date, prev_processing_date)
+            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
+
+            get_metrics_from_agg_consolidated_allocation_view_and_insert_into_agg_consolidated_allocation_table()
+            get_metrics_from_fin_consolidated_allocation_view_and_insert_into_fin_consolidated_allocation_table()
+            get_metrics_from_fin_consolidated_allocation_portfolio_view_and_insert_into_fin_consolidated_allocation_portfolio_table()
+
+            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
+
+        return jsonify({'message': 'Successfully inserted historic Allocation in to AGG_CONSOLIDATED_HIST_ALLOCATION, CONSOLIDATED_HIST_ALLOCATION and CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/consolidated_hist_allocation_portfolio/', methods = ['GET'])
+def consolidated_hist_allocation_portfolio_lookup():
+    try:
+        data = get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table()
+        data = data.get_json()
+        return jsonify({'data': data,'message': 'Successfully retrieved Historic Allocation from CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/consolidated_hist_allocation/all/', methods = ['GET'])
+def consolidated_hist_allocation_fetch_all():
+    try:
+        data = get_all_from_consolidated_hist_allocation_table()
+        data = data.get_json()
+        return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_ALLOCATION, CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO and AGG_CONSOLIDATED_ALLOCATION Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})

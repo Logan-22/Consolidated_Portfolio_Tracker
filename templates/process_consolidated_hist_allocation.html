@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Process Consolidated Historic Allocation{% endblock %}
+
+{% block content %}
+    <div>
+    <form id = "process_consolidated_hist_allocation_form">
+
+    <b>Process Consolidated Historic Allocation</b></label></br></br>
+
+    <button type = "submit" class = "submit">Start Processing Historic Allocation</button>
+    </form>
+    </div>
+    <div>
+        <canvas id="allocation_chart"></canvas>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='process_consolidated_hist_allocation.js') }}" defer></script>
+{% endblock %}

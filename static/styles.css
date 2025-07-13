@@ -241,6 +241,10 @@ canvas {
   margin-right: auto;
 }
 
+#consolidated_allocation_chart{
+  max-width: 250px !important;
+}
+
 /* Hide items */
 
 .hidden {

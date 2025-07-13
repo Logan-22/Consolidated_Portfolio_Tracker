@@ -22,7 +22,6 @@ const get_mf_hist_returns_response = await fetch (`/api/mf_hist_returns/`, {
 })
 
 const get_mf_hist_returns_data = await get_mf_hist_returns_response.json();
-console.log(get_mf_hist_returns_data)
 
 const processing_date_array = []
 const perc_total_p_l_array = []

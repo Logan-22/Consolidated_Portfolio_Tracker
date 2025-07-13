@@ -57,3 +57,7 @@ def process_unrealised_stock_hist_returns():
 @frontend.route('/process_consolidated_hist_returns')
 def process_consolidated_hist_returns():
     return render_template('process_consolidated_hist_returns.html')
+
+@frontend.route('/process_consolidated_hist_allocation')
+def process_consolidated_hist_allocation():
+    return render_template('process_consolidated_hist_allocation.html')

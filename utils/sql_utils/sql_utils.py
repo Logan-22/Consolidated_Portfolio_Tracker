@@ -16,6 +16,9 @@ from utils.sql_utils.views.FIN_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW import FIN_
 from utils.sql_utils.views.CONSOLIDATED_PORTFOLIO_VIEW import CONSOLIDATED_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_CONSOLIDATED_PORTFOLIO_VIEW import AGG_CONSOLIDATED_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_CONSOLIDATED_PORTFOLIO_VIEW import FIN_CONSOLIDATED_PORTFOLIO_VIEW
+from utils.sql_utils.views.AGG_CONSOLIDATED_ALLOCATION_VIEW import AGG_CONSOLIDATED_ALLOCATION_VIEW
+from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_VIEW import FIN_CONSOLIDATED_ALLOCATION_VIEW
+from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW import FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW
 
 db_path = os.path.join(os.getcwd(), "databases", "consolidated_portfolio.db")
 
@@ -82,6 +85,7 @@ def create_metadata_store_table():
             EXCHANGE_SYMBOL TEXT(100),
             YAHOO_SYMBOL TEXT(100),
             ALT_SYMBOL TEXT(100),
+            ALLOCATION_CATEGORY TEXT(100),
             PORTFOLIO_TYPE TEXT(50),
             AMC TEXT(50),
             MF_TYPE TEXT(100),
@@ -99,13 +103,13 @@ def create_metadata_store_table():
             RECORD_DELETED_FLAG INTEGER
         )''')
 
-def insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin):
+def insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     today = datetime.date.today()
     today = today.strftime("%Y-%m-%d")
-    cursor.execute("INSERT INTO METADATA_STORE (EXCHANGE_SYMBOL, YAHOO_SYMBOL, ALT_SYMBOL, PORTFOLIO_TYPE, AMC, MF_TYPE, FUND_CATEGORY, LAUNCHED_ON, EXIT_LOAD, EXPENSE_RATIO, FUND_MANAGER, FUND_MANAGER_STARTED_ON, ISIN, PROCESS_FLAG, CONSIDER_FOR_HIST_RETURNS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                   (exchange_symbol, yahoo_symbol, alt_symbol, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin, 1, 1, today, '9998-12-31', 0  ))
+    cursor.execute("INSERT INTO METADATA_STORE (EXCHANGE_SYMBOL, YAHOO_SYMBOL, ALT_SYMBOL, ALLOCATION_CATEGORY, PORTFOLIO_TYPE, AMC, MF_TYPE, FUND_CATEGORY, LAUNCHED_ON, EXIT_LOAD, EXPENSE_RATIO, FUND_MANAGER, FUND_MANAGER_STARTED_ON, ISIN, PROCESS_FLAG, CONSIDER_FOR_HIST_RETURNS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                   (exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin, 1, 1, today, '9998-12-31', 0  ))
     conn.commit()
     conn.close()
 
@@ -330,6 +334,13 @@ def create_consolidated_portfolio_views_in_db():
     cursor.execute(AGG_CONSOLIDATED_PORTFOLIO_VIEW)
     cursor.execute("DROP VIEW IF EXISTS FIN_CONSOLIDATED_PORTFOLIO_VIEW;")
     cursor.execute(FIN_CONSOLIDATED_PORTFOLIO_VIEW)
+
+    cursor.execute("DROP VIEW IF EXISTS AGG_CONSOLIDATED_ALLOCATION_VIEW;")
+    cursor.execute(AGG_CONSOLIDATED_ALLOCATION_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS FIN_CONSOLIDATED_ALLOCATION_VIEW;")
+    cursor.execute(FIN_CONSOLIDATED_ALLOCATION_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW;")
+    cursor.execute(FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW)
 
     conn.commit()
     conn.close()
@@ -1142,9 +1153,9 @@ def get_all_from_consolidated_hist_returns_table():
     cursor.execute('SELECT PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2)  FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
     cons_rows = cursor.fetchall()
     if cons_rows:
-        cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'fin_day_p_l': row[7], 'perc_fin_total_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in cons_rows]
+        cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'perc_fin_total_p_l': row[7], 'fin_day_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in cons_rows]
     else:
-        cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_total_p_l': None, 'perc_fin_day_p_l': None}]
+        cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'perc_fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_day_p_l': None}]
 
     # Latest Data Fetch
     cursor.execute('SELECT PORTFOLIO_TYPE, PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2) FROM AGG_CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0  AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM AGG_CONSOLIDATED_HIST_RETURNS);')
@@ -1156,9 +1167,1256 @@ def get_all_from_consolidated_hist_returns_table():
     cursor.execute('SELECT PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2)  FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM CONSOLIDATED_HIST_RETURNS);')
     latest_cons_rows = cursor.fetchall()
     if latest_cons_rows:
-        latest_cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'fin_day_p_l': row[7], 'perc_fin_total_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in latest_cons_rows]
+        latest_cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'perc_fin_total_p_l': row[7], 'fin_day_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in latest_cons_rows]
     else:
-        latest_cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_total_p_l': None, 'perc_fin_day_p_l': None}]
+        latest_cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'perc_fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_day_p_l': None}]
     conn.close()
     data = {'agg_data': agg_data, 'cons_data': cons_data, 'latest_agg_data': latest_agg_data, 'latest_cons_data' : latest_cons_data}
+    return jsonify(data)
+
+def get_max_next_proc_date_from_consolidated_hist_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT MAX(NEXT_PROCESSING_DATE) FROM CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO WHERE RECORD_DELETED_FLAG = 0;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = {'max_next_processing_date': rows[0][0]}
+        return jsonify(data)
+    data = {'max_next_processing_date': None}
+    return jsonify(data)
+
+def truncate_consolidated_hist_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS CONSOLIDATED_HIST_ALLOCATION;')
+
+def create_consolidated_hist_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS CONSOLIDATED_HIST_ALLOCATION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PORTFOLIO_TYPE VARCHAR(100),
+            PORTFOLIO_NAME VARCHAR(100),
+            PORTFOLIO_HOUSE VARCHAR(100),
+            PORTFOLIO_SUB_TYPE VARCHAR(100),
+            PORTFOLIO_CATEGORY VARCHAR(100),
+            PROCESSING_DATE DATE,
+            PREV_PROCESSING_DATE DATE,
+            AMOUNT_INVESTED_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            QUANTITY INTEGER,
+            CURRENT_VALUE NUMBER(10,4),
+            PREVIOUS_VALUE NUMBER(10,4),
+            "P/L" NUMBER(10,4),
+            "%_P/L" NUMBER(10,4),
+            "DAY_P/L" NUMBER(10,4),
+            "%_DAY_P/L" NUMBER(10,4),
+            AVERAGE_PRICE NUMBER(10,4),
+            FIN_INVESTED_AMOUNT NUMBER(10,4),
+            FIN_INVESTED_AMOUNT_EXCLUDING_FEES NUMBER(10,4),
+            FIN_QUANTITY INTEGER,
+            FIN_CURRENT_AMOUNT NUMBER(10,4),
+            FIN_PREVIOUS_AMOUNT NUMBER(10,4),
+            "FIN_P/L" NUMBER(10,4),
+            "FIN_DAY_P/L" NUMBER(10,4),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT" NUMBER(10,2),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES" NUMBER(10,2),
+            "FIN_ALLOC_%_QUANTITY_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_QUANTITY" NUMBER(10,2),
+            "FIN_ALLOC_%_CURRENT_VALUE_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_CURRENT_VALUE" NUMBER(10,2),
+            "FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_PREVIOUS_VALUE" NUMBER(10,2),
+            "FIN_ALLOC_%_P/L_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_P/L" NUMBER(10,2),
+            "FIN_ALLOC_%_DAY_P/L_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_DAY_P/L" NUMBER(10,2),
+            NEXT_PROCESSING_DATE DATE,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        );''')
+
+def truncate_consolidated_hist_allocation_portfolio_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO;')
+
+def create_consolidated_hist_allocation_portfolio_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PORTFOLIO_TYPE VARCHAR(100),
+            PROCESSING_DATE DATE,
+            PREV_PROCESSING_DATE DATE,
+            AMOUNT_INVESTED_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            QUANTITY INTEGER,
+            CURRENT_VALUE NUMBER(10,4),
+            PREVIOUS_VALUE NUMBER(10,4),
+            "P/L" NUMBER(10,4),
+            "DAY_P/L" NUMBER(10,4),
+            AVERAGE_PRICE NUMBER(10,4),
+            FIN_INVESTED_AMOUNT NUMBER(10,4),
+            FIN_INVESTED_AMOUNT_EXCLUDING_FEES NUMBER(10,4),
+            FIN_QUANTITY INTEGER,
+            FIN_CURRENT_AMOUNT NUMBER(10,4),
+            FIN_PREVIOUS_AMOUNT NUMBER(10,4),
+            "FIN_P/L" NUMBER(10,4),
+            "FIN_DAY_P/L" NUMBER(10,4),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT" NUMBER(10,2),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES" NUMBER(10,2),
+            "FIN_ALLOC_%_QUANTITY_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_QUANTITY" NUMBER(10,2),
+            "FIN_ALLOC_%_CURRENT_VALUE_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_CURRENT_VALUE" NUMBER(10,2),
+            "FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_PREVIOUS_VALUE" NUMBER(10,2),
+            "FIN_ALLOC_%_P/L_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_P/L" NUMBER(10,2),
+            "FIN_ALLOC_%_DAY_P/L_TYP_CD" VARCHAR(100),
+            "FIN_ALLOC_%_DAY_P/L" NUMBER(10,2),
+            NEXT_PROCESSING_DATE DATE,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        );''')
+
+def truncate_agg_consolidated_hist_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('DROP TABLE IF EXISTS AGG_CONSOLIDATED_HIST_ALLOCATION;')
+
+def create_agg_consolidated_hist_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_CONSOLIDATED_HIST_ALLOCATION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PORTFOLIO_TYPE VARCHAR(100),
+            PORTFOLIO_NAME VARCHAR(100),
+            PORTFOLIO_HOUSE VARCHAR(100),
+            PORTFOLIO_SUB_TYPE VARCHAR(100),
+            PORTFOLIO_CATEGORY VARCHAR(100),
+            PROCESSING_DATE DATE,
+            PREV_PROCESSING_DATE DATE,
+            AMOUNT_INVESTED_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE NUMBER(10,4),
+            QUANTITY INTEGER,
+            CURRENT_VALUE NUMBER(10,4),
+            PREVIOUS_VALUE NUMBER(10,4),
+            "P/L" NUMBER(10,4),
+            "%_P/L" NUMBER(10,4),
+            "DAY_P/L" NUMBER(10,4),
+            "%_DAY_P/L" NUMBER(10,4),
+            AVERAGE_PRICE NUMBER(10,4),
+            AGG_INVESTED_AMOUNT NUMBER(10,4),
+            AGG_INVESTED_AMOUNT_EXCLUDING_FEES NUMBER(10,4),
+            AGG_QUANTITY INTEGER,
+            AGG_CURRENT_AMOUNT NUMBER(10,4),
+            AGG_PREVIOUS_AMOUNT NUMBER(10,4),
+            "AGG_P/L" NUMBER(10,4),
+            "AGG_DAY_P/L" NUMBER(10,4),
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD" VARCHAR(100),
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT" NUMBER(10,2),
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD" VARCHAR(100),
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES" NUMBER(10,2),
+            "AGG_ALLOC_%_QUANTITY_TYP_CD" VARCHAR(100),
+            "AGG_ALLOC_%_QUANTITY" NUMBER(10,2),
+            "AGG_ALLOC_%_CURRENT_VALUE_TYP_CD" VARCHAR(100),
+            "AGG_ALLOC_%_CURRENT_VALUE" NUMBER(10,2),
+            "AGG_ALLOC_%_PREVIOUS_VALUE_TYP_CD" VARCHAR(100),
+            "AGG_ALLOC_%_PREVIOUS_VALUE" NUMBER(10,2),
+            "AGG_ALLOC_%_P/L_TYP_CD" VARCHAR(100),
+            "AGG_ALLOC_%_P/L" NUMBER(10,2),
+            "AGG_ALLOC_%_DAY_P/L_TYP_CD" VARCHAR(100),
+            "AGG_ALLOC_%_DAY_P/L" NUMBER(10,2),
+            NEXT_PROCESSING_DATE DATE,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+        );''')
+
+def get_metrics_from_agg_consolidated_allocation_view_and_insert_into_agg_consolidated_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+INSERT INTO AGG_CONSOLIDATED_HIST_ALLOCATION (
+    PORTFOLIO_TYPE,
+    PORTFOLIO_NAME,
+    PORTFOLIO_HOUSE,
+    PORTFOLIO_SUB_TYPE,
+    PORTFOLIO_CATEGORY,
+    PROCESSING_DATE,
+    PREV_PROCESSING_DATE,
+    AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,
+    AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE,
+    QUANTITY,
+    CURRENT_VALUE,
+    PREVIOUS_VALUE,
+    "P/L",
+    "%_P/L",
+    "DAY_P/L",
+    "%_DAY_P/L",
+    AVERAGE_PRICE,
+    AGG_INVESTED_AMOUNT,
+    AGG_INVESTED_AMOUNT_EXCLUDING_FEES,
+    AGG_QUANTITY,
+    AGG_CURRENT_AMOUNT,
+    AGG_PREVIOUS_AMOUNT,
+    "AGG_P/L",
+    "AGG_DAY_P/L",
+    "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD",
+    "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT",
+    "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD",
+    "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES",
+    "AGG_ALLOC_%_QUANTITY_TYP_CD",
+    "AGG_ALLOC_%_QUANTITY",
+    "AGG_ALLOC_%_CURRENT_VALUE_TYP_CD",
+    "AGG_ALLOC_%_CURRENT_VALUE",
+    "AGG_ALLOC_%_PREVIOUS_VALUE_TYP_CD",
+    "AGG_ALLOC_%_PREVIOUS_VALUE",
+    "AGG_ALLOC_%_P/L_TYP_CD",
+    "AGG_ALLOC_%_P/L",
+    "AGG_ALLOC_%_DAY_P/L_TYP_CD",
+    "AGG_ALLOC_%_DAY_P/L",
+    NEXT_PROCESSING_DATE,
+    START_DATE,
+    END_DATE,
+    RECORD_DELETED_FLAG
+)
+SELECT
+    A.PORTFOLIO_TYPE,
+    A.PORTFOLIO_NAME,
+    A.PORTFOLIO_HOUSE,
+    A.PORTFOLIO_SUB_TYPE,
+    A.PORTFOLIO_CATEGORY,
+    P.PROC_DATE AS PROCESSING_DATE,
+    P.PREV_PROC_DATE AS PREV_PROCESSING_DATE,
+    A.INVESTED_AMOUNT AS AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,
+    A.INVESTED_AMOUNT_EXCLUDING_FEES AS AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE,
+    A.QUANTITY,
+    A.CURRENT_VALUE,
+    A.PREVIOUS_VALUE,
+    A."P/L",
+    A."%_P_L",
+    A."DAY_P/L",
+    A."%_DAY_P/L",
+    A.AVERAGE_PRICE,
+    A.AGG_INVESTED_AMOUNT,
+    A.AGG_INVESTED_AMOUNT_EXCLUDING_FEES,
+    A.AGG_QUANTITY,
+    A.AGG_CURRENT_AMOUNT,
+    A.AGG_PREVIOUS_AMOUNT,
+    A."AGG_P/L",
+    A."AGG_DAY_P/L",
+    A."AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD",
+    A."AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT",
+    A."AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD",
+    A."AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES",
+    A."AGG_ALLOC_%_QUANTITY_TYP_CD",
+    A."AGG_ALLOC_%_QUANTITY",
+    A."AGG_ALLOC_%_CURRENT_VALUE_TYP_CD",
+    A."AGG_ALLOC_%_CURRENT_VALUE",
+    A."AGG_ALLOC_%_PREVIOUS_VALUE_TYP_CD",
+    A."AGG_ALLOC_%_PREVIOUS_VALUE",
+    A."AGG_ALLOC_%_P/L_TYP_CD",
+    A."AGG_ALLOC_%_P/L",
+    A."AGG_ALLOC_%_DAY_P/L_TYP_CD",
+    A."AGG_ALLOC_%_DAY_P/L",
+    P.NEXT_PROC_DATE AS NEXT_PROCESSING_DATE,
+    P.PROC_DATE AS START_DATE,
+    '9998-12-31' AS END_DATE,
+    0 AS RECORD_DELETED_FLAG
+FROM
+    AGG_CONSOLIDATED_ALLOCATION_VIEW A
+INNER JOIN
+    PROCESSING_DATE P 
+ON
+    P.PROC_TYP_CD = 'MF_PROC';
+''')
+    conn.commit()
+    conn.close()
+
+def get_metrics_from_fin_consolidated_allocation_view_and_insert_into_fin_consolidated_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+INSERT INTO CONSOLIDATED_HIST_ALLOCATION (
+    PORTFOLIO_TYPE,
+    PORTFOLIO_NAME,
+    PORTFOLIO_HOUSE,
+    PORTFOLIO_SUB_TYPE,
+    PORTFOLIO_CATEGORY,
+    PROCESSING_DATE,
+    PREV_PROCESSING_DATE,
+    AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,
+    AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE,
+    QUANTITY,
+    CURRENT_VALUE,
+    PREVIOUS_VALUE,
+    "P/L",
+    "%_P/L",
+    "DAY_P/L",
+    "%_DAY_P/L",
+    AVERAGE_PRICE,
+    FIN_INVESTED_AMOUNT,
+    FIN_INVESTED_AMOUNT_EXCLUDING_FEES,
+    FIN_QUANTITY,
+    FIN_CURRENT_AMOUNT,
+    FIN_PREVIOUS_AMOUNT,
+    "FIN_P/L",
+    "FIN_DAY_P/L",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES",
+    "FIN_ALLOC_%_QUANTITY_TYP_CD",
+    "FIN_ALLOC_%_QUANTITY",
+    "FIN_ALLOC_%_CURRENT_VALUE_TYP_CD",
+    "FIN_ALLOC_%_CURRENT_VALUE",
+    "FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD",
+    "FIN_ALLOC_%_PREVIOUS_VALUE",
+    "FIN_ALLOC_%_P/L_TYP_CD",
+    "FIN_ALLOC_%_P/L",
+    "FIN_ALLOC_%_DAY_P/L_TYP_CD",
+    "FIN_ALLOC_%_DAY_P/L",
+    NEXT_PROCESSING_DATE,
+    START_DATE,
+    END_DATE,
+    RECORD_DELETED_FLAG
+)
+SELECT
+    V.PORTFOLIO_TYPE,
+    V.PORTFOLIO_NAME,
+    V.PORTFOLIO_HOUSE,
+    V.PORTFOLIO_SUB_TYPE,
+    V.PORTFOLIO_CATEGORY,
+    PD.PROC_DATE                          AS PROCESSING_DATE,
+    PD.PREV_PROC_DATE                     AS PREV_PROCESSING_DATE,
+    V.INVESTED_AMOUNT                     AS AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,
+    V.INVESTED_AMOUNT_EXCLUDING_FEES      AS AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE,
+    V.QUANTITY,
+    V.CURRENT_VALUE,
+    V.PREVIOUS_VALUE,
+    V."P/L",
+    V."%_P_L",
+    V."DAY_P/L",
+    V."%_DAY_P/L",
+    V.AVERAGE_PRICE,
+    V.FIN_INVESTED_AMOUNT,
+    V.FIN_INVESTED_AMOUNT_EXCLUDING_FEES,
+    V.FIN_QUANTITY,
+    V.FIN_CURRENT_AMOUNT,
+    V.FIN_PREVIOUS_AMOUNT,
+    V."FIN_P/L",
+    V."FIN_DAY_P/L",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES",
+    V."FIN_ALLOC_%_QUANTITY_TYP_CD",
+    V."FIN_ALLOC_%_QUANTITY",
+    V."FIN_ALLOC_%_CURRENT_VALUE_TYP_CD",
+    V."FIN_ALLOC_%_CURRENT_VALUE",
+    V."FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD",
+    V."FIN_ALLOC_%_PREVIOUS_VALUE",
+    V."FIN_ALLOC_%_P/L_TYP_CD",
+    V."FIN_ALLOC_%_P/L",
+    V."FIN_ALLOC_%_DAY_P/L_TYP_CD",
+    V."FIN_ALLOC_%_DAY_P/L",
+    PD.NEXT_PROC_DATE                     AS NEXT_PROCESSING_DATE,
+    PD.PROC_DATE                          AS START_DATE,
+    '9998-12-31'                          AS END_DATE,
+    0                                     AS RECORD_DELETED_FLAG
+FROM
+    FIN_CONSOLIDATED_ALLOCATION_VIEW V
+INNER JOIN
+    PROCESSING_DATE PD
+ON
+    PD.PROC_TYP_CD = 'MF_PROC';
+''')
+    conn.commit()
+    conn.close()
+
+def get_metrics_from_fin_consolidated_allocation_portfolio_view_and_insert_into_fin_consolidated_allocation_portfolio_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+INSERT INTO CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO (
+    PORTFOLIO_TYPE,
+    PROCESSING_DATE,
+    PREV_PROCESSING_DATE,
+    AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,
+    AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE,
+    QUANTITY,
+    CURRENT_VALUE,
+    PREVIOUS_VALUE,
+    "P/L",
+    "DAY_P/L",
+    AVERAGE_PRICE,
+    FIN_INVESTED_AMOUNT,
+    FIN_INVESTED_AMOUNT_EXCLUDING_FEES,
+    FIN_QUANTITY,
+    FIN_CURRENT_AMOUNT,
+    FIN_PREVIOUS_AMOUNT,
+    "FIN_P/L",
+    "FIN_DAY_P/L",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD",
+    "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES",
+    "FIN_ALLOC_%_QUANTITY_TYP_CD",
+    "FIN_ALLOC_%_QUANTITY",
+    "FIN_ALLOC_%_CURRENT_VALUE_TYP_CD",
+    "FIN_ALLOC_%_CURRENT_VALUE",
+    "FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD",
+    "FIN_ALLOC_%_PREVIOUS_VALUE",
+    "FIN_ALLOC_%_P/L_TYP_CD",
+    "FIN_ALLOC_%_P/L",
+    "FIN_ALLOC_%_DAY_P/L_TYP_CD",
+    "FIN_ALLOC_%_DAY_P/L",
+    NEXT_PROCESSING_DATE,
+    START_DATE,
+    END_DATE,
+    RECORD_DELETED_FLAG
+)
+SELECT
+    V.PORTFOLIO_TYPE,
+    PD.PROC_DATE                         AS PROCESSING_DATE,
+    PD.PREV_PROC_DATE                    AS PREV_PROCESSING_DATE,
+    V.FIN_INVESTED_AMOUNT                AS AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,
+    V.FIN_INVESTED_AMOUNT_EXCLUDING_FEES AS AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE,
+    V.FIN_QUANTITY                       AS QUANTITY,
+    V.FIN_CURRENT_VALUE                  AS CURRENT_VALUE,
+    V.FIN_PREVIOUS_VALUE                 AS PREVIOUS_VALUE,
+    V."P/L",
+    V."DAY_P/L",
+    V.AVERAGE_PRICE,
+    V.FIN_INVESTED_AMOUNT,
+    V.FIN_INVESTED_AMOUNT_EXCLUDING_FEES,
+    V.FIN_QUANTITY,
+    V.FIN_CURRENT_AMOUNT,
+    V.FIN_PREVIOUS_AMOUNT,
+    V."FIN_P/L",
+    V."FIN_DAY_P/L",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD",
+    V."FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES",
+    V."FIN_ALLOC_%_QUANTITY_TYP_CD",
+    V."FIN_ALLOC_%_QUANTITY",
+    V."FIN_ALLOC_%_CURRENT_VALUE_TYP_CD",
+    V."FIN_ALLOC_%_CURRENT_VALUE",
+    V."FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD",
+    V."FIN_ALLOC_%_PREVIOUS_VALUE",
+    V."FIN_ALLOC_%_P/L_TYP_CD",
+    V."FIN_ALLOC_%_P/L",
+    V."FIN_ALLOC_%_DAY_P/L_TYP_CD",
+    V."FIN_ALLOC_%_DAY_P/L",
+    PD.NEXT_PROC_DATE                   AS NEXT_PROCESSING_DATE,
+    PD.PROC_DATE                        AS START_DATE,
+    '9998-12-31'                        AS END_DATE,
+    0                                   AS RECORD_DELETED_FLAG
+FROM
+    FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW V
+INNER JOIN
+    PROCESSING_DATE PD
+ON
+    PD.PROC_TYP_CD = 'MF_PROC';
+''')
+    conn.commit()
+    conn.close()
+
+def get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT PROCESSING_DATE, PORTFOLIO_TYPE, "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT" FROM CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
+    rows = cursor.fetchall()
+    conn.close()
+    if rows:
+        data = [{'processing_date': row[0], 'portfolio_type': row[1], 'fin_alloc_perc_portfolio_invested_amount': row[2]} for row in rows]
+        return jsonify(data)
+    data = [{'processing_date': None, 'portfolio_type': None, 'fin_alloc_perc_portfolio_invested_amount': None}]
+    return jsonify(data)
+
+def get_all_from_consolidated_hist_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Consolidated Hist Allocation
+    cursor.execute('''
+    SELECT 
+         PORTFOLIO_TYPE
+        ,PORTFOLIO_NAME
+        ,PORTFOLIO_HOUSE
+        ,PORTFOLIO_SUB_TYPE
+        ,PORTFOLIO_CATEGORY
+        ,PROCESSING_DATE
+        ,PREV_PROCESSING_DATE
+        ,AMOUNT_INVESTED_AS_ON_PROCESSING_DATE
+        ,AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE
+        ,QUANTITY
+        ,CURRENT_VALUE
+        ,PREVIOUS_VALUE
+        ,"P/L"
+        ,"%_P/L"
+        ,"DAY_P/L"
+        ,"%_DAY_P/L"
+        ,AVERAGE_PRICE
+        ,FIN_INVESTED_AMOUNT
+        ,FIN_INVESTED_AMOUNT_EXCLUDING_FEES
+        ,FIN_QUANTITY
+        ,FIN_CURRENT_AMOUNT
+        ,FIN_PREVIOUS_AMOUNT
+        ,"FIN_P/L"
+        ,"FIN_DAY_P/L"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES"
+        ,"FIN_ALLOC_%_QUANTITY_TYP_CD"
+        ,"FIN_ALLOC_%_QUANTITY"
+        ,"FIN_ALLOC_%_CURRENT_VALUE_TYP_CD"
+        ,"FIN_ALLOC_%_CURRENT_VALUE"
+        ,"FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD"
+        ,"FIN_ALLOC_%_PREVIOUS_VALUE"
+        ,"FIN_ALLOC_%_P/L_TYP_CD"
+        ,"FIN_ALLOC_%_P/L"
+        ,"FIN_ALLOC_%_DAY_P/L_TYP_CD"
+        ,"FIN_ALLOC_%_DAY_P/L"
+        ,NEXT_PROCESSING_DATE
+    FROM CONSOLIDATED_HIST_ALLOCATION
+    WHERE RECORD_DELETED_FLAG = 0
+    ORDER BY PROCESSING_DATE;
+''')
+    rows = cursor.fetchall()
+    if rows:
+        consolidated_allocation_data = [{
+            'portfolio_type': row[0],
+            'portfolio_name': row[1],
+            'portfolio_house': row[2],
+            'portfolio_sub_type': row[3],
+            'portfolio_category': row[4],
+            'processing_date': row[5],
+            'prev_processing_date': row[6],
+            'amount_invested': row[7],
+            'amount_invested_excl_fees': row[8],
+            'quantity': row[9],
+            'current_value': row[10],
+            'previous_value': row[11],
+            'p_l': row[12],
+            'perc_p_l': row[13],
+            'day_p_l': row[14],
+            'perc_day_p_l': row[15],
+            'average_price': row[16],
+            'fin_invested_amount': row[17],
+            'fin_invested_amount_excl_fees': row[18],
+            'fin_quantity': row[19],
+            'fin_current_amount': row[20],
+            'fin_previous_amount': row[21],
+            'fin_p_l': row[22],
+            'fin_day_p_l': row[23],
+            'fin_alloc_perc_inv_amt_typ_cd': row[24],
+            'fin_alloc_perc_inv_amt': row[25],
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': row[26],
+            'fin_alloc_perc_inv_amt_excl_fees': row[27],
+            'fin_alloc_perc_quantity_typ_cd': row[28],
+            'fin_alloc_perc_quantity': row[29],
+            'fin_alloc_perc_curr_val_typ_cd': row[30],
+            'fin_alloc_perc_curr_val': row[31],
+            'fin_alloc_perc_prev_val_typ_cd': row[32],
+            'fin_alloc_perc_prev_val': row[33],
+            'fin_alloc_perc_p_l_typ_cd': row[34],
+            'fin_alloc_perc_p_l': row[35],
+            'fin_alloc_perc_day_p_l_typ_cd': row[36],
+            'fin_alloc_perc_day_p_l': row[37],
+            'next_processing_date': row[38]
+        } for row in rows]
+    else:
+        consolidated_allocation_data = [{
+            'portfolio_type': None,
+            'portfolio_name': None,
+            'portfolio_house': None,
+            'portfolio_sub_type': None,
+            'portfolio_category': None,
+            'processing_date': None,
+            'prev_processing_date': None,
+            'amount_invested': None,
+            'amount_invested_excl_fees': None,
+            'quantity': None,
+            'current_value': None,
+            'previous_value': None,
+            'p_l': None,
+            'perc_p_l': None,
+            'day_p_l': None,
+            'perc_day_p_l': None,
+            'average_price': None,
+            'fin_invested_amount': None,
+            'fin_invested_amount_excl_fees': None,
+            'fin_quantity': None,
+            'fin_current_amount': None,
+            'fin_previous_amount': None,
+            'fin_p_l': None,
+            'fin_day_p_l': None,
+            'fin_alloc_perc_inv_amt_typ_cd': None,
+            'fin_alloc_perc_inv_amt': None,
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': None,
+            'fin_alloc_perc_inv_amt_excl_fees': None,
+            'fin_alloc_perc_quantity_typ_cd': None,
+            'fin_alloc_perc_quantity': None,
+            'fin_alloc_perc_curr_val_typ_cd': None,
+            'fin_alloc_perc_curr_val': None,
+            'fin_alloc_perc_prev_val_typ_cd': None,
+            'fin_alloc_perc_prev_val': None,
+            'fin_alloc_perc_p_l_typ_cd': None,
+            'fin_alloc_perc_p_l': None,
+            'fin_alloc_perc_day_p_l_typ_cd': None,
+            'fin_alloc_perc_day_p_l': None,
+            'next_processing_date': None
+        }]
+
+    # Consolidated Hist Allocation Portfolio
+    cursor.execute('''
+        SELECT 
+            PORTFOLIO_TYPE
+            ,PROCESSING_DATE
+            ,PREV_PROCESSING_DATE
+            ,AMOUNT_INVESTED_AS_ON_PROCESSING_DATE
+            ,AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE
+            ,QUANTITY
+            ,CURRENT_VALUE
+            ,PREVIOUS_VALUE
+            ,"P/L"
+            ,"DAY_P/L"
+            ,AVERAGE_PRICE
+            ,FIN_INVESTED_AMOUNT
+            ,FIN_INVESTED_AMOUNT_EXCLUDING_FEES
+            ,FIN_QUANTITY
+            ,FIN_CURRENT_AMOUNT
+            ,FIN_PREVIOUS_AMOUNT
+            ,"FIN_P/L"
+            ,"FIN_DAY_P/L"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES"
+            ,"FIN_ALLOC_%_QUANTITY_TYP_CD"
+            ,"FIN_ALLOC_%_QUANTITY"
+            ,"FIN_ALLOC_%_CURRENT_VALUE_TYP_CD"
+            ,"FIN_ALLOC_%_CURRENT_VALUE"
+            ,"FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD"
+            ,"FIN_ALLOC_%_PREVIOUS_VALUE"
+            ,"FIN_ALLOC_%_P/L_TYP_CD"
+            ,"FIN_ALLOC_%_P/L"
+            ,"FIN_ALLOC_%_DAY_P/L_TYP_CD"
+            ,"FIN_ALLOC_%_DAY_P/L"
+            ,NEXT_PROCESSING_DATE
+        FROM CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO
+        WHERE RECORD_DELETED_FLAG = 0
+        ORDER BY PROCESSING_DATE;
+    ''')
+    rows = cursor.fetchall()
+    if rows:
+        consolidated_allocation_portfolio_data = [{
+            'portfolio_type': row[0],
+            'processing_date': row[1],
+            'prev_processing_date': row[2],
+            'amount_invested': row[3],
+            'amount_invested_excl_fees': row[4],
+            'quantity': row[5],
+            'current_value': row[6],
+            'previous_value': row[7],
+            'p_l': row[8],
+            'day_p_l': row[9],
+            'average_price': row[10],
+            'fin_invested_amount': row[11],
+            'fin_invested_amount_excl_fees': row[12],
+            'fin_quantity': row[13],
+            'fin_current_amount': row[14],
+            'fin_previous_amount': row[15],
+            'fin_p_l': row[16],
+            'fin_day_p_l': row[17],
+            'fin_alloc_perc_inv_amt_typ_cd': row[18],
+            'fin_alloc_perc_inv_amt': row[19],
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': row[20],
+            'fin_alloc_perc_inv_amt_excl_fees': row[21],
+            'fin_alloc_perc_quantity_typ_cd': row[22],
+            'fin_alloc_perc_quantity': row[23],
+            'fin_alloc_perc_curr_val_typ_cd': row[24],
+            'fin_alloc_perc_curr_val': row[25],
+            'fin_alloc_perc_prev_val_typ_cd': row[26],
+            'fin_alloc_perc_prev_val': row[27],
+            'fin_alloc_perc_p_l_typ_cd': row[28],
+            'fin_alloc_perc_p_l': row[29],
+            'fin_alloc_perc_day_p_l_typ_cd': row[30],
+            'fin_alloc_perc_day_p_l': row[31],
+            'next_processing_date': row[32]
+        } for row in rows]
+    else:
+        consolidated_allocation_portfolio_data = [{
+            'portfolio_type': None,
+            'processing_date': None,
+            'prev_processing_date': None,
+            'amount_invested': None,
+            'amount_invested_excl_fees': None,
+            'quantity': None,
+            'current_value': None,
+            'previous_value': None,
+            'p_l': None,
+            'day_p_l': None,
+            'average_price': None,
+            'fin_invested_amount': None,
+            'fin_invested_amount_excl_fees': None,
+            'fin_quantity': None,
+            'fin_current_amount': None,
+            'fin_previous_amount': None,
+            'fin_p_l': None,
+            'fin_day_p_l': None,
+            'fin_alloc_perc_inv_amt_typ_cd': None,
+            'fin_alloc_perc_inv_amt': None,
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': None,
+            'fin_alloc_perc_inv_amt_excl_fees': None,
+            'fin_alloc_perc_quantity_typ_cd': None,
+            'fin_alloc_perc_quantity': None,
+            'fin_alloc_perc_curr_val_typ_cd': None,
+            'fin_alloc_perc_curr_val': None,
+            'fin_alloc_perc_prev_val_typ_cd': None,
+            'fin_alloc_perc_prev_val': None,
+            'fin_alloc_perc_p_l_typ_cd': None,
+            'fin_alloc_perc_p_l': None,
+            'fin_alloc_perc_day_p_l_typ_cd': None,
+            'fin_alloc_perc_day_p_l': None,
+            'next_processing_date': None
+        }]
+    
+    # Agg Consolidated Hist Allocation
+    cursor.execute('''
+        SELECT 
+            PORTFOLIO_TYPE
+            ,PORTFOLIO_NAME
+            ,PORTFOLIO_HOUSE
+            ,PORTFOLIO_SUB_TYPE
+            ,PORTFOLIO_CATEGORY
+            ,PROCESSING_DATE
+            ,PREV_PROCESSING_DATE
+            ,AMOUNT_INVESTED_AS_ON_PROCESSING_DATE
+            ,AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE
+            ,QUANTITY
+            ,CURRENT_VALUE
+            ,PREVIOUS_VALUE
+            ,"P/L"
+            ,"%_P/L"
+            ,"DAY_P/L"
+            ,"%_DAY_P/L"
+            ,AVERAGE_PRICE
+            ,AGG_INVESTED_AMOUNT
+            ,AGG_INVESTED_AMOUNT_EXCLUDING_FEES
+            ,AGG_QUANTITY
+            ,AGG_CURRENT_AMOUNT
+            ,AGG_PREVIOUS_AMOUNT
+            ,"AGG_P/L"
+            ,"AGG_DAY_P/L"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES"
+            ,"AGG_ALLOC_%_QUANTITY_TYP_CD"
+            ,"AGG_ALLOC_%_QUANTITY"
+            ,"AGG_ALLOC_%_CURRENT_VALUE_TYP_CD"
+            ,"AGG_ALLOC_%_CURRENT_VALUE"
+            ,"AGG_ALLOC_%_PREVIOUS_VALUE_TYP_CD"
+            ,"AGG_ALLOC_%_PREVIOUS_VALUE"
+            ,"AGG_ALLOC_%_P/L_TYP_CD"
+            ,"AGG_ALLOC_%_P/L"
+            ,"AGG_ALLOC_%_DAY_P/L_TYP_CD"
+            ,"AGG_ALLOC_%_DAY_P/L"
+            ,NEXT_PROCESSING_DATE
+        FROM AGG_CONSOLIDATED_HIST_ALLOCATION
+        WHERE RECORD_DELETED_FLAG = 0
+        ORDER BY PROCESSING_DATE;
+    ''')
+    rows = cursor.fetchall()
+    if rows:
+        agg_consolidated_allocation_data = [{
+            'portfolio_type': row[0],
+            'portfolio_name': row[1],
+            'portfolio_house': row[2],
+            'portfolio_sub_type': row[3],
+            'portfolio_category': row[4],
+            'processing_date': row[5],
+            'prev_processing_date': row[6],
+            'amount_invested': row[7],
+            'amount_invested_excl_fees': row[8],
+            'quantity': row[9],
+            'current_value': row[10],
+            'previous_value': row[11],
+            'p_l': row[12],
+            'perc_p_l': row[13],
+            'day_p_l': row[14],
+            'perc_day_p_l': row[15],
+            'average_price': row[16],
+            'agg_invested_amount': row[17],
+            'agg_invested_amount_excl_fees': row[18],
+            'agg_quantity': row[19],
+            'agg_current_amount': row[20],
+            'agg_previous_amount': row[21],
+            'agg_p_l': row[22],
+            'agg_day_p_l': row[23],
+            'agg_alloc_perc_inv_amt_typ_cd': row[24],
+            'agg_alloc_perc_inv_amt': row[25],
+            'agg_alloc_perc_inv_amt_excl_fees_typ_cd': row[26],
+            'agg_alloc_perc_inv_amt_excl_fees': row[27],
+            'agg_alloc_perc_quantity_typ_cd': row[28],
+            'agg_alloc_perc_quantity': row[29],
+            'agg_alloc_perc_curr_val_typ_cd': row[30],
+            'agg_alloc_perc_curr_val': row[31],
+            'agg_alloc_perc_prev_val_typ_cd': row[32],
+            'agg_alloc_perc_prev_val': row[33],
+            'agg_alloc_perc_p_l_typ_cd': row[34],
+            'agg_alloc_perc_p_l': row[35],
+            'agg_alloc_perc_day_p_l_typ_cd': row[36],
+            'agg_alloc_perc_day_p_l': row[37],
+            'next_processing_date': row[38]
+        } for row in rows]
+    else:
+        agg_consolidated_allocation_data = [{
+            'portfolio_type': None,
+            'portfolio_name': None,
+            'portfolio_house': None,
+            'portfolio_sub_type': None,
+            'portfolio_category': None,
+            'processing_date': None,
+            'prev_processing_date': None,
+            'amount_invested': None,
+            'amount_invested_excl_fees': None,
+            'quantity': None,
+            'current_value': None,
+            'previous_value': None,
+            'p_l': None,
+            'perc_p_l': None,
+            'day_p_l': None,
+            'perc_day_p_l': None,
+            'average_price': None,
+            'agg_invested_amount': None,
+            'agg_invested_amount_excl_fees': None,
+            'agg_quantity': None,
+            'agg_current_amount': None,
+            'agg_previous_amount': None,
+            'agg_p_l': None,
+            'agg_day_p_l': None,
+            'agg_alloc_perc_inv_amt_typ_cd': None,
+            'agg_alloc_perc_inv_amt': None,
+            'agg_alloc_perc_inv_amt_excl_fees_typ_cd': None,
+            'agg_alloc_perc_inv_amt_excl_fees': None,
+            'agg_alloc_perc_quantity_typ_cd': None,
+            'agg_alloc_perc_quantity': None,
+            'agg_alloc_perc_curr_val_typ_cd': None,
+            'agg_alloc_perc_curr_val': None,
+            'agg_alloc_perc_prev_val_typ_cd': None,
+            'agg_alloc_perc_prev_val': None,
+            'agg_alloc_perc_p_l_typ_cd': None,
+            'agg_alloc_perc_p_l': None,
+            'agg_alloc_perc_day_p_l_typ_cd': None,
+            'agg_alloc_perc_day_p_l': None,
+            'next_processing_date': None
+        }]
+
+    # Latest Data Fetch
+
+    # Consolidated Hist Allocation
+    cursor.execute('''
+    SELECT 
+         PORTFOLIO_TYPE
+        ,PORTFOLIO_NAME
+        ,PORTFOLIO_HOUSE
+        ,PORTFOLIO_SUB_TYPE
+        ,PORTFOLIO_CATEGORY
+        ,PROCESSING_DATE
+        ,PREV_PROCESSING_DATE
+        ,AMOUNT_INVESTED_AS_ON_PROCESSING_DATE
+        ,AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE
+        ,QUANTITY
+        ,CURRENT_VALUE
+        ,PREVIOUS_VALUE
+        ,"P/L"
+        ,"%_P/L"
+        ,"DAY_P/L"
+        ,"%_DAY_P/L"
+        ,AVERAGE_PRICE
+        ,FIN_INVESTED_AMOUNT
+        ,FIN_INVESTED_AMOUNT_EXCLUDING_FEES
+        ,FIN_QUANTITY
+        ,FIN_CURRENT_AMOUNT
+        ,FIN_PREVIOUS_AMOUNT
+        ,"FIN_P/L"
+        ,"FIN_DAY_P/L"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD"
+        ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES"
+        ,"FIN_ALLOC_%_QUANTITY_TYP_CD"
+        ,"FIN_ALLOC_%_QUANTITY"
+        ,"FIN_ALLOC_%_CURRENT_VALUE_TYP_CD"
+        ,"FIN_ALLOC_%_CURRENT_VALUE"
+        ,"FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD"
+        ,"FIN_ALLOC_%_PREVIOUS_VALUE"
+        ,"FIN_ALLOC_%_P/L_TYP_CD"
+        ,"FIN_ALLOC_%_P/L"
+        ,"FIN_ALLOC_%_DAY_P/L_TYP_CD"
+        ,"FIN_ALLOC_%_DAY_P/L"
+        ,NEXT_PROCESSING_DATE
+    FROM CONSOLIDATED_HIST_ALLOCATION
+    WHERE RECORD_DELETED_FLAG = 0
+    AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM CONSOLIDATED_HIST_ALLOCATION)
+    ORDER BY PROCESSING_DATE;
+''')
+    rows = cursor.fetchall()
+    if rows:
+        latest_consolidated_allocation_data = [{
+            'portfolio_type': row[0],
+            'portfolio_name': row[1],
+            'portfolio_house': row[2],
+            'portfolio_sub_type': row[3],
+            'portfolio_category': row[4],
+            'processing_date': row[5],
+            'prev_processing_date': row[6],
+            'amount_invested': row[7],
+            'amount_invested_excl_fees': row[8],
+            'quantity': row[9],
+            'current_value': row[10],
+            'previous_value': row[11],
+            'p_l': row[12],
+            'perc_p_l': row[13],
+            'day_p_l': row[14],
+            'perc_day_p_l': row[15],
+            'average_price': row[16],
+            'fin_invested_amount': row[17],
+            'fin_invested_amount_excl_fees': row[18],
+            'fin_quantity': row[19],
+            'fin_current_amount': row[20],
+            'fin_previous_amount': row[21],
+            'fin_p_l': row[22],
+            'fin_day_p_l': row[23],
+            'fin_alloc_perc_inv_amt_typ_cd': row[24],
+            'fin_alloc_perc_inv_amt': row[25],
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': row[26],
+            'fin_alloc_perc_inv_amt_excl_fees': row[27],
+            'fin_alloc_perc_quantity_typ_cd': row[28],
+            'fin_alloc_perc_quantity': row[29],
+            'fin_alloc_perc_curr_val_typ_cd': row[30],
+            'fin_alloc_perc_curr_val': row[31],
+            'fin_alloc_perc_prev_val_typ_cd': row[32],
+            'fin_alloc_perc_prev_val': row[33],
+            'fin_alloc_perc_p_l_typ_cd': row[34],
+            'fin_alloc_perc_p_l': row[35],
+            'fin_alloc_perc_day_p_l_typ_cd': row[36],
+            'fin_alloc_perc_day_p_l': row[37],
+            'next_processing_date': row[38]
+        } for row in rows]
+    else:
+        latest_consolidated_allocation_data = [{
+            'portfolio_type': None,
+            'portfolio_name': None,
+            'portfolio_house': None,
+            'portfolio_sub_type': None,
+            'portfolio_category': None,
+            'processing_date': None,
+            'prev_processing_date': None,
+            'amount_invested': None,
+            'amount_invested_excl_fees': None,
+            'quantity': None,
+            'current_value': None,
+            'previous_value': None,
+            'p_l': None,
+            'perc_p_l': None,
+            'day_p_l': None,
+            'perc_day_p_l': None,
+            'average_price': None,
+            'fin_invested_amount': None,
+            'fin_invested_amount_excl_fees': None,
+            'fin_quantity': None,
+            'fin_current_amount': None,
+            'fin_previous_amount': None,
+            'fin_p_l': None,
+            'fin_day_p_l': None,
+            'fin_alloc_perc_inv_amt_typ_cd': None,
+            'fin_alloc_perc_inv_amt': None,
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': None,
+            'fin_alloc_perc_inv_amt_excl_fees': None,
+            'fin_alloc_perc_quantity_typ_cd': None,
+            'fin_alloc_perc_quantity': None,
+            'fin_alloc_perc_curr_val_typ_cd': None,
+            'fin_alloc_perc_curr_val': None,
+            'fin_alloc_perc_prev_val_typ_cd': None,
+            'fin_alloc_perc_prev_val': None,
+            'fin_alloc_perc_p_l_typ_cd': None,
+            'fin_alloc_perc_p_l': None,
+            'fin_alloc_perc_day_p_l_typ_cd': None,
+            'fin_alloc_perc_day_p_l': None,
+            'next_processing_date': None
+        }]
+
+    # Consolidated Hist Allocation Portfolio
+    cursor.execute('''
+        SELECT 
+            PORTFOLIO_TYPE
+            ,PROCESSING_DATE
+            ,PREV_PROCESSING_DATE
+            ,AMOUNT_INVESTED_AS_ON_PROCESSING_DATE
+            ,AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE
+            ,QUANTITY
+            ,CURRENT_VALUE
+            ,PREVIOUS_VALUE
+            ,"P/L"
+            ,"DAY_P/L"
+            ,AVERAGE_PRICE
+            ,FIN_INVESTED_AMOUNT
+            ,FIN_INVESTED_AMOUNT_EXCLUDING_FEES
+            ,FIN_QUANTITY
+            ,FIN_CURRENT_AMOUNT
+            ,FIN_PREVIOUS_AMOUNT
+            ,"FIN_P/L"
+            ,"FIN_DAY_P/L"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD"
+            ,"FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES"
+            ,"FIN_ALLOC_%_QUANTITY_TYP_CD"
+            ,"FIN_ALLOC_%_QUANTITY"
+            ,"FIN_ALLOC_%_CURRENT_VALUE_TYP_CD"
+            ,"FIN_ALLOC_%_CURRENT_VALUE"
+            ,"FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD"
+            ,"FIN_ALLOC_%_PREVIOUS_VALUE"
+            ,"FIN_ALLOC_%_P/L_TYP_CD"
+            ,"FIN_ALLOC_%_P/L"
+            ,"FIN_ALLOC_%_DAY_P/L_TYP_CD"
+            ,"FIN_ALLOC_%_DAY_P/L"
+            ,NEXT_PROCESSING_DATE
+        FROM CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO
+        WHERE RECORD_DELETED_FLAG = 0
+        AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO)
+        ORDER BY PROCESSING_DATE;
+    ''')
+    rows = cursor.fetchall()
+    if rows:
+        latest_consolidated_allocation_portfolio_data = [{
+            'portfolio_type': row[0],
+            'processing_date': row[1],
+            'prev_processing_date': row[2],
+            'amount_invested': row[3],
+            'amount_invested_excl_fees': row[4],
+            'quantity': row[5],
+            'current_value': row[6],
+            'previous_value': row[7],
+            'p_l': row[8],
+            'day_p_l': row[9],
+            'average_price': row[10],
+            'fin_invested_amount': row[11],
+            'fin_invested_amount_excl_fees': row[12],
+            'fin_quantity': row[13],
+            'fin_current_amount': row[14],
+            'fin_previous_amount': row[15],
+            'fin_p_l': row[16],
+            'fin_day_p_l': row[17],
+            'fin_alloc_perc_inv_amt_typ_cd': row[18],
+            'fin_alloc_perc_inv_amt': row[19],
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': row[20],
+            'fin_alloc_perc_inv_amt_excl_fees': row[21],
+            'fin_alloc_perc_quantity_typ_cd': row[22],
+            'fin_alloc_perc_quantity': row[23],
+            'fin_alloc_perc_curr_val_typ_cd': row[24],
+            'fin_alloc_perc_curr_val': row[25],
+            'fin_alloc_perc_prev_val_typ_cd': row[26],
+            'fin_alloc_perc_prev_val': row[27],
+            'fin_alloc_perc_p_l_typ_cd': row[28],
+            'fin_alloc_perc_p_l': row[29],
+            'fin_alloc_perc_day_p_l_typ_cd': row[30],
+            'fin_alloc_perc_day_p_l': row[31],
+            'next_processing_date': row[32]
+        } for row in rows]
+    else:
+        latest_consolidated_allocation_portfolio_data = [{
+            'portfolio_type': None,
+            'processing_date': None,
+            'prev_processing_date': None,
+            'amount_invested': None,
+            'amount_invested_excl_fees': None,
+            'quantity': None,
+            'current_value': None,
+            'previous_value': None,
+            'p_l': None,
+            'day_p_l': None,
+            'average_price': None,
+            'fin_invested_amount': None,
+            'fin_invested_amount_excl_fees': None,
+            'fin_quantity': None,
+            'fin_current_amount': None,
+            'fin_previous_amount': None,
+            'fin_p_l': None,
+            'fin_day_p_l': None,
+            'fin_alloc_perc_inv_amt_typ_cd': None,
+            'fin_alloc_perc_inv_amt': None,
+            'fin_alloc_perc_inv_amt_excl_fees_typ_cd': None,
+            'fin_alloc_perc_inv_amt_excl_fees': None,
+            'fin_alloc_perc_quantity_typ_cd': None,
+            'fin_alloc_perc_quantity': None,
+            'fin_alloc_perc_curr_val_typ_cd': None,
+            'fin_alloc_perc_curr_val': None,
+            'fin_alloc_perc_prev_val_typ_cd': None,
+            'fin_alloc_perc_prev_val': None,
+            'fin_alloc_perc_p_l_typ_cd': None,
+            'fin_alloc_perc_p_l': None,
+            'fin_alloc_perc_day_p_l_typ_cd': None,
+            'fin_alloc_perc_day_p_l': None,
+            'next_processing_date': None
+        }]
+    
+    # Agg Consolidated Hist Allocation
+    cursor.execute('''
+        SELECT 
+            PORTFOLIO_TYPE
+            ,PORTFOLIO_NAME
+            ,PORTFOLIO_HOUSE
+            ,PORTFOLIO_SUB_TYPE
+            ,PORTFOLIO_CATEGORY
+            ,PROCESSING_DATE
+            ,PREV_PROCESSING_DATE
+            ,AMOUNT_INVESTED_AS_ON_PROCESSING_DATE
+            ,AMOUNT_INVESTED_EXCLUDING_FEES_AS_ON_PROCESSING_DATE
+            ,QUANTITY
+            ,CURRENT_VALUE
+            ,PREVIOUS_VALUE
+            ,"P/L"
+            ,"%_P/L"
+            ,"DAY_P/L"
+            ,"%_DAY_P/L"
+            ,AVERAGE_PRICE
+            ,AGG_INVESTED_AMOUNT
+            ,AGG_INVESTED_AMOUNT_EXCLUDING_FEES
+            ,AGG_QUANTITY
+            ,AGG_CURRENT_AMOUNT
+            ,AGG_PREVIOUS_AMOUNT
+            ,"AGG_P/L"
+            ,"AGG_DAY_P/L"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD"
+            ,"AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES"
+            ,"AGG_ALLOC_%_QUANTITY_TYP_CD"
+            ,"AGG_ALLOC_%_QUANTITY"
+            ,"AGG_ALLOC_%_CURRENT_VALUE_TYP_CD"
+            ,"AGG_ALLOC_%_CURRENT_VALUE"
+            ,"AGG_ALLOC_%_PREVIOUS_VALUE_TYP_CD"
+            ,"AGG_ALLOC_%_PREVIOUS_VALUE"
+            ,"AGG_ALLOC_%_P/L_TYP_CD"
+            ,"AGG_ALLOC_%_P/L"
+            ,"AGG_ALLOC_%_DAY_P/L_TYP_CD"
+            ,"AGG_ALLOC_%_DAY_P/L"
+            ,NEXT_PROCESSING_DATE
+        FROM AGG_CONSOLIDATED_HIST_ALLOCATION
+        WHERE RECORD_DELETED_FLAG = 0
+        AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM AGG_CONSOLIDATED_HIST_ALLOCATION)   
+        ORDER BY PROCESSING_DATE;
+    ''')
+    rows = cursor.fetchall()
+    if rows:
+        latest_agg_consolidated_allocation_data = [{
+            'portfolio_type': row[0],
+            'portfolio_name': row[1],
+            'portfolio_house': row[2],
+            'portfolio_sub_type': row[3],
+            'portfolio_category': row[4],
+            'processing_date': row[5],
+            'prev_processing_date': row[6],
+            'amount_invested': row[7],
+            'amount_invested_excl_fees': row[8],
+            'quantity': row[9],
+            'current_value': row[10],
+            'previous_value': row[11],
+            'p_l': row[12],
+            'perc_p_l': row[13],
+            'day_p_l': row[14],
+            'perc_day_p_l': row[15],
+            'average_price': row[16],
+            'agg_invested_amount': row[17],
+            'agg_invested_amount_excl_fees': row[18],
+            'agg_quantity': row[19],
+            'agg_current_amount': row[20],
+            'agg_previous_amount': row[21],
+            'agg_p_l': row[22],
+            'agg_day_p_l': row[23],
+            'agg_alloc_perc_inv_amt_typ_cd': row[24],
+            'agg_alloc_perc_inv_amt': row[25],
+            'agg_alloc_perc_inv_amt_excl_fees_typ_cd': row[26],
+            'agg_alloc_perc_inv_amt_excl_fees': row[27],
+            'agg_alloc_perc_quantity_typ_cd': row[28],
+            'agg_alloc_perc_quantity': row[29],
+            'agg_alloc_perc_curr_val_typ_cd': row[30],
+            'agg_alloc_perc_curr_val': row[31],
+            'agg_alloc_perc_prev_val_typ_cd': row[32],
+            'agg_alloc_perc_prev_val': row[33],
+            'agg_alloc_perc_p_l_typ_cd': row[34],
+            'agg_alloc_perc_p_l': row[35],
+            'agg_alloc_perc_day_p_l_typ_cd': row[36],
+            'agg_alloc_perc_day_p_l': row[37],
+            'next_processing_date': row[38]
+        } for row in rows]
+    else:
+        latest_agg_consolidated_allocation_data = [{
+            'portfolio_type': None,
+            'portfolio_name': None,
+            'portfolio_house': None,
+            'portfolio_sub_type': None,
+            'portfolio_category': None,
+            'processing_date': None,
+            'prev_processing_date': None,
+            'amount_invested': None,
+            'amount_invested_excl_fees': None,
+            'quantity': None,
+            'current_value': None,
+            'previous_value': None,
+            'p_l': None,
+            'perc_p_l': None,
+            'day_p_l': None,
+            'perc_day_p_l': None,
+            'average_price': None,
+            'agg_invested_amount': None,
+            'agg_invested_amount_excl_fees': None,
+            'agg_quantity': None,
+            'agg_current_amount': None,
+            'agg_previous_amount': None,
+            'agg_p_l': None,
+            'agg_day_p_l': None,
+            'agg_alloc_perc_inv_amt_typ_cd': None,
+            'agg_alloc_perc_inv_amt': None,
+            'agg_alloc_perc_inv_amt_excl_fees_typ_cd': None,
+            'agg_alloc_perc_inv_amt_excl_fees': None,
+            'agg_alloc_perc_quantity_typ_cd': None,
+            'agg_alloc_perc_quantity': None,
+            'agg_alloc_perc_curr_val_typ_cd': None,
+            'agg_alloc_perc_curr_val': None,
+            'agg_alloc_perc_prev_val_typ_cd': None,
+            'agg_alloc_perc_prev_val': None,
+            'agg_alloc_perc_p_l_typ_cd': None,
+            'agg_alloc_perc_p_l': None,
+            'agg_alloc_perc_day_p_l_typ_cd': None,
+            'agg_alloc_perc_day_p_l': None,
+            'next_processing_date': None
+        }]
+
+    data = {'consolidated_allocation_data':                   consolidated_allocation_data,
+            'consolidated_allocation_portfolio_data' :        consolidated_allocation_portfolio_data,
+            'agg_consolidated_allocation_data':               agg_consolidated_allocation_data,
+            'latest_consolidated_allocation_data':            latest_consolidated_allocation_data,
+            'latest_consolidated_allocation_portfolio_data' : latest_consolidated_allocation_portfolio_data,
+            'latest_agg_consolidated_allocation_data':        latest_agg_consolidated_allocation_data}
     return jsonify(data)

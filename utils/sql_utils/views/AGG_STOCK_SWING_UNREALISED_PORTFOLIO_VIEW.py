@@ -2,6 +2,7 @@ AGG_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW = '''
 CREATE VIEW AGG_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW AS
 SELECT
     SSUPV.STOCK_NAME                                                                      AS STOCK_NAME
+    ,SSUPV.ALLOCATION_CATEGORY                                                            AS ALLOCATION_CATEGORY
     ,SSUPV.PROCESSING_DATE                                                                AS PROCESSING_DATE
     ,SSUPV.CURRENT_PRICE                                                                  AS CURRENT_PRICE
     ,SSUPV.PREVIOUS_PROCESSING_DATE                                                       AS PREVIOUS_PROCESSING_DATE

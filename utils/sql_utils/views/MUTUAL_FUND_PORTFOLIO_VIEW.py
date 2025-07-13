@@ -5,6 +5,7 @@ SUB.FUND_NAME
 ,SUB.FUND_AMC
 ,SUB.FUND_TYPE
 ,SUB.FUND_CATEGORY
+,SUB.ALLOCATION_CATEGORY
 ,SUB.FUND_PURCHASE_DATE
 ,SUB.NAV_DURING_PURCHASE
 ,SUB.PROCESSING_DATE
@@ -31,6 +32,7 @@ FROM
     ,META.AMC                                                                             AS FUND_AMC
     ,META.MF_TYPE                                                                         AS FUND_TYPE
     ,META.FUND_CATEGORY                                                                   AS FUND_CATEGORY
+    ,META.ALLOCATION_CATEGORY                                                             AS ALLOCATION_CATEGORY
     ,PO.PURCHASED_ON                                                                      AS FUND_PURCHASE_DATE
     ,PO.NAV_DURING_PURCHASE                                                               AS NAV_DURING_PURCHASE
     ,(SELECT DISTINCT PROC_DATE FROM PROCESSING_DATE

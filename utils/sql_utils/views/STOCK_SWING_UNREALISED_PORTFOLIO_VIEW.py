@@ -2,6 +2,7 @@ STOCK_SWING_UNREALISED_PORTFOLIO_VIEW = '''
 CREATE VIEW STOCK_SWING_UNREALISED_PORTFOLIO_VIEW AS
 SELECT
     SUB.STOCK_NAME                                                                        AS STOCK_NAME
+    ,SUB.ALLOCATION_CATEGORY                                                              AS ALLOCATION_CATEGORY
     ,SUB.TRADE_DATE                                                                       AS TRADE_DATE
     ,SUB.STOCK_QUANTITY                                                                   AS STOCK_QUANTITY
     ,SUB.TRADE_PRICE                                                                      AS TRADE_PRICE
@@ -25,6 +26,7 @@ FROM
 (
 SELECT
     TRD.STOCK_NAME                                                                        AS STOCK_NAME
+    ,META.ALLOCATION_CATEGORY                                                             AS ALLOCATION_CATEGORY
     ,TRD.TRADE_DATE                                                                       AS TRADE_DATE
     ,TRD.STOCK_QUANTITY                                                                   AS STOCK_QUANTITY
     ,TRD.NET_TRADE_PRICE_PER_UNIT                                                         AS TRADE_PRICE

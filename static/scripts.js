@@ -1,16 +1,17 @@
 import { create_notification } from './create_notification.js'
 //create_notification(message, type, duration)
 
-// Insert into corresponding NAV Table when the site loads
-
-// Method : GET
-// URL    : /api/hist_price/
-
-// Global
+// Global Variables
 let latest_consolidated_returns_data;
 let latest_agg_returns_data;
 let cons_returns_data;
 let agg_returns_data;
+let cons_alloc_data;
+let cons_alloc_portfolio_data;
+let agg_alloc_data;
+let latest_cons_alloc_data;
+let latest_cons_alloc_portfolio_data;
+let latest_agg_alloc_data;
 let processing_date_value;
 let create_table_status;
 let create_view_status;
@@ -20,7 +21,25 @@ let realised_intraday_hist_status;
 let realised_swing_hist_status;
 let unrealised_swing_hist_status;
 let process_consolidated_hist_status;
-let get_consolidated_hist_status;
+let get_consolidated_hist_return_status;
+let process_consolidated_hist_allocation_status;
+let get_consolidated_hist_allocation_status;
+
+// Global Variables for Chart
+
+let consolidated_returns_chart;
+let consolidated_allocation_chart;
+
+const cons_processing_date_array = []
+const cons_perc_total_p_l_array  = []
+const cons_perc_day_p_l_array    = []
+const cons_current_value_array   = []
+const cons_day_p_l_array         = []
+const cons_invested_amount_array = []
+const cons_previous_value_array  = []
+const cons_total_p_l_array       = []
+
+// Global variables for elememts
 
 const total_invested_amount             = document.getElementById("total_invested_amount")
 const current_value                     = document.getElementById("current_value")
@@ -68,7 +87,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await upsert_realised_swing_stock_hist_returns_table()
     await upsert_unrealised_swing_stock_hist_returns_table()
     await upsert_consolidated_hist_returns()
+    await upsert_consolidated_hist_allocation()
     await get_consolidated_hist_returns()
+    await get_consolidated_hist_allocation()
     await create_consolidated_notification()
     }
   }
@@ -382,7 +403,45 @@ process_consolidated_hist_status = process_consolidated_returns_data.status
 if(process_consolidated_hist_status != "Success"){
 create_notification(process_consolidated_returns_data.message, process_consolidated_returns_data.status)
 }
+}
 
+async function upsert_consolidated_hist_allocation(){
+const consolidated_allocation_max_next_proc_date_response = await fetch ('/api/consolidated_hist_allocation/max_next_proc_date/', {
+  method: 'GET'
+})
+
+const consolidated_allocation_max_next_proc_date_data = await consolidated_allocation_max_next_proc_date_response.json();
+const max_next_proc_date_in_consolidated_allocation = consolidated_allocation_max_next_proc_date_data.data.max_next_processing_date
+
+// Get the Max of all Hist Returns tables and get the minimum out of the those
+
+const min_date_from_hist_returns_table_max_date_response = await fetch ('/api/hist_returns_tables/max_processing_date/', {
+  method: 'GET'
+})
+
+const min_date_from_hist_returns_table_max_date_data = await min_date_from_hist_returns_table_max_date_response.json();
+const min_date_from_hist_returns_table_max_date = min_date_from_hist_returns_table_max_date_data.max_proc_date_data.min_of_max_proc_date_from_hist_tables
+
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, '0');
+const day = String(today.getDate()).padStart(2, '0');
+
+let end_date = `${year}-${month}-${day}`
+if(min_date_from_hist_returns_table_max_date){
+end_date = min_date_from_hist_returns_table_max_date
+}
+
+const process_consolidated_allocation_response = await fetch (`/api/process_consolidated_hist_allocation?start_date=${max_next_proc_date_in_consolidated_allocation}&end_date=${end_date}`, {
+  method: 'GET'
+})
+
+const process_consolidated_allocation_data = await process_consolidated_allocation_response.json();
+
+process_consolidated_hist_allocation_status = process_consolidated_allocation_data.status
+if(process_consolidated_hist_allocation_status != "Success"){
+create_notification(process_consolidated_allocation_data.message, process_consolidated_allocation_data.status)
+}
 }
 
 async function get_consolidated_hist_returns(){
@@ -391,9 +450,9 @@ const consolidated_returns_response = await fetch ('/api/consolidated_hist_retur
 })
 
 const consolidated_returns_data = await consolidated_returns_response.json();
-console.log(consolidated_returns_data)
-get_consolidated_hist_status = consolidated_returns_data.status
-if(get_consolidated_hist_status != "Success"){
+
+get_consolidated_hist_return_status = consolidated_returns_data.status
+if(get_consolidated_hist_return_status != "Success"){
 create_notification(consolidated_returns_data.message, consolidated_returns_data.status)
 }
 
@@ -466,8 +525,62 @@ processing_date_input.value = latest_consolidated_returns_data.processing_date
 
 await add_class_list_based_on_value();
 
+// Prepare arrays for Chart
+
+cons_returns_data.forEach(cons_hist_return => {
+  cons_processing_date_array.push(cons_hist_return.processing_date)
+  cons_perc_total_p_l_array.push(cons_hist_return.perc_fin_total_p_l)
+  cons_perc_day_p_l_array.push(cons_hist_return.perc_fin_day_p_l)
+  cons_current_value_array.push(cons_hist_return.fin_current_value)
+  cons_day_p_l_array.push(cons_hist_return.fin_day_p_l)
+  cons_invested_amount_array.push(cons_hist_return.fin_invested_amount)
+  cons_previous_value_array.push(cons_hist_return.fin_previous_value)
+  cons_total_p_l_array.push(cons_hist_return.fin_total_p_l)
+});
+
+await initialize_consolidated_returns_chart();
+
 processing_date_input.addEventListener("change", e => change_processing_date(e))
 
+}
+
+async function get_consolidated_hist_allocation(){
+const consolidated_allocation_response = await fetch ('/api/consolidated_hist_allocation/all/', {
+  method: 'GET'
+})
+
+const consolidated_allocation_data = await consolidated_allocation_response.json();
+
+get_consolidated_hist_allocation_status = consolidated_allocation_data.status
+if(get_consolidated_hist_allocation_status != "Success"){
+create_notification(consolidated_allocation_data.message, consolidated_allocation_data.status)
+}
+
+if(consolidated_allocation_data.data.consolidated_allocation_portfolio_data){
+  cons_alloc_portfolio_data = consolidated_allocation_data.data.consolidated_allocation_portfolio_data
+}
+
+if(consolidated_allocation_data.data.consolidated_allocation_data){
+  cons_alloc_data = consolidated_allocation_data.data.consolidated_allocation_data
+}
+
+if(consolidated_allocation_data.data.agg_consolidated_allocation_data){
+  agg_alloc_data = consolidated_allocation_data.data.agg_consolidated_allocation_data
+}
+
+if(consolidated_allocation_data.data.latest_consolidated_allocation_portfolio_data){
+  latest_cons_alloc_portfolio_data = consolidated_allocation_data.data.latest_consolidated_allocation_portfolio_data
+}
+
+if(consolidated_allocation_data.data.latest_consolidated_allocation_data){
+  latest_cons_alloc_data = consolidated_allocation_data.data.latest_consolidated_allocation_data
+}
+
+if(consolidated_allocation_data.data.latest_agg_consolidated_allocation_data){
+  latest_agg_alloc_data = consolidated_allocation_data.data.latest_agg_consolidated_allocation_data
+}
+
+await initialize_consolidated_allocation_chart();
 }
 
 async function add_class_list_based_on_value(){
@@ -636,16 +749,184 @@ realised_intraday_perc_p_l.classList  = "color-neutral"
 }
 }
 
+async function initialize_consolidated_returns_chart(){
+if(consolidated_returns_chart){
+  consolidated_returns_chart.destroy();
+}
+
+const ctx = document.getElementById('consolidated_returns_chart').getContext('2d');
+
+consolidated_returns_chart = new Chart(ctx, {type: 'line',
+        data: 
+        {
+        labels: cons_processing_date_array,  // Dates on the X-axis
+        datasets: [
+          {
+            label: '% Total Profit/Loss %',
+            data: cons_perc_total_p_l_array, 
+            borderColor: 'rgba(75, 192, 192, 1)',
+            // backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            // fill: true,
+            tension: 0.4
+          },
+          {
+            label: '% Day Profit/Loss',
+            data: cons_perc_day_p_l_array,
+            borderColor: 'rgba(12, 176, 6, 0.82)',
+            // backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            // fill: true,
+            tension: 0.4,
+          },
+          {
+            label: '₹ Invested Amount',
+            data: cons_invested_amount_array,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            // backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            // fill: true,
+            tension: 0.4,
+            hidden: true
+          },
+          {
+            label: '₹ Perceived Value',
+            data: cons_current_value_array,
+            borderColor: 'rgba(153, 51, 255, 1)',
+            // backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            // fill: true,
+            tension: 0.4,
+            hidden: true
+          },
+          {
+            label: '₹ Previous Perceived Value',
+            data: cons_previous_value_array,
+            borderColor: 'rgba(255, 165, 0, 1)',
+            // backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            // fill: true,
+            tension: 0.4,
+            hidden: true
+          },
+          {
+            label: '₹ Total P/L',
+            data: cons_total_p_l_array,
+            borderColor: 'rgba(255, 205, 86, 1)',
+            // backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            // fill: true,
+            tension: 0.4,
+            hidden: true
+          },
+          {
+            label: '₹ Day P/L',
+            data: cons_day_p_l_array,
+            borderColor: 'rgba(255, 105, 180, 1)',
+            // backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            // fill: true,
+            tension: 0.4,
+            hidden: true
+          }
+        ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Consolidated Returns Chart'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
+          },
+          scales: {
+            x: {
+              type: 'category',
+              title: {
+                display: true,
+                text: 'Date'
+              },
+            grid: {
+              color: 'rgba(150, 150, 150, 0.2)', // Light grid color for X-axis
+              lineWidth: 1 // Set line width if needed
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Metrics'
+              },
+              beginAtZero: false,
+            grid: {
+              color: 'rgba(150, 150, 150, 0.2)', // Light grid color for X-axis
+              lineWidth: 1 // Set line width if needed
+              }
+            }
+          }
+        }
+      });
+}
+
+async function initialize_consolidated_allocation_chart(){
+if(consolidated_allocation_chart){
+  consolidated_allocation_chart.destroy();
+}
+
+const ctx = document.getElementById('consolidated_allocation_chart').getContext('2d');
+
+
+const allocation_chart_data = {
+labels: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.portfolio_type),
+datasets: [{
+label: 'Portfolio Allocation',
+data: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.fin_alloc_perc_inv_amt),
+backgroundColor: [
+  'rgba(75, 192, 192, 0.7)',
+  'rgba(255, 205, 86, 0.7)',
+  'rgba(255, 99, 132, 0.7)',
+  'rgba(201, 203, 207, 0.7)'
+],
+borderColor: [
+  'rgba(75, 192, 192, 1)',
+  'rgba(255, 205, 86, 1)',
+  'rgba(255, 99, 132, 1)',
+  'rgba(201, 203, 207, 1)'
+],
+borderWidth: 1
+}]
+};
+
+const allocaion_chart_options = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'bottom'
+    },
+    title: {
+      display: true,
+      text: 'Invested Amount Allocation Pie Chart'
+    }
+  }
+};
+
+const allocation_chart_config = {
+  type: 'pie',
+  data: allocation_chart_data,
+  options: allocaion_chart_options
+};
+
+consolidated_allocation_chart = new Chart(ctx, allocation_chart_config);
+}
+
 async function create_consolidated_notification(){
-if (create_table_status              == "Success" &&
-    create_view_status               == "Success" &&
-    dup_check_status                 == "Success" &&
-    mf_hist_status                   == "Success" &&
-    realised_intraday_hist_status    == "Success" &&
-    realised_swing_hist_status       == "Success" &&
-    unrealised_swing_hist_status     == "Success" &&
-    process_consolidated_hist_status == "Success" &&
-    get_consolidated_hist_status     == "Success"){
+if (create_table_status                         == "Success" &&
+    create_view_status                          == "Success" &&
+    dup_check_status                            == "Success" &&
+    mf_hist_status                              == "Success" &&
+    realised_intraday_hist_status               == "Success" &&
+    realised_swing_hist_status                  == "Success" &&
+    unrealised_swing_hist_status                == "Success" &&
+    process_consolidated_hist_status            == "Success" &&
+    get_consolidated_hist_return_status         == "Success" &&
+    process_consolidated_hist_allocation_status == "Success" &&
+    get_consolidated_hist_allocation_status     == "Success"){
     create_notification('All scheduled background processes executed successfully.', 'success')
     }
 }

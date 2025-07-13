@@ -241,8 +241,17 @@ canvas {
   margin-right: auto;
 }
 
-#consolidated_allocation_chart{
-  max-width: 250px !important;
+.consolidated_allocation_chart{
+  max-width: 400px !important;
+  width: 100% !important;
+  height: 400px !important;
+}
+
+.consoliated_allocation_chart_container{
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 /* Hide items */

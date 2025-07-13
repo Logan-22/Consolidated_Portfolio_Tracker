@@ -29,7 +29,8 @@ let get_consolidated_hist_allocation_status;
 // Global Variables for Chart
 
 let consolidated_returns_chart;
-let consolidated_allocation_chart;
+let consolidated_allocation_chart_invested_amount_by_portfolio_type;
+let consolidated_allocation_chart_invested_amount_by_portfolio_category;
 
 const cons_processing_date_array = []
 const cons_perc_total_p_l_array  = []
@@ -882,14 +883,15 @@ consolidated_returns_chart = new Chart(ctx, {type: 'line',
 }
 
 async function initialize_consolidated_allocation_chart(){
-if(consolidated_allocation_chart){
-  consolidated_allocation_chart.destroy();
+
+// Invested Amount by Portfolio Type  
+if(consolidated_allocation_chart_invested_amount_by_portfolio_type){
+  consolidated_allocation_chart_invested_amount_by_portfolio_type.destroy();
 }
 
-const ctx = document.getElementById('consolidated_allocation_chart').getContext('2d');
+const ctx_invested_amount_by_portfolio_type = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_type').getContext('2d');
 
-
-const allocation_chart_data = {
+const allocation_chart_invested_amount_by_portfolio_type_data = {
 labels: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.portfolio_type),
 datasets: [{
 label: 'Portfolio Allocation',
@@ -910,7 +912,7 @@ borderWidth: 1
 }]
 };
 
-const allocaion_chart_options = {
+const allocation_chart_invested_amount_by_portfolio_type_options = {
   responsive: true,
   plugins: {
     legend: {
@@ -918,18 +920,103 @@ const allocaion_chart_options = {
     },
     title: {
       display: true,
-      text: 'Invested Amount Allocation Pie Chart'
+      text: 'Invested Amount Allocation by Portfolio Type'
     }
   }
 };
 
-const allocation_chart_config = {
+const allocation_chart_invested_amount_by_portfolio_type_config = {
   type: 'pie',
-  data: allocation_chart_data,
-  options: allocaion_chart_options
+  data: allocation_chart_invested_amount_by_portfolio_type_data,
+  options: allocation_chart_invested_amount_by_portfolio_type_options
 };
 
-consolidated_allocation_chart = new Chart(ctx, allocation_chart_config);
+consolidated_allocation_chart_invested_amount_by_portfolio_type = new Chart(ctx_invested_amount_by_portfolio_type, allocation_chart_invested_amount_by_portfolio_type_config);
+
+// Invested Amount by Portfolio Category  
+if(consolidated_allocation_chart_invested_amount_by_portfolio_category){
+  consolidated_allocation_chart_invested_amount_by_portfolio_category.destroy();
+}
+
+// To Aggregate Percentages of same category
+let category_list = []
+const category_allocation_object = {}
+const allocation_perc_by_portfolio_category = []
+
+latest_cons_alloc_data.forEach(allocation => {
+  category_list.push(allocation.portfolio_category)
+})
+category_list = [... new Set(category_list)] // Deduplicate
+category_list.sort()
+
+category_list.forEach(category => {
+category_allocation_object[category] = 0
+latest_cons_alloc_data.forEach(allocation => {
+  if(category == allocation.portfolio_category){
+    category_allocation_object[category] += allocation.fin_alloc_perc_inv_amt
+  }
+})
+})
+
+category_list.forEach(category => {
+  allocation_perc_by_portfolio_category.push(category_allocation_object[category])
+})
+
+const ctx_invested_amount_by_portfolio_category = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_category').getContext('2d');
+
+const allocation_chart_invested_amount_by_portfolio_category_data = {
+labels: category_list,
+datasets: [{
+label: 'Portfolio Allocation',
+data: allocation_perc_by_portfolio_category,
+backgroundColor : [
+  'rgba(75, 192, 192, 0.7)',   // teal
+  'rgba(255, 99, 132, 0.7)',   // pink/red
+  'rgba(255, 205, 86, 0.7)',   // yellow
+  'rgba(54, 162, 235, 0.7)',   // blue
+  'rgba(153, 102, 255, 0.7)',  // purple
+  'rgba(201, 203, 207, 0.7)',  // grey
+  'rgba(255, 159, 64, 0.7)',   // orange
+  'rgba(100, 181, 246, 0.7)',  // sky blue
+  'rgba(139, 195, 74, 0.7)',   // lime green
+  'rgba(255, 138, 128, 0.7)',  // light red
+  'rgba(121, 134, 203, 0.7)',  // indigo
+  'rgba(255, 241, 118, 0.7)',  // light yellow
+  'rgba(129, 212, 250, 0.7)',  // light cyan
+  'rgba(174, 213, 129, 0.7)',  // greenish
+  'rgba(244, 143, 177, 0.7)'   // light pink
+],
+borderColor: [
+  'rgba(75, 192, 192, 1)',
+  'rgba(255, 205, 86, 1)',
+  'rgba(255, 99, 132, 1)',
+  'rgba(201, 203, 207, 1)'
+],
+borderWidth: 1
+}]
+};
+
+const allocation_chart_invested_amount_by_portfolio_category_options = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top'
+    },
+    title: {
+      display: true,
+      text: 'Invested Amount Allocation by Portfolio Category'
+    }
+  }
+};
+
+const allocation_chart_invested_amount_by_portfolio_category_config = {
+  type: 'pie',
+  data: allocation_chart_invested_amount_by_portfolio_category_data,
+  options: allocation_chart_invested_amount_by_portfolio_category_options
+};
+
+consolidated_allocation_chart_invested_amount_by_portfolio_category = new Chart(ctx_invested_amount_by_portfolio_category, allocation_chart_invested_amount_by_portfolio_category_config);
+
 }
 
 async function create_consolidated_notification(){

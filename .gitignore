@@ -8,7 +8,7 @@ db.md
 # DB
 *.db
 databases/
-
+files/
 # C extensions
 *.so
 

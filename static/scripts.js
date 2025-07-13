@@ -13,6 +13,7 @@ let latest_cons_alloc_data;
 let latest_cons_alloc_portfolio_data;
 let latest_agg_alloc_data;
 let processing_date_value;
+let create_folder_status;
 let create_table_status;
 let create_view_status;
 let dup_check_status;
@@ -79,6 +80,7 @@ const realised_intraday_perc_p_l        = document.getElementById("realised_intr
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.getElementById('container')) {
+    await create_managed_folders_in_directory()
     await create_managed_tables_in_db()
     await create_portfolio_views_in_db()
     await upsert_price_table()
@@ -94,6 +96,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 );
+
+// Create Managed Folders in Directory
+
+async function create_managed_folders_in_directory(){
+const create_folder_response=  await fetch ('/api/create_managed_folders/', {
+  method: 'GET'
+})
+
+const create_folder_data = await create_folder_response.json();
+
+create_folder_status = create_folder_data.status
+if(create_folder_status != "Success"){
+create_notification(create_folder_data.message, create_folder_data.status)
+}
+}
 
 // Create Managed Tables in DB
 

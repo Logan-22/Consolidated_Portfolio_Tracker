@@ -95,6 +95,7 @@ from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 # Folders
 
 from utils.folder_utils.paths import upload_folder_path
+from utils.folder_utils.paths import db_folder_path
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader
 
@@ -276,6 +277,16 @@ def create_portfolio_views():
         return jsonify({'message': 'Successfully replaced Portfolio Views in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/create_managed_folders/', methods = ['GET'])
+def create_managed_folders():
+    try:
+        # Create the Upload Directory if it doesn't exist
+        os.makedirs(upload_folder_path, exist_ok = True)
+        os.makedirs(db_folder_path, exist_ok = True)
+        return jsonify({'message': 'Successfully created Managed Folders in Directory','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'}) 
 
 @api.route('/api/create_managed_tables/', methods = ['GET'])
 def create_managed_tables():
@@ -520,8 +531,6 @@ def stock_order_entry_from_pdf():
             stock_pdf_file_name = stock_pdf_file.filename.lower().replace(" ", "_")
             safe_stock_pdf_file_name = secure_filename(stock_pdf_file_name)
 
-            # Create the Upload Directory if it doesn't exist
-            os.makedirs(upload_folder_path, exist_ok=True)
             stock_pdf_file_name_path = os.path.join(upload_folder_path, safe_stock_pdf_file_name)
             
             stock_pdf_file.save(stock_pdf_file_name_path)

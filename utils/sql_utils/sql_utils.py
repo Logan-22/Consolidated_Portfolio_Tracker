@@ -1,6 +1,7 @@
-import sqlite3, os
+import sqlite3
 from flask import  jsonify
 import datetime
+from utils.folder_utils.paths import db_path
 from utils.sql_utils.views.MUTUAL_FUND_PORTFOLIO_VIEW import MUTUAL_FUND_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_MUTUAL_FUND_PORTFOLIO_VIEW import AGG_MUTUAL_FUND_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_MUTUAL_FUND_PORTFOLIO_VIEW import FIN_MUTUAL_FUND_PORTFOLIO_VIEW
@@ -19,11 +20,6 @@ from utils.sql_utils.views.FIN_CONSOLIDATED_PORTFOLIO_VIEW import FIN_CONSOLIDAT
 from utils.sql_utils.views.AGG_CONSOLIDATED_ALLOCATION_VIEW import AGG_CONSOLIDATED_ALLOCATION_VIEW
 from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_VIEW import FIN_CONSOLIDATED_ALLOCATION_VIEW
 from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW import FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW
-
-db_path = os.path.join(os.getcwd(), "databases", "consolidated_portfolio.db")
-
-if not os.path.exists(os.path.dirname(db_path)):
-    os.makedirs(os.path.dirname(db_path))
 
 def create_price_table():
     conn = sqlite3.connect(db_path)

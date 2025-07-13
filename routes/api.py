@@ -38,8 +38,6 @@ get_metrics_from_fin_mutual_fund_portfolio_view,\
 insert_into_mf_hist_returns,\
 get_mf_hist_returns_from_mf_hist_returns_table,\
 get_max_next_proc_date_from_mf_hist_returns_table,\
-create_stock_order_table,\
-insert_stock_order_entry,\
 get_all_symbols_list_from_metadata_store,\
 upsert_trade_entry_in_db,\
 create_trade_table,\
@@ -290,7 +288,6 @@ def create_managed_tables():
         create_working_date_table()
         create_holiday_calendar_table()
         create_mf_hist_returns_table()
-        create_stock_order_table()
         create_trade_table()
         create_fee_table()
         create_realised_intraday_stock_hist_returns_table()
@@ -489,47 +486,6 @@ def process_mf_hist_returns_from_start_to_end_date(start_date, end_date):
         return jsonify({'message': f'Successfully inserted historic returns for {str(log_date)} in to MF_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-
-@api.route('/api/stock_order/', methods = ['POST'])
-def stock_order():
-    try:
-        alt_symbol = request.form.get('alt_symbol')
-        trade_entry_date = request.form.get('trade_entry_date')
-        trade_entry_time = request.form.get('trade_entry_time')
-        trade_exit_date = request.form.get('trade_exit_date')
-        trade_exit_time = request.form.get('trade_exit_time')
-        stock_quantity = request.form.get('stock_quantity')
-        trade_type = request.form.get('trade_type')
-        leverage = request.form.get('leverage')
-        trade_position = request.form.get('trade_position')
-        stock_buy_price = request.form.get('stock_buy_price')
-        stock_sell_price = request.form.get('stock_sell_price')
-        brokerage = request.form.get('brokerage')
-        exchange_transaction_fees = request.form.get('exchange_transaction_fees')
-        igst = request.form.get('igst')
-        securities_transaction_tax = request.form.get('securities_transaction_tax')
-        sebi_turnover_fees = request.form.get('sebi_turnover_fees')
-        auto_square_off_charges = request.form.get('auto_square_off_charges')
-        depository_charges = request.form.get('depository_charges')
-        holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, trade_exit_time = None, None, None, None, None
-        net_obligation, total_fees, net_receivable, actual_p_l_w_leverage = None, None, None, None
-        if trade_exit_date:
-            trade_exit_time = request.form.get('trade_exit_time')
-            # Derived Fields
-            holding_days = request.form.get('holding_days')
-            sell_minus_buy = round(float(request.form.get('sell_minus_buy')), 4)
-            actual_p_l_w_o_leverage = round(float(request.form.get('actual_p_l_w_o_leverage')),2)
-            deployed_capital = round(float(request.form.get('deployed_capital')),4)
-            net_obligation = round(float(request.form.get('net_obligation')),4)
-            total_fees = round(float(request.form.get('total_fees')),4)
-            net_receivable = round(float(request.form.get('net_receivable')),4)
-            actual_p_l_w_leverage = round(float(request.form.get('actual_p_l_w_leverage')),2)
-
-        create_stock_order_table()
-        insert_stock_order_entry(alt_symbol, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, stock_quantity, trade_type, leverage, trade_position, stock_buy_price, stock_sell_price, brokerage, exchange_transaction_fees, igst, securities_transaction_tax, sebi_turnover_fees, holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, net_obligation, total_fees, net_receivable, auto_square_off_charges, depository_charges, actual_p_l_w_leverage)
-        return jsonify({'message': "Successfully inserted data into STOCK_ORDER table", 'status': "Success"})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
     
 @api.route('/api/stock_pdf/', methods = ['POST'])
 def stock_order_entry_from_pdf():

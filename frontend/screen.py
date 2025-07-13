@@ -18,10 +18,6 @@ def metadata_entry():
 def mf_order_entry():
     return render_template('mf_order_entry.html')
 
-@frontend.route('/stock_order/')
-def stock_order_entry():
-    return render_template('stock_order_entry.html')
-
 @frontend.route('/stock_order_pdf/')
 def stock_order_pdf():
     return render_template('stock_order_pdf.html')

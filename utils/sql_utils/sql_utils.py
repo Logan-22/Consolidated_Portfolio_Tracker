@@ -540,51 +540,6 @@ def get_max_next_proc_date_from_mf_hist_returns_table():
     data = {'max_next_processing_date': None}
     return jsonify(data)
 
-def create_stock_order_table():
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS STOCK_ORDER (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            NAME TEXT(200),
-            TRADE_ENTRY_DATE DATE,
-            TRADE_ENTRY_TIME TIME,
-            TRADE_EXIT_DATE DATE,
-            TRADE_EXIT_TIME TIME,
-            STOCK_QUANTITY INTEGER,
-            TRADE_TYPE TEXT(20),
-            LEVERAGE INTEGER,
-            TRADE_POSITION TEXT(20),
-            STOCK_BUY_PRICE NUMERIC(10,4),
-            STOCK_SELL_PRICE NUMERIC(10,4),
-            BROKERAGE NUMERIC(10,4),
-            EXCHANGE_TRANSACTION_FEES NUMERIC(10,4),
-            IGST NUMERIC(10,4),
-            SECURITIES_TRANSACTION_TAX NUMERIC(10,4),
-            SEBI_TURNOVER_FEES NUMERIC(10,4),
-            HOLDING_DAYS INTEGER,
-            "SELL-BUY" NUMERIC(10,4),
-            "%ACTUAL_P_L_WITHOUT_LEVERAGE" NUMERIC(10,4),
-            DEPLOYED_CAPITAL NUMERIC(10,4),
-            NET_OBLIGATION NUMERIC(10,4),
-            TOTAL_FEES NUMERIC(10,4),
-            NET_RECEIVABLE NUMERIC(10,4),
-            AUTO_SQUARE_OFF_CHARGES NUMERIC(10,4),
-            DEPOSITORY_CHARGES NUMERIC(10,4),
-            "%ACTUAL_P_L_WITH_LEVERAGE" NUMERIC(10,4),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
-    
-def insert_stock_order_entry(alt_symbol, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, stock_quantity, trade_type, leverage, trade_position, stock_buy_price, stock_sell_price, brokerage, exchange_transaction_fees, igst, securities_transaction_tax, sebi_turnover_fees, holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, net_obligation, total_fees, net_receivable, auto_square_off_charges, depository_charges, actual_p_l_w_leverage):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO STOCK_ORDER (NAME, TRADE_ENTRY_DATE, TRADE_ENTRY_TIME, TRADE_EXIT_DATE, TRADE_EXIT_TIME, STOCK_QUANTITY, TRADE_TYPE, LEVERAGE, TRADE_POSITION, STOCK_BUY_PRICE, STOCK_SELL_PRICE, BROKERAGE, EXCHANGE_TRANSACTION_FEES, IGST, SECURITIES_TRANSACTION_TAX, SEBI_TURNOVER_FEES, HOLDING_DAYS, "SELL-BUY", "%ACTUAL_P_L_WITHOUT_LEVERAGE", DEPLOYED_CAPITAL, NET_OBLIGATION, TOTAL_FEES, NET_RECEIVABLE, AUTO_SQUARE_OFF_CHARGES, DEPOSITORY_CHARGES, "%ACTUAL_P_L_WITH_LEVERAGE", START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   (alt_symbol, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, stock_quantity, trade_type, leverage, trade_position, stock_buy_price, stock_sell_price, brokerage, exchange_transaction_fees, igst, securities_transaction_tax, sebi_turnover_fees, holding_days, sell_minus_buy, actual_p_l_w_o_leverage, deployed_capital, net_obligation, total_fees, net_receivable, auto_square_off_charges, depository_charges, actual_p_l_w_leverage, trade_entry_date, '9998-12-31', 0  ))
-    conn.commit()
-    conn.close()
-
 def create_trade_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()

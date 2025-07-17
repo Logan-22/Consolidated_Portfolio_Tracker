@@ -30,7 +30,11 @@ let get_consolidated_hist_allocation_status;
 
 let consolidated_returns_chart;
 let consolidated_allocation_chart_invested_amount_by_portfolio_type;
+let consolidated_allocation_chart_profit_or_loss_by_portfolio_type;
 let consolidated_allocation_chart_invested_amount_by_portfolio_category;
+let consolidated_allocation_chart_profit_or_loss_by_portfolio_category;
+let consolidated_allocation_chart_invested_amount_by_portfolio_name;
+let consolidated_allocation_chart_profit_or_loss_by_portfolio_name;
 
 const cons_processing_date_array = []
 const cons_perc_total_p_l_array  = []
@@ -847,7 +851,13 @@ consolidated_returns_chart = new Chart(ctx, {type: 'line',
           plugins: {
             title: {
               display: true,
-              text: 'Consolidated Returns Chart'
+              text: 'Consolidated Portfolio Chart',
+              font: {
+                    size: 20,
+                    weight: 'bold',
+                    family: 'Cambria'
+                    },
+              color: get_accent_color_from_theme()
             },
             tooltip: {
               mode: 'index',
@@ -894,8 +904,8 @@ const ctx_invested_amount_by_portfolio_type = document.getElementById('consolida
 const allocation_chart_invested_amount_by_portfolio_type_data = {
 labels: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.portfolio_type),
 datasets: [{
-label: 'Portfolio Allocation',
-data: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.fin_alloc_perc_inv_amt),
+label: 'Invested Amount',
+data: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.fin_invested_amount),
 backgroundColor: [
   'rgba(75, 192, 192, 0.7)',
   'rgba(255, 205, 86, 0.7)',
@@ -914,25 +924,99 @@ borderWidth: 1
 
 const allocation_chart_invested_amount_by_portfolio_type_options = {
   responsive: true,
+  cutout: '70%',
   plugins: {
     legend: {
-      position: 'bottom'
+      display:false
     },
     title: {
       display: true,
-      text: 'Invested Amount Allocation by Portfolio Type'
+      text: 'Invested Amount by Type',
+      font: {
+        size: 15,
+        weight: 'bold',
+        family: 'Arial'
+      },
+      color: get_accent_color_from_theme(),
+      padding: {
+        top: 10,
+        bottom: 10
+      }
     }
   }
 };
 
 const allocation_chart_invested_amount_by_portfolio_type_config = {
-  type: 'pie',
+  type: 'doughnut',
   data: allocation_chart_invested_amount_by_portfolio_type_data,
   options: allocation_chart_invested_amount_by_portfolio_type_options
 };
 
 consolidated_allocation_chart_invested_amount_by_portfolio_type = new Chart(ctx_invested_amount_by_portfolio_type, allocation_chart_invested_amount_by_portfolio_type_config);
 
+///////////////////////////////////////////////////////////////////////////////
+
+// Profit or Loss Amount by Portfolio Type  
+if(consolidated_allocation_chart_profit_or_loss_by_portfolio_type){
+  consolidated_allocation_chart_profit_or_loss_by_portfolio_type.destroy();
+}
+
+const ctx_profit_or_loss_by_portfolio_type = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_type').getContext('2d');
+
+const allocation_chart_profit_or_loss_by_portfolio_type_data = {
+labels: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.portfolio_type),
+datasets: [{
+label: 'Profit/Loss',
+data: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.p_l),
+backgroundColor: [
+  'rgba(75, 192, 192, 0.7)',
+  'rgba(255, 205, 86, 0.7)',
+  'rgba(255, 99, 132, 0.7)',
+  'rgba(201, 203, 207, 0.7)'
+],
+borderColor: [
+  'rgba(75, 192, 192, 1)',
+  'rgba(255, 205, 86, 1)',
+  'rgba(255, 99, 132, 1)',
+  'rgba(201, 203, 207, 1)'
+],
+borderWidth: 1
+}]
+};
+
+const allocation_chart_profit_or_loss_by_portfolio_type_options = {
+  responsive: true,
+  cutout: '70%',
+  plugins: {
+    legend: {
+      display: false
+    },
+    title: {
+      display: true,
+      text: 'Profit/Loss by Type',
+      font: {
+        size: 15,
+        weight: 'bold',
+        family: 'Arial'
+      },
+      color: get_accent_color_from_theme(),
+      padding: {
+        top: 10,
+        bottom: 10
+      }
+    }
+  }
+};
+
+const allocation_chart_profit_or_loss_by_portfolio_type_config = {
+  type: 'doughnut',
+  data: allocation_chart_profit_or_loss_by_portfolio_type_data,
+  options: allocation_chart_profit_or_loss_by_portfolio_type_options
+};
+
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type = new Chart(ctx_profit_or_loss_by_portfolio_type, allocation_chart_profit_or_loss_by_portfolio_type_config);
+
+///////////////////////////////////////////////////////////////////////////////
 // Invested Amount by Portfolio Category  
 if(consolidated_allocation_chart_invested_amount_by_portfolio_category){
   consolidated_allocation_chart_invested_amount_by_portfolio_category.destroy();
@@ -941,7 +1025,7 @@ if(consolidated_allocation_chart_invested_amount_by_portfolio_category){
 // To Aggregate Percentages of same category
 let category_list = []
 const category_allocation_object = {}
-const allocation_perc_by_portfolio_category = []
+const allocation_invested_amt_by_portfolio_category = []
 
 latest_cons_alloc_data.forEach(allocation => {
   category_list.push(allocation.portfolio_category)
@@ -953,13 +1037,13 @@ category_list.forEach(category => {
 category_allocation_object[category] = 0
 latest_cons_alloc_data.forEach(allocation => {
   if(category == allocation.portfolio_category){
-    category_allocation_object[category] += allocation.fin_alloc_perc_inv_amt
+    category_allocation_object[category] += allocation.amount_invested
   }
 })
 })
 
 category_list.forEach(category => {
-  allocation_perc_by_portfolio_category.push(category_allocation_object[category])
+  allocation_invested_amt_by_portfolio_category.push(category_allocation_object[category])
 })
 
 const ctx_invested_amount_by_portfolio_category = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_category').getContext('2d');
@@ -967,8 +1051,8 @@ const ctx_invested_amount_by_portfolio_category = document.getElementById('conso
 const allocation_chart_invested_amount_by_portfolio_category_data = {
 labels: category_list,
 datasets: [{
-label: 'Portfolio Allocation',
-data: allocation_perc_by_portfolio_category,
+label: 'Invested Amount',
+data: allocation_invested_amt_by_portfolio_category,
 backgroundColor : [
   'rgba(75, 192, 192, 0.7)',   // teal
   'rgba(255, 99, 132, 0.7)',   // pink/red
@@ -998,24 +1082,292 @@ borderWidth: 1
 
 const allocation_chart_invested_amount_by_portfolio_category_options = {
   responsive: true,
+  cutout: '70%',
   plugins: {
     legend: {
-      position: 'top'
+      display: false
     },
     title: {
       display: true,
-      text: 'Invested Amount Allocation by Portfolio Category'
+      text: 'Invested Amount by Category',
+      font: {
+        size: 15,
+        weight: 'bold',
+        family: 'Arial'
+      },
+      color: get_accent_color_from_theme(),
+      padding: {
+        top: 10,
+        bottom: 10
+      }
     }
   }
 };
 
 const allocation_chart_invested_amount_by_portfolio_category_config = {
-  type: 'pie',
+  type: 'doughnut',
   data: allocation_chart_invested_amount_by_portfolio_category_data,
   options: allocation_chart_invested_amount_by_portfolio_category_options
 };
 
 consolidated_allocation_chart_invested_amount_by_portfolio_category = new Chart(ctx_invested_amount_by_portfolio_category, allocation_chart_invested_amount_by_portfolio_category_config);
+
+///////////////////////////////////////////////////////////////////////////////
+// Profit/Loss Amount by Portfolio Category  
+if(consolidated_allocation_chart_profit_or_loss_by_portfolio_category){
+  consolidated_allocation_chart_profit_or_loss_by_portfolio_category.destroy();
+}
+
+// To Aggregate Percentages of same category
+const p_l_category_allocation_object = {}
+const p_l_allocation_amt_by_portfolio_category = []
+
+category_list.forEach(category => {
+p_l_category_allocation_object[category] = 0
+latest_cons_alloc_data.forEach(allocation => {
+  if(category == allocation.portfolio_category){
+    p_l_category_allocation_object[category] += allocation.p_l
+  }
+})
+})
+
+category_list.forEach(category => {
+  p_l_allocation_amt_by_portfolio_category.push(p_l_category_allocation_object[category])
+})
+
+const ctx_profit_or_loss_by_portfolio_category = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_category').getContext('2d');
+
+const allocation_chart_profit_or_loss_by_portfolio_category_data = {
+labels: category_list,
+datasets: [{
+label: 'Profit/Loss',
+data: p_l_allocation_amt_by_portfolio_category,
+backgroundColor : [
+  'rgba(75, 192, 192, 0.7)',   // teal
+  'rgba(255, 99, 132, 0.7)',   // pink/red
+  'rgba(255, 205, 86, 0.7)',   // yellow
+  'rgba(54, 162, 235, 0.7)',   // blue
+  'rgba(153, 102, 255, 0.7)',  // purple
+  'rgba(201, 203, 207, 0.7)',  // grey
+  'rgba(255, 159, 64, 0.7)',   // orange
+  'rgba(100, 181, 246, 0.7)',  // sky blue
+  'rgba(139, 195, 74, 0.7)',   // lime green
+  'rgba(255, 138, 128, 0.7)',  // light red
+  'rgba(121, 134, 203, 0.7)',  // indigo
+  'rgba(255, 241, 118, 0.7)',  // light yellow
+  'rgba(129, 212, 250, 0.7)',  // light cyan
+  'rgba(174, 213, 129, 0.7)',  // greenish
+  'rgba(244, 143, 177, 0.7)'   // light pink
+],
+borderColor: [
+  'rgba(75, 192, 192, 1)',
+  'rgba(255, 205, 86, 1)',
+  'rgba(255, 99, 132, 1)',
+  'rgba(201, 203, 207, 1)'
+],
+borderWidth: 1
+}]
+};
+
+const allocation_chart_profit_or_loss_by_portfolio_category_options = {
+  responsive: true,
+  cutout: '70%',
+  plugins: {
+    legend: {
+      display :false
+    },
+    title: {
+      display: true,
+      text: 'Profit/Loss by Category',
+      font: {
+        size: 15,
+        weight: 'bold',
+        family: 'Arial'
+      },
+      color: get_accent_color_from_theme(),
+      padding: {
+        top: 10,
+        bottom: 10
+      }
+    }
+  }
+};
+
+const allocation_chart_profit_or_loss_by_portfolio_category_config = {
+  type: 'doughnut',
+  data: allocation_chart_profit_or_loss_by_portfolio_category_data,
+  options: allocation_chart_profit_or_loss_by_portfolio_category_options
+};
+
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category = new Chart(ctx_profit_or_loss_by_portfolio_category, allocation_chart_profit_or_loss_by_portfolio_category_config);
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Invested Amount by Portfolio Name
+if(consolidated_allocation_chart_invested_amount_by_portfolio_name){
+  consolidated_allocation_chart_invested_amount_by_portfolio_name.destroy();
+}
+
+const ctx_invested_amount_by_portfolio_name = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_name').getContext('2d');
+
+const allocation_chart_invested_amount_by_portfolio_name_data = {
+labels: latest_agg_alloc_data.map(portfolio => portfolio.portfolio_name),
+datasets: [{
+label: 'Invested Amount',
+data: latest_agg_alloc_data.map(portfolio => portfolio.amount_invested),
+backgroundColor: [
+  'rgba(75, 192, 192, 0.7)',    // Teal
+  'rgba(255, 205, 86, 0.7)',    // Yellow
+  'rgba(255, 99, 132, 0.7)',    // Pink/Red
+  'rgba(201, 203, 207, 0.7)',   // Gray
+  'rgba(54, 162, 235, 0.7)',    // Blue
+  'rgba(153, 102, 255, 0.7)',   // Purple
+  'rgba(255, 159, 64, 0.7)',    // Orange
+  'rgba(100, 181, 246, 0.7)',   // Light Blue
+  'rgba(139, 195, 74, 0.7)',    // Light Green
+  'rgba(255, 138, 128, 0.7)',   // Soft Red
+  'rgba(121, 134, 203, 0.7)',   // Indigo
+  'rgba(255, 241, 118, 0.7)',   // Light Yellow
+  'rgba(129, 212, 250, 0.7)',   // Cyan
+  'rgba(174, 213, 129, 0.7)',   // Pastel Green
+  'rgba(244, 143, 177, 0.7)'    // Light Pink
+],
+borderColor: [
+  'rgba(75, 192, 192, 1)',    // Teal
+  'rgba(255, 205, 86, 1)',    // Yellow
+  'rgba(255, 99, 132, 1)',    // Pink/Red
+  'rgba(201, 203, 207, 1)',   // Gray
+  'rgba(54, 162, 235, 1)',    // Blue
+  'rgba(153, 102, 255, 1)',   // Purple
+  'rgba(255, 159, 64, 1)',    // Orange
+  'rgba(100, 181, 246, 1)',   // Light Blue
+  'rgba(139, 195, 74, 1)',    // Light Green
+  'rgba(255, 138, 128, 1)',   // Soft Red
+  'rgba(121, 134, 203, 1)',   // Indigo
+  'rgba(255, 241, 118, 1)',   // Light Yellow
+  'rgba(129, 212, 250, 1)',   // Cyan
+  'rgba(174, 213, 129, 1)',   // Pastel Green
+  'rgba(244, 143, 177, 1)'    // Light Pink
+],
+borderWidth: 1
+}]
+};
+
+const allocation_chart_invested_amount_by_portfolio_name_options = {
+  responsive: true,
+  cutout: '70%',
+  plugins: {
+    legend: {
+      display: false
+    },
+    title: {
+      display: true,
+      text: 'Invested Amount by Name',
+      font: {
+        size: 15,
+        weight: 'bold',
+        family: 'Arial'
+      },
+      color: get_accent_color_from_theme(),
+      padding: {
+        top: 10,
+        bottom: 10
+      }
+    }
+  }
+};
+
+const allocation_chart_invested_amount_by_portfolio_name_config = {
+  type: 'doughnut',
+  data: allocation_chart_invested_amount_by_portfolio_name_data,
+  options: allocation_chart_invested_amount_by_portfolio_name_options
+};
+
+consolidated_allocation_chart_invested_amount_by_portfolio_name = new Chart(ctx_invested_amount_by_portfolio_name, allocation_chart_invested_amount_by_portfolio_name_config);
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Invested Amount by Portfolio Name
+if(consolidated_allocation_chart_profit_or_loss_by_portfolio_name){
+  consolidated_allocation_chart_profit_or_loss_by_portfolio_name.destroy();
+}
+
+const ctx_profit_or_loss_by_portfolio_name = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_name').getContext('2d');
+
+const allocation_chart_profit_or_loss_by_portfolio_name_data = {
+labels: latest_agg_alloc_data.map(portfolio => portfolio.portfolio_name),
+datasets: [{
+label: 'Profit/Loss',
+data: latest_agg_alloc_data.map(portfolio => portfolio.p_l),
+backgroundColor: [
+  'rgba(75, 192, 192, 0.7)',    // Teal
+  'rgba(255, 205, 86, 0.7)',    // Yellow
+  'rgba(255, 99, 132, 0.7)',    // Pink/Red
+  'rgba(201, 203, 207, 0.7)',   // Gray
+  'rgba(54, 162, 235, 0.7)',    // Blue
+  'rgba(153, 102, 255, 0.7)',   // Purple
+  'rgba(255, 159, 64, 0.7)',    // Orange
+  'rgba(100, 181, 246, 0.7)',   // Light Blue
+  'rgba(139, 195, 74, 0.7)',    // Light Green
+  'rgba(255, 138, 128, 0.7)',   // Soft Red
+  'rgba(121, 134, 203, 0.7)',   // Indigo
+  'rgba(255, 241, 118, 0.7)',   // Light Yellow
+  'rgba(129, 212, 250, 0.7)',   // Cyan
+  'rgba(174, 213, 129, 0.7)',   // Pastel Green
+  'rgba(244, 143, 177, 0.7)'    // Light Pink
+],
+borderColor: [
+  'rgba(75, 192, 192, 1)',    // Teal
+  'rgba(255, 205, 86, 1)',    // Yellow
+  'rgba(255, 99, 132, 1)',    // Pink/Red
+  'rgba(201, 203, 207, 1)',   // Gray
+  'rgba(54, 162, 235, 1)',    // Blue
+  'rgba(153, 102, 255, 1)',   // Purple
+  'rgba(255, 159, 64, 1)',    // Orange
+  'rgba(100, 181, 246, 1)',   // Light Blue
+  'rgba(139, 195, 74, 1)',    // Light Green
+  'rgba(255, 138, 128, 1)',   // Soft Red
+  'rgba(121, 134, 203, 1)',   // Indigo
+  'rgba(255, 241, 118, 1)',   // Light Yellow
+  'rgba(129, 212, 250, 1)',   // Cyan
+  'rgba(174, 213, 129, 1)',   // Pastel Green
+  'rgba(244, 143, 177, 1)'    // Light Pink
+],
+borderWidth: 1
+}]
+};
+
+const allocation_chart_profit_or_loss_by_portfolio_name_options = {
+  responsive: true,
+  cutout: '70%',
+  plugins: {
+    legend: {
+      display: false
+    },
+    title: {
+      display: true,
+      text: 'Profit/Loss by Name',
+      font: {
+        size: 15,
+        weight: 'bold',
+        family: 'Arial'
+      },
+      color: get_accent_color_from_theme(),
+      padding: {
+        top: 10,
+        bottom: 10
+      }
+    }
+  }
+};
+
+const allocation_chart_profit_or_loss_by_portfolio_name_config = {
+  type: 'doughnut',
+  data: allocation_chart_profit_or_loss_by_portfolio_name_data,
+  options: allocation_chart_profit_or_loss_by_portfolio_name_options
+};
+
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name = new Chart(ctx_profit_or_loss_by_portfolio_name, allocation_chart_profit_or_loss_by_portfolio_name_config);
 
 }
 
@@ -1135,4 +1487,9 @@ realised_intraday_perc_p_l.textContent             = "0 %"
 }
 
 add_class_list_based_on_value()
+}
+
+function get_accent_color_from_theme(){
+  let accent_color = document.body.classList.contains("Zerodha_Theme") ? '#f6461a': document.body.classList.contains("Dark_Theme") ? '#bb86fc' : '#3f51b5'
+  return accent_color
 }

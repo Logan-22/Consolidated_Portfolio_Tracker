@@ -242,12 +242,11 @@ canvas {
 }
 
 .consolidated_allocation_chart{
-  max-width: 400px !important;
-  width: 100% !important;
-  height: 400px !important;
+  max-width: 200px !important;
+  height: 200px !important;
 }
 
-.consoliated_allocation_chart_container{
+.consolidated_allocation_chart_container{
   display: flex;
   justify-content: space-between;
   gap: 20px;

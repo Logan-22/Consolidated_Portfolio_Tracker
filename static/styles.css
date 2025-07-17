@@ -369,10 +369,6 @@ canvas {
 
 /* Custom Selectors */
 
-#title {
-  letter-spacing: 5px;
-  animation: glow 1.5s ease-in-out infinite alternate;
-}
 
 /* Glow Definition */
 

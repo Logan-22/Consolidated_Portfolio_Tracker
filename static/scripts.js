@@ -77,11 +77,7 @@ const realised_swing_previous_value     = document.getElementById("realised_swin
 const realised_swing_p_l                = document.getElementById("realised_swing_p_l")
 const realised_swing_perc_p_l           = document.getElementById("realised_swing_perc_p_l")
 
-const realised_intraday_invested_amount = document.getElementById("realised_intraday_invested_amount")
-const realised_intraday_current_value   = document.getElementById("realised_intraday_current_value")
-const realised_intraday_previous_value  = document.getElementById("realised_intraday_previous_value")
 const realised_intraday_p_l             = document.getElementById("realised_intraday_p_l")
-const realised_intraday_perc_p_l        = document.getElementById("realised_intraday_perc_p_l")
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.getElementById('container')) {
@@ -515,16 +511,11 @@ unrealised_swing_perc_day_p_l.textContent          = `${element.perc_agg_day_p_l
 else if(element.portfolio_type == "Realised Swing Stocks"){
 realised_swing_invested_amount.textContent         = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
 realised_swing_current_value.textContent           = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
-realised_swing_previous_value.textContent          = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
 realised_swing_p_l.textContent                     = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
 realised_swing_perc_p_l.textContent                = `${element.perc_agg_total_p_l} %`
 }
 else if(element.portfolio_type == "Intraday Stocks"){
-realised_intraday_invested_amount.textContent      = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
-realised_intraday_current_value.textContent        = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
-realised_intraday_previous_value.textContent       = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
 realised_intraday_p_l.textContent                  = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
-realised_intraday_perc_p_l.textContent             = `${element.perc_agg_total_p_l} %`
 }
 })
 }
@@ -759,15 +750,6 @@ realised_intraday_card.classList += " border-left-loss"
 } else{
 realised_intraday_p_l.classList  = "color-neutral"
 realised_intraday_card.classList += " border-left-neutral"
-}
-
-const realised_intraday_perc_p_l_value = Number(realised_intraday_perc_p_l.textContent.split(" ")[0].replaceAll(",",""))
-if (realised_intraday_perc_p_l_value > 0){
-realised_intraday_perc_p_l.classList  = "color-profit"
-} else if (realised_intraday_perc_p_l_value < 0){
-realised_intraday_perc_p_l.classList  = "color-loss"
-} else{
-realised_intraday_perc_p_l.classList  = "color-neutral"
 }
 }
 
@@ -1487,9 +1469,108 @@ realised_intraday_perc_p_l.textContent             = "0 %"
 }
 
 add_class_list_based_on_value()
+
+// Reset and Update the Doughnut charts
+
+consolidated_allocation_chart_invested_amount_by_portfolio_type.data.datasets[0].data = []
+consolidated_allocation_chart_invested_amount_by_portfolio_type.data.labels = []
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type.data.datasets[0].data = []
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type.data.labels = []
+
+cons_alloc_portfolio_data.forEach(allocation => {
+if(allocation.processing_date == processing_date_value || (processing_date_value > allocation.processing_date && processing_date_value < allocation.next_processing_date))
+{
+consolidated_allocation_chart_invested_amount_by_portfolio_type.data.datasets[0].data.push(allocation.amount_invested)
+consolidated_allocation_chart_invested_amount_by_portfolio_type.data.labels.push(allocation.portfolio_type)
+consolidated_allocation_chart_invested_amount_by_portfolio_type.update()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type.data.datasets[0].data.push(allocation.p_l)
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type.data.labels.push(allocation.portfolio_type)
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type.update()
+}
+})
+
+///////////////////////////////////////////////////////////////////////////////
+
+consolidated_allocation_chart_invested_amount_by_portfolio_category.data.datasets[0].data = []
+consolidated_allocation_chart_invested_amount_by_portfolio_category.data.labels = []
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category.data.datasets[0].data = []
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category.data.labels = []
+let category_list = []
+const category_invested_amount_object = {}
+const category_profit_or_loss_object = {}
+
+// Get Category List
+cons_alloc_data.forEach(allocation => {
+if(allocation.processing_date == processing_date_value || (processing_date_value > allocation.processing_date && processing_date_value < allocation.next_processing_date))
+{
+category_list.push(allocation.portfolio_category)
+}
+})
+
+category_list = [... new Set(category_list)] // Deduplicate
+category_list.sort()
+
+category_list.forEach(category => {
+category_invested_amount_object[category] = 0
+category_profit_or_loss_object[category] = 0
+cons_alloc_data.forEach(allocation => {
+  if(category == allocation.portfolio_category && (allocation.processing_date == processing_date_value || (processing_date_value > allocation.processing_date && processing_date_value < allocation.next_processing_date))){
+    category_invested_amount_object[category] += allocation.amount_invested
+    category_profit_or_loss_object[category] += allocation.p_l
+  }
+})
+})
+
+category_list.forEach(category => {
+consolidated_allocation_chart_invested_amount_by_portfolio_category.data.datasets[0].data.push(category_invested_amount_object[category])
+consolidated_allocation_chart_invested_amount_by_portfolio_category.data.labels.push(category)
+consolidated_allocation_chart_invested_amount_by_portfolio_category.update()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category.data.datasets[0].data.push(category_profit_or_loss_object[category])
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category.data.labels.push(category)
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category.update()
+})
+
+///////////////////////////////////////////////////////////////////////////////
+
+consolidated_allocation_chart_invested_amount_by_portfolio_name.data.datasets[0].data = []
+consolidated_allocation_chart_invested_amount_by_portfolio_name.data.labels = []
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name.data.datasets[0].data = []
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name.data.labels = []
+
+agg_alloc_data.forEach(allocation => {
+if(allocation.processing_date == processing_date_value || (processing_date_value > allocation.processing_date && processing_date_value < allocation.next_processing_date))
+{
+console.log(allocation)
+consolidated_allocation_chart_invested_amount_by_portfolio_name.data.datasets[0].data.push(allocation.amount_invested)
+consolidated_allocation_chart_invested_amount_by_portfolio_name.data.labels.push(allocation.portfolio_name)
+consolidated_allocation_chart_invested_amount_by_portfolio_name.update()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name.data.datasets[0].data.push(allocation.p_l)
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name.data.labels.push(allocation.portfolio_name)
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name.update()
+}
+})
+
 }
 
 function get_accent_color_from_theme(){
   let accent_color = document.body.classList.contains("Zerodha_Theme") ? '#f6461a': document.body.classList.contains("Dark_Theme") ? '#bb86fc' : '#3f51b5'
   return accent_color
+}
+
+export async function change_title_color_in_chart(){
+consolidated_returns_chart.options.plugins.title.color = get_accent_color_from_theme()
+consolidated_allocation_chart_invested_amount_by_portfolio_type.options.plugins.title.color = get_accent_color_from_theme()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type.options.plugins.title.color = get_accent_color_from_theme()
+consolidated_allocation_chart_invested_amount_by_portfolio_category.options.plugins.title.color = get_accent_color_from_theme()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category.options.plugins.title.color = get_accent_color_from_theme()
+consolidated_allocation_chart_invested_amount_by_portfolio_name.options.plugins.title.color = get_accent_color_from_theme()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name.options.plugins.title.color = get_accent_color_from_theme()
+
+consolidated_returns_chart.update()
+consolidated_allocation_chart_invested_amount_by_portfolio_type.update()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type.update()
+consolidated_allocation_chart_invested_amount_by_portfolio_category.update()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category.update()
+consolidated_allocation_chart_invested_amount_by_portfolio_name.update()
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name.update()
 }

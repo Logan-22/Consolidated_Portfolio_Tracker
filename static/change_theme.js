@@ -1,4 +1,5 @@
 import { create_notification } from './create_notification.js'
+import { change_title_color_in_chart } from './scripts.js';
 
 const change_theme_button = document.getElementById('change-theme');
 
@@ -11,10 +12,11 @@ if (saved_theme) {
 
 if (change_theme_button) {
 change_theme_button.addEventListener('change', () => {
-    create_notification(`Changed theme to ${change_theme_button.value}`, 'success')
-    const theme_value = change_theme_button.value.replaceAll(" ", "_")
-    document.body.classList = ""
-    document.body.classList.add(theme_value)
-    localStorage.setItem('theme', theme_value);
+  const theme_value = change_theme_button.value.replaceAll(" ", "_")
+  document.body.classList = ""
+  document.body.classList.add(theme_value)
+  create_notification(`Changed theme to ${change_theme_button.value}`, 'success')
+  change_title_color_in_chart()
+  localStorage.setItem('theme', theme_value);
   });
 }

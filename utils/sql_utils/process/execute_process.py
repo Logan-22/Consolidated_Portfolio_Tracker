@@ -69,9 +69,8 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
             for proc_typ_cd in proc_typ_cds_list:
                 update_proc_date_in_processing_date_table(proc_typ_cd, processing_date, next_processing_date, prev_processing_date)
             
-            # Input View Palyload
-            input_view = process_metadata['INPUT_VIEW']
-            input_view_rows = fetch_queries_as_dictionaries(f'SELECT * FROM {input_view};')
+            # Input View Payload
+            input_view_rows = fetch_queries_as_dictionaries(f"SELECT PROC.PROC_DATE, INP.* FROM {process_metadata['INPUT_VIEW']} INP LEFT OUTER JOIN (SELECT DISTINCT PROC_DATE FROM PROCESSING_DATE WHERE PROC_TYP_CD IN ('{process_metadata['PROC_TYP_CD_LIST']}')) PROC ON 1 = 1;")
             for row in input_view_rows:
                 payloads.append(row)
 
@@ -82,6 +81,6 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
         logs = upsert_scd2(process_name, process_metadata['TARGET_TABLE'], payloads, process_id, processing_date, prev_processing_date, next_processing_date)
     
     # Update the Initial Log Record
-    update_log_record(process_name, process_id, logs['status'], logs['message'], logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['no_change_count'], str(logs['skipped_due_to_schema_mismatch']))
+    update_log_record(process_name, process_id, logs['status'], logs['message'], logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['no_change_count'], logs['skipped_count'], str(logs['skipped_due_to_schema_mismatch']))
 
     return({'message': f'Process {process_name} Successfully Completed', 'status': 'Success'})

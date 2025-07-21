@@ -10,6 +10,7 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
         ,'inserted_count': 0
         ,'updated_count': 0
         ,'no_change_count': 0
+        ,'skipped_count': 0
         ,'skipped_due_to_schema_mismatch': []
         ,'status': ''
         ,'message': ''
@@ -35,9 +36,10 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
     table_column_set = set(column_names_list)
     scd2_columns_set = {'"UPDATE_PROCESS_NAME"', '"UPDATE_PROCESS_ID"', '"PROCESS_NAME"',\
                         '"PROCESS_ID"', '"START_DATE"', '"END_DATE"', '"RECORD_DELETED_FLAG"'}
-    auto_generated_columns_set = {'"ID"'}
+    columns_in_table_to_be_ignored_set = {'"ID"'}
+    columns_in_payload_to_be_ignored_set = {'"PROC_DATE"'}
 
-    value_columns_to_be_compared = [column for column in column_names_list if column not in scd2_columns_set and column not in auto_generated_columns_set] # column_names_list is already with ""
+    value_columns_to_be_compared = [column for column in column_names_list if column not in scd2_columns_set and column not in columns_in_table_to_be_ignored_set] # column_names_list is already with ""
     column_index_map = {column: index for index, column in enumerate(value_columns_to_be_compared)} # value_columns_to_be_compared already has ""
     select_clause = ", ".join(value_columns_to_be_compared)
 
@@ -45,11 +47,11 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
         updated = False
         logs['payload_count'] += 1
         payload_keys_set = set(f'"{key}"' for key in payload.keys())
-
-        missing_in_table = payload_keys_set - table_column_set
-        missing_in_payload = table_column_set - payload_keys_set - scd2_columns_set - auto_generated_columns_set
+        missing_in_table = payload_keys_set - table_column_set - columns_in_payload_to_be_ignored_set
+        missing_in_payload = table_column_set - payload_keys_set - scd2_columns_set - columns_in_table_to_be_ignored_set
 
         if missing_in_table or missing_in_payload:
+            logs['skipped_count'] += 1
             logs['skipped_due_to_schema_mismatch'].append({
                 'payload': payload
                 ,'missing_in_table' : list(missing_in_table)

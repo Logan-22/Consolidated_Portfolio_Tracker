@@ -115,7 +115,7 @@ const process_simulate_returns_data = await process_simulate_returns_response.js
 
 create_notification(process_simulate_returns_data.message, process_simulate_returns_data.status)
 
-if(simulate_returns_data.process_simulate_returns_data === "Success"){
+if(process_simulate_returns_data.status === "Success"){
     init_simulated_returns_chart()
 }
 })

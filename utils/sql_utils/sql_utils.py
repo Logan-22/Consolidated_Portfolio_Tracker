@@ -299,6 +299,7 @@ def create_execution_logs_table():
             INSERTED_COUNT INTEGER,
             UPDATED_COUNT INTEGER,
             NO_CHANGE_COUNT INTEGER,
+            SKIPPED_COUNT INTEGER,
             SKIPPED_DUE_TO_SCHEMA TEXT,
             START_TS TEXT,
             END_TS TEXT

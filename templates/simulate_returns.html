@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Simulate Returns{% endblock %}
+
+{% block content %}
+    <div>
+    <form id = "simulate_returns_form">
+
+    <b>Simulate Returns</b></label></br></br>
+
+    <button type = "submit" class = "submit">Start Simulating Returns</button>
+    </form>
+    </div>
+    <div>
+        <canvas id="simulated_returns_chart"></canvas>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='simulate_returns.js') }}" defer></script>
+{% endblock %}

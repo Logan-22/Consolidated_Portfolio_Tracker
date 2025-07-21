@@ -6,6 +6,10 @@ frontend = Blueprint('frontend', __name__)
 def index():
     return render_template('index.html')
 
+@frontend.route('/simulate_returns/')
+def simulate_returns():
+    return render_template('simulate_returns.html')
+
 @frontend.route('/hist_price/')
 def hist_price_form():
     return render_template('hist_price_form.html')

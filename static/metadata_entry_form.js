@@ -7,7 +7,6 @@ import { create_notification } from './create_notification.js'
 
 // Hide Options if not Mutual Fund
 
-
 toggle_hide_in_metadata_entry_form();
 
 async function toggle_hide_in_metadata_entry_form() {
@@ -82,4 +81,7 @@ body: formData
 const metadata_post_data = await metadata_post_response.json();
 
 create_notification(metadata_post_data.message, metadata_post_data.status)
+
+if(metadata_post_data.status == "Success")
+document.getElementById('metadata_entry_form').reset()
 })

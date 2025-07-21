@@ -1540,7 +1540,6 @@ consolidated_allocation_chart_profit_or_loss_by_portfolio_name.data.labels = []
 agg_alloc_data.forEach(allocation => {
 if(allocation.processing_date == processing_date_value || (processing_date_value > allocation.processing_date && processing_date_value < allocation.next_processing_date))
 {
-console.log(allocation)
 consolidated_allocation_chart_invested_amount_by_portfolio_name.data.datasets[0].data.push(allocation.amount_invested)
 consolidated_allocation_chart_invested_amount_by_portfolio_name.data.labels.push(allocation.portfolio_name)
 consolidated_allocation_chart_invested_amount_by_portfolio_name.update()

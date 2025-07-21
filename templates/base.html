@@ -13,6 +13,7 @@
 <header class="navbar">
     <nav id="index-nav" class="top-nav">
         <a href="/">Home</a>
+        <a href="/simulate_returns">Simulate Returns</a>
         <a href="/hist_price">Historic Price</a>
         <a href="/metadata">Metadata Entry</a>
         <a href="/mf_order">Mutual Funds Order Entry</a>
@@ -33,5 +34,11 @@
     <!-- Page-specific scripts -->
     {% block scripts %}{% endblock %}
 <div id="notification-container" class="notification-container"></div>
+
+<footer class="footer">
+    <div class="footer-content">
+        <p>&copy; {{ current_year }} Consolidated Portfolio Tracker App. All rights reserved.</p>
+    </div>
+</footer>
 </body>
 </html>

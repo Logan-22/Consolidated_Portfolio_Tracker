@@ -2,6 +2,8 @@ import sqlite3
 from flask import  jsonify
 import datetime
 from utils.folder_utils.paths import db_path
+from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
+
 from utils.sql_utils.views.MUTUAL_FUND_PORTFOLIO_VIEW import MUTUAL_FUND_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_MUTUAL_FUND_PORTFOLIO_VIEW import AGG_MUTUAL_FUND_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_MUTUAL_FUND_PORTFOLIO_VIEW import FIN_MUTUAL_FUND_PORTFOLIO_VIEW
@@ -20,6 +22,9 @@ from utils.sql_utils.views.FIN_CONSOLIDATED_PORTFOLIO_VIEW import FIN_CONSOLIDAT
 from utils.sql_utils.views.AGG_CONSOLIDATED_ALLOCATION_VIEW import AGG_CONSOLIDATED_ALLOCATION_VIEW
 from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_VIEW import FIN_CONSOLIDATED_ALLOCATION_VIEW
 from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW import FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW
+from utils.sql_utils.views.SIMULATED_PORTFOLIO_VIEW import SIMULATED_PORTFOLIO_VIEW
+from utils.sql_utils.views.AGG_SIMULATED_PORTFOLIO_VIEW import AGG_SIMULATED_PORTFOLIO_VIEW
+from utils.sql_utils.views.FIN_SIMULATED_PORTFOLIO_VIEW import FIN_SIMULATED_PORTFOLIO_VIEW
 
 def create_price_table():
     conn = sqlite3.connect(db_path)
@@ -98,6 +103,17 @@ def create_metadata_store_table():
             END_DATE DATE,
             RECORD_DELETED_FLAG INTEGER
         )''')
+
+def create_metadata_key_columns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS METADATA_KEY_COLUMNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROCESS_NAME TEXT(100),
+            KEYCOLUMN_NAME TEXT(100),
+            CONSIDER_FOR_PROCESSING INTEGER
+        );''')
 
 def insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin):
     conn = sqlite3.connect(db_path)
@@ -223,7 +239,70 @@ def create_processing_date_table():
                    ('PPF_MF_PROC', datetime.date.today(), datetime.date.today(), datetime.date.today()))
         cursor.execute("INSERT INTO PROCESSING_DATE (PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE) VALUES (?, ?, ?, ?)",
                    ('STOCK_PROC', datetime.date.today(), datetime.date.today(), datetime.date.today()))
+        cursor.execute("INSERT INTO PROCESSING_DATE (PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE) VALUES (?, ?, ?, ?)",
+                   ('SIM_MF_PROC', datetime.date.today(), datetime.date.today(), datetime.date.today()))
+        cursor.execute("INSERT INTO PROCESSING_DATE (PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE) VALUES (?, ?, ?, ?)",
+                   ('SIM_STOCK_PROC', datetime.date.today(), datetime.date.today(), datetime.date.today()))
         conn.commit()
+    conn.close()
+
+def create_processing_type_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS PROCESSING_TYPE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROC_TYP_CD VARCHAR(100),
+            PROC_TYPE VARCHAR(100),
+            PROC_DESCRIPTION VARCHAR(100)
+        )''')
+    cursor.execute(f"SELECT COUNT(*) FROM PROCESSING_TYPE;")
+    rows = cursor.fetchall()
+    if rows:
+        count = rows[0][0]
+    if count == 0:
+        cursor.execute("INSERT INTO PROCESSING_TYPE (PROC_TYP_CD, PROC_TYPE, PROC_DESCRIPTION) VALUES (?, ?, ?)",
+                      ('SIMULATED_RETURNS', 'nifty_50', 'NIFTY 50'))
+        conn.commit()
+    conn.close()
+
+def create_metadata_process_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS METADATA_PROCESS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROCESS_NAME TEXT,
+            PROCESS_TYPE TEXT,
+            PROC_TYP_CD_LIST TEXT,
+            INPUT_VIEW TEXT,
+            TARGET_TABLE TEXT,
+            PROCESS_DESCRIPTION TEXT,
+            AUTO_TRIGGER_ON_LAUNCH INTEGER,
+            PROCESS_DECOMMISSIONED INTEGER,
+            FREQUENCY TEXT,
+            DEFAULT_START_DATE_TYPE_CD TEXT
+        );''')
+    conn.close()
+
+def create_execution_logs_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS EXECUTION_LOGS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            STATUS TEXT,
+            LOG TEXT,
+            PAYLOAD_COUNT INTEGER,
+            INSERTED_COUNT INTEGER,
+            UPDATED_COUNT INTEGER,
+            NO_CHANGE_COUNT INTEGER,
+            SKIPPED_DUE_TO_SCHEMA TEXT,
+            START_TS TEXT,
+            END_TS TEXT
+        );''')
     conn.close()
 
 def update_proc_date_in_processing_date_table(proc_typ_cd, proc_date, next_proc_date, prev_proc_date):
@@ -319,6 +398,18 @@ def create_stock_portfolio_views_in_db():
     
     conn.commit()
     conn.close()
+
+def create_simulated_portfolio_views_in_db():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Simualated Mutual Fund View
+    cursor.execute("DROP VIEW IF EXISTS SIMULATED_PORTFOLIO_VIEW;")
+    cursor.execute(SIMULATED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS AGG_SIMULATED_PORTFOLIO_VIEW;")
+    cursor.execute(AGG_SIMULATED_PORTFOLIO_VIEW)
+    cursor.execute("DROP VIEW IF EXISTS FIN_SIMULATED_PORTFOLIO_VIEW;")
+    cursor.execute(FIN_SIMULATED_PORTFOLIO_VIEW)
 
 def create_consolidated_portfolio_views_in_db():
     conn = sqlite3.connect(db_path)
@@ -2371,3 +2462,112 @@ def get_all_from_consolidated_hist_allocation_table():
             'latest_consolidated_allocation_portfolio_data' : latest_consolidated_allocation_portfolio_data,
             'latest_agg_consolidated_allocation_data':        latest_agg_consolidated_allocation_data}
     return jsonify(data)
+
+def create_simulated_portfolio_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS SIMULATED_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            SIM_FUND_NAME TEXT,
+            SIM_BASE_TYPE TEXT,
+            SIM_BASE_NAME TEXT,
+            SIM_ALLOCATION_CATEGORY TEXT,
+            SIM_PURCHASE_DATE DATE,
+            SIM_NAV_DURING_PURCHASE REAL,
+            SIM_PROCESSING_DATE DATE,
+            SIM_HOLDING_DAYS REAL,
+            SIM_CURRENT_NAV REAL,
+            SIM_INVESTED_AMOUNT REAL,
+            SIM_FUND_UNITS REAL,
+            SIM_CURRENT_AMOUNT REAL,
+            "SIM_P/L" REAL,
+            "SIM_%_P/L" REAL,
+            SIM_PREVIOUS_PROCESSING_DATE DATE,
+            SIM_PREVIOUS_NAV REAL,
+            SIM_PREVIOUS_AMOUNT REAL,
+            "SIM_DAY_P/L" REAL,
+            "SIM_%_DAY_P/L" REAL,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_agg_simulated_portfolio_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_SIMULATED_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            AGG_SIM_FUND_NAME TEXT,
+            AGG_SIM_BASE_TYPE TEXT,
+            AGG_SIM_ALLOCATION_CATEGORY TEXT,
+            AGG_SIM_PROCESSING_DATE DATE,
+            AGG_SIM_INVESTED_AMOUNT REAL,
+            AGG_SIM_FUND_UNITS REAL,
+            AGG_SIM_CURRENT_AMOUNT REAL,
+            AGG_SIM_PREVIOUS_AMOUNT REAL,
+            "AGG_SIM_P/L" REAL,
+            "AGG_SIM_DAY_P/L" REAL,
+            "AGG_%_SIM_P/L" REAL,
+            "AGG_%_SIM_DAY_P/L" REAL,
+            AGG_SIM_AVG_PRICE REAL,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_fin_simulated_portfolio_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FIN_SIMULATED_RETURNS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            FIN_SIM_FUND_NAME TEXT,
+            FIN_SIM_ALLOCATION_CATEGORY TEXT,
+            FIN_SIM_PROCESSING_DATE DATE,
+            FIN_SIM_INVESTED_AMOUNT REAL,
+            FIN_SIM_FUND_UNITS REAL,
+            FIN_SIM_CURRENT_AMOUNT REAL,
+            FIN_SIM_PREVIOUS_AMOUNT REAL,
+            "FIN_SIM_P/L" REAL,
+            "FIN_SIM_DAY_P/L" REAL,
+            "FIN_%_SIM_P/L" REAL,
+            "FIN_%_SIM_DAY_P/L" REAL,
+            FIN_SIM_AVG_PRICE REAL,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def get_simulated_returns_from_fin_simulated_returns_table():
+    simulated_returns_dict = fetch_queries_as_dictionaries('''
+SELECT
+    CONS.PROCESSING_DATE
+    ,CONS."%_P/L"
+    ,CONS."%_DAY_P/L"
+    ,SIM."FIN_%_SIM_P/L"
+    ,SIM."FIN_%_SIM_DAY_P/L"
+FROM
+    CONSOLIDATED_HIST_RETURNS CONS
+INNER JOIN
+    FIN_SIMULATED_RETURNS SIM
+ON
+    CONS.PROCESSING_DATE = SIM.FIN_SIM_PROCESSING_DATE
+WHERE
+    CONS.RECORD_DELETED_FLAG = 0
+    AND SIM.RECORD_DELETED_FLAG = 0
+ORDER BY CONS.PROCESSING_DATE;''')
+    return jsonify(simulated_returns_dict)

@@ -6,11 +6,14 @@ import os
 from json import loads
 from uuid import NAMESPACE_URL,uuid5
 
+from utils.sql_utils.process.execute_process import execute_process_using_metadata
+
 from utils.sql_utils.sql_utils import \
 create_price_table,\
 delete_alt_symbol_from_price_table,\
 upsert_into_price_table,\
 create_metadata_store_table,\
+create_metadata_key_columns_table,\
 insert_metadata_store_entry,\
 get_price_from_price_table,\
 create_mf_order_table,\
@@ -18,6 +21,9 @@ insert_mf_order_entry,\
 get_proc_date_from_processing_date_table,\
 update_proc_date_in_processing_date_table,\
 create_processing_date_table,\
+create_processing_type_table,\
+create_metadata_process_table,\
+create_execution_logs_table,\
 get_max_value_date_for_alt_symbol,\
 duplicate_check_on_price_table,\
 create_mf_portfolio_views_in_db,\
@@ -88,7 +94,12 @@ get_metrics_from_agg_consolidated_allocation_view_and_insert_into_agg_consolidat
 get_metrics_from_fin_consolidated_allocation_view_and_insert_into_fin_consolidated_allocation_table,\
 get_metrics_from_fin_consolidated_allocation_portfolio_view_and_insert_into_fin_consolidated_allocation_portfolio_table,\
 get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table,\
-get_all_from_consolidated_hist_allocation_table
+get_all_from_consolidated_hist_allocation_table,\
+create_simulated_portfolio_views_in_db,\
+create_simulated_portfolio_table,\
+create_agg_simulated_portfolio_table,\
+create_fin_simulated_portfolio_table,\
+get_simulated_returns_from_fin_simulated_returns_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -274,6 +285,7 @@ def create_portfolio_views():
         create_mf_portfolio_views_in_db()
         create_stock_portfolio_views_in_db()
         create_consolidated_portfolio_views_in_db()
+        create_simulated_portfolio_views_in_db()
         return jsonify({'message': 'Successfully replaced Portfolio Views in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -294,6 +306,7 @@ def create_managed_tables():
         create_metadata_store_table()
         create_price_table()
         create_processing_date_table()
+        create_processing_type_table()
         create_mf_order_table()
         create_holiday_date_table()
         create_working_date_table()
@@ -310,6 +323,12 @@ def create_managed_tables():
         create_consolidated_hist_allocation_table()
         create_agg_consolidated_hist_allocation_table()
         create_consolidated_hist_allocation_portfolio_table()
+        create_metadata_key_columns_table()
+        create_simulated_portfolio_table()
+        create_agg_simulated_portfolio_table()
+        create_fin_simulated_portfolio_table()
+        create_metadata_process_table()
+        create_execution_logs_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'}) 
@@ -1198,5 +1217,33 @@ def consolidated_hist_allocation_fetch_all():
         data = get_all_from_consolidated_hist_allocation_table()
         data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_ALLOCATION, CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO and AGG_CONSOLIDATED_ALLOCATION Table','status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/process_simulate_returns/', methods = ['GET'])
+def process_simulated_returns():
+    try:
+        start_date = request.args.get('start_date') or None
+        end_date = request.args.get('end_date') or None
+
+        create_simulated_portfolio_table()
+        create_agg_simulated_portfolio_table()
+        create_fin_simulated_portfolio_table()
+
+        simulated_portfolio_logs = execute_process_using_metadata('H1_SIMULATED_RETURNS_HIST')
+        agg_simulated_portfolio_logs = execute_process_using_metadata('H2_AGG_SIMULATED_RETURNS_HIST')
+        agg_simulated_portfolio_logs = execute_process_using_metadata('H3_FIN_SIMULATED_RETURNS_HIST')
+        if simulated_portfolio_logs['status'] == "Success" and agg_simulated_portfolio_logs['status'] == "Success" and agg_simulated_portfolio_logs['status'] == "Success":
+            return jsonify({'message': 'Successfully inserted simulated returns into SIMULATED_RETURNS, AGG_SIMULATED_RETURNS and FIN_SIMULATED_RETURNS Table','status': 'Success'})
+        else:
+            return jsonify({'message': 'Failure while inserting simulated returns into SIMULATED_RETURNS, AGG_SIMULATED_RETURNS and FIN_SIMULATED_RETURNS Table','status': 'Failed'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'})
+@api.route('/api/simulated_returns/', methods = ['GET'])
+def fetch_simulated_returns():
+    try:
+        data = get_simulated_returns_from_fin_simulated_returns_table()
+        data = data.get_json()
+        return jsonify({'data': data,'message': 'Successfully retrieved from FIN_SIMULATED_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})

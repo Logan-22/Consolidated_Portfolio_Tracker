@@ -455,3 +455,14 @@ canvas {
 .border-left-neutral {
   border-left: 5px solid var(--neutral) !important;
 }
+
+/* Footer */
+
+.footer{
+  background: var(--half-accent);
+  padding: 0.1rem;
+  text-align: center;
+  border-top: 1px solid var(--accent);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}

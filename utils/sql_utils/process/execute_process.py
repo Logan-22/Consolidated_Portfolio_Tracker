@@ -66,11 +66,12 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
             prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
 
             # Update Processing Dates Table
+            proc_typ_cd_filter = str(proc_typ_cds_list).replace("[","").replace("]","") # To filter PROC_TYP_CD in Input view query
             for proc_typ_cd in proc_typ_cds_list:
                 update_proc_date_in_processing_date_table(proc_typ_cd, processing_date, next_processing_date, prev_processing_date)
-            
+
             # Input View Payload
-            input_view_rows = fetch_queries_as_dictionaries(f"SELECT PROC.PROC_DATE, INP.* FROM {process_metadata['INPUT_VIEW']} INP LEFT OUTER JOIN (SELECT DISTINCT PROC_DATE FROM PROCESSING_DATE WHERE PROC_TYP_CD IN ('{process_metadata['PROC_TYP_CD_LIST']}')) PROC ON 1 = 1;")
+            input_view_rows = fetch_queries_as_dictionaries(f"SELECT PROC.PROC_DATE, INP.* FROM {process_metadata['INPUT_VIEW']} INP LEFT OUTER JOIN (SELECT DISTINCT PROC_DATE FROM PROCESSING_DATE WHERE PROC_TYP_CD IN ({proc_typ_cd_filter})) PROC ON 1 = 1;")
             for row in input_view_rows:
                 payloads.append(row)
 

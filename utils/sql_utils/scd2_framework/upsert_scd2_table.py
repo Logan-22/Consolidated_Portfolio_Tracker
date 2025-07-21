@@ -58,7 +58,7 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
                 ,'missing_in_payload': list(missing_in_payload)
             })
             continue # proceed with the next record/payload after logging and skipping bad record
-        
+
         # Where Clause to find the latest active record
         where_clause = ' AND '.join(f'{key_column} = ?' for key_column in key_columns_list) + \
                        ' AND "END_DATE" = ? AND "RECORD_DELETED_FLAG" = 0'
@@ -79,8 +79,8 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
                 continue # if Payload and existing record matches move on
 
         # Insert Latest Record
-        insert_columns = [f'"{key}"' for key in payload.keys()] + ['"PROCESS_NAME"', '"PROCESS_ID"', '"START_DATE"', '"END_DATE"', '"RECORD_DELETED_FLAG"']
-        insert_values = list(payload.values()) + [process_name, process_id, processing_date, high_end_date, 0]
+        insert_columns = [f'"{key}"' for key in payload.keys() if f'"{key}"' not in list(columns_in_payload_to_be_ignored_set)] + ['"PROCESS_NAME"', '"PROCESS_ID"', '"START_DATE"', '"END_DATE"', '"RECORD_DELETED_FLAG"']
+        insert_values = list(payload.values())[1:] + [process_name, process_id, processing_date, high_end_date, 0] # [1:] to ignore the PROC_DATE value
         insert_statement_placeholders = ", ".join('?' for _ in insert_values) # eg., (?, ?, ?)
         insert_clause = ", ".join(insert_columns)
 

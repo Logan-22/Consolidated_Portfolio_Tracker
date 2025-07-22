@@ -18,14 +18,15 @@ SUB.FUND_NAME
 ,ROUND(SUB.FUND_UNITS * SUB.CURRENT_NAV, 4)                                                                  AS CURRENT_AMOUNT
 ,ROUND(ROUND(SUB.FUND_UNITS * SUB.CURRENT_NAV, 4) - SUB.AMC_AMOUNT, 4)                                       AS "P/L"
 ,ROUND((ROUND(ROUND(SUB.FUND_UNITS * SUB.CURRENT_NAV, 4) - SUB.AMC_AMOUNT, 4)
-/ SUB.AMC_AMOUNT )* 100 , 2)                                                                                 AS "%P/L"
+/ SUB.AMC_AMOUNT )* 100 , 2)                                                                                 AS "%_P/L"
 ,SUB.PREVIOUS_PROCESSING_DATE                                                                                AS PREVIOUS_PROCESSING_DATE
 ,SUB.PREVIOUS_NAV                                                                                            AS PREVIOUS_NAV
 ,ROUND(SUB.FUND_UNITS * SUB.PREVIOUS_NAV, 4)                                                                 AS PREVIOUS_AMOUNT
 ,ROUND(ROUND(SUB.FUND_UNITS * SUB.CURRENT_NAV, 4) - 
 ROUND(SUB.FUND_UNITS * SUB.PREVIOUS_NAV, 4),4)                                                               AS "DAY_P/L"
 ,ROUND((ROUND(SUB.FUND_UNITS * SUB.CURRENT_NAV, 4) - 
-ROUND(SUB.FUND_UNITS * SUB.PREVIOUS_NAV, 4)) / ROUND(SUB.FUND_UNITS * SUB.PREVIOUS_NAV, 4),4) * 100          AS "%DAY_P/L" 
+ROUND(SUB.FUND_UNITS * SUB.PREVIOUS_NAV, 4)) / ROUND(SUB.FUND_UNITS * SUB.PREVIOUS_NAV, 4),4) * 100          AS "%_DAY_P/L" 
+,SUB.NEXT_PROCESSING_DATE                                                                                    AS NEXT_PROCESSING_DATE
 FROM
 (SELECT
     PO.NAME                                                                               AS FUND_NAME
@@ -48,6 +49,8 @@ FROM
     ,(SELECT DISTINCT PREV_PROC_DATE FROM PROCESSING_DATE
     WHERE PROC_TYP_CD = 'MF_PROC')                                                        AS PREVIOUS_PROCESSING_DATE
     ,PREV_PRICE.PRICE                                                                     AS PREVIOUS_NAV
+    ,(SELECT DISTINCT NEXT_PROC_DATE FROM PROCESSING_DATE
+    WHERE PROC_TYP_CD = 'MF_PROC')                                                        AS NEXT_PROCESSING_DATE
 FROM
     MF_ORDER PO
 LEFT OUTER JOIN

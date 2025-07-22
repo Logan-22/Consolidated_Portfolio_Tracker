@@ -6,7 +6,7 @@ import os
 from json import loads
 from uuid import NAMESPACE_URL,uuid5
 
-from utils.sql_utils.process.execute_process import execute_process_using_metadata
+from utils.sql_utils.process.execute_process_group import execute_process_group_using_metadata
 
 from utils.sql_utils.sql_utils import \
 create_price_table,\
@@ -99,7 +99,9 @@ create_simulated_portfolio_views_in_db,\
 create_simulated_portfolio_table,\
 create_agg_simulated_portfolio_table,\
 create_fin_simulated_portfolio_table,\
-get_simulated_returns_from_fin_simulated_returns_table
+get_simulated_returns_from_fin_simulated_returns_table,\
+create_metadata_process_group_table,\
+create_mutual_fund_returns_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -329,6 +331,7 @@ def create_managed_tables():
         create_fin_simulated_portfolio_table()
         create_metadata_process_table()
         create_execution_logs_table()
+        create_metadata_process_group_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'}) 
@@ -422,43 +425,17 @@ def holiday_calendar_setup():
 @api.route('/api/process_mf_hist_returns/', methods = ['GET'])
 def process_mf_hist_returns():
     try:
-        truncate_mf_hist_returns_table()
-        create_mf_hist_returns_table()
+        start_date = request.args.get('start_date') or None
+        end_date = request.args.get('end_date') or None
+        on_start = request.args.get('on_start') or None
+
+        create_mutual_fund_returns_table()
         
-        first_purchase_data = get_first_purchase_date_from_mf_order_date_table()
-        first_purchase_data = first_purchase_data.get_json()
-        first_purchase_date = first_purchase_data['first_purchase_date']
-
-        counter_date = datetime.strptime(first_purchase_date,'%Y-%m-%d')
-        first_purchase_date = datetime.strptime(first_purchase_date,'%Y-%m-%d')
-
-        while(counter_date <= datetime.today() + timedelta(days = -2)):
-
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-            holiday_calendar_data = holiday_calendar_data.get_json()
-            processing_date = holiday_calendar_data[0]['processing_date']
-            next_processing_date = holiday_calendar_data[0]['next_processing_date']
-            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
-
-            update_proc_date_in_processing_date_table('MF_PROC', processing_date, next_processing_date, prev_processing_date)
-            update_proc_date_in_processing_date_table('PPF_MF_PROC', processing_date, next_processing_date, prev_processing_date)
-
-            hist_returns_data = get_metrics_from_fin_mutual_fund_portfolio_view()
-            hist_returns_data = hist_returns_data.get_json()
-            total_p_l = hist_returns_data[0]['total_p_l']
-            amount_invested_as_on_processing_date = hist_returns_data[0]['amount_invested_as_on_processing_date']
-            amount_as_on_processing_date = hist_returns_data[0]['amount_as_on_processing_date']
-            amount_as_on_prev_processing_date = hist_returns_data[0]['amount_as_on_prev_processing_date']
-            perc_total_p_l = hist_returns_data[0]['perc_total_p_l']
-            day_p_l = hist_returns_data[0]['day_p_l']
-            perc_day_p_l = hist_returns_data[0]['perc_day_p_l']
-
-
-            insert_into_mf_hist_returns(processing_date, next_processing_date, prev_processing_date, total_p_l, amount_invested_as_on_processing_date, amount_as_on_processing_date, amount_as_on_prev_processing_date, perc_total_p_l, day_p_l, perc_day_p_l)
-
-            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
-
-        return jsonify({'message': 'Successfully inserted historic returns in to MF_HIST_RETURNS Table','status': 'Success'})
+        if on_start == "true" or (start_date):
+            simulated_returns_process_group_logs = execute_process_group_using_metadata('MF_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
+        elif not start_date and not end_date:
+            simulated_returns_process_group_logs = execute_process_group_using_metadata('MF_RETURNS_HIST_PROCESS_GROUP')
+        return jsonify(simulated_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -477,43 +454,6 @@ def mf_hist_returns_max_date():
         max_date = get_max_next_proc_date_from_mf_hist_returns_table()
         max_date = max_date.get_json()
         return jsonify({'data': max_date,'message': 'Successfully retrieved Max Date from MF_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-    
-@api.route('/api/mf_hist_returns/<start_date>/<end_date>/', methods = ['GET'])
-def process_mf_hist_returns_from_start_to_end_date(start_date, end_date):
-    try:
-        start_date = datetime.strptime(start_date,'%Y-%m-%d')
-        end_date = datetime.strptime(end_date,'%Y-%m-%d')
-        counter_date = start_date
-        log_date = []
-
-        while(counter_date <= end_date):
-
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-            holiday_calendar_data = holiday_calendar_data.get_json()
-            processing_date = holiday_calendar_data[0]['processing_date']
-            next_processing_date = holiday_calendar_data[0]['next_processing_date']
-            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
-
-            update_proc_date_in_processing_date_table('MF_PROC', processing_date, next_processing_date, prev_processing_date)
-            update_proc_date_in_processing_date_table('PPF_MF_PROC', processing_date, next_processing_date, prev_processing_date)
-            
-            hist_returns_data = get_metrics_from_fin_mutual_fund_portfolio_view()
-            hist_returns_data = hist_returns_data.get_json()
-            total_p_l = hist_returns_data[0]['total_p_l']
-            amount_invested_as_on_processing_date = hist_returns_data[0]['amount_invested_as_on_processing_date']
-            amount_as_on_processing_date = hist_returns_data[0]['amount_as_on_processing_date']
-            amount_as_on_prev_processing_date = hist_returns_data[0]['amount_as_on_prev_processing_date']
-            perc_total_p_l = hist_returns_data[0]['perc_total_p_l']
-            day_p_l = hist_returns_data[0]['day_p_l']
-            perc_day_p_l = hist_returns_data[0]['perc_day_p_l']
-
-
-            insert_into_mf_hist_returns(processing_date, next_processing_date, prev_processing_date, total_p_l, amount_invested_as_on_processing_date, amount_as_on_processing_date, amount_as_on_prev_processing_date, perc_total_p_l, day_p_l, perc_day_p_l)
-            log_date.append(processing_date)
-            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
-        return jsonify({'message': f'Successfully inserted historic returns for {str(log_date)} in to MF_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -1225,20 +1165,20 @@ def process_simulated_returns():
     try:
         start_date = request.args.get('start_date') or None
         end_date = request.args.get('end_date') or None
+        on_start = request.args.get('on_start') or None
 
         create_simulated_portfolio_table()
         create_agg_simulated_portfolio_table()
         create_fin_simulated_portfolio_table()
 
-        simulated_portfolio_logs = execute_process_using_metadata('H1_SIMULATED_RETURNS_HIST')
-        agg_simulated_portfolio_logs = execute_process_using_metadata('H2_AGG_SIMULATED_RETURNS_HIST')
-        agg_simulated_portfolio_logs = execute_process_using_metadata('H3_FIN_SIMULATED_RETURNS_HIST')
-        if simulated_portfolio_logs['status'] == "Success" and agg_simulated_portfolio_logs['status'] == "Success" and agg_simulated_portfolio_logs['status'] == "Success":
-            return jsonify({'message': 'Successfully inserted simulated returns into SIMULATED_RETURNS, AGG_SIMULATED_RETURNS and FIN_SIMULATED_RETURNS Table','status': 'Success'})
-        else:
-            return jsonify({'message': 'Failure while inserting simulated returns into SIMULATED_RETURNS, AGG_SIMULATED_RETURNS and FIN_SIMULATED_RETURNS Table','status': 'Failed'})
+        if on_start == "true" or (start_date):
+            simulated_returns_process_group_logs = execute_process_group_using_metadata('SIMULATED_RETURNS_DAILY_PROCESS_GROUP')
+        elif not start_date and not end_date:
+            simulated_returns_process_group_logs = execute_process_group_using_metadata('SIMULATED_RETURNS_HIST_PROCESS_GROUP')
+        return jsonify(simulated_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
+
 @api.route('/api/simulated_returns/', methods = ['GET'])
 def fetch_simulated_returns():
     try:

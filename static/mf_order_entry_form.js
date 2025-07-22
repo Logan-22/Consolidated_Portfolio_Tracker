@@ -82,5 +82,23 @@ body: formData
 const mf_order_data = await mf_order_response.json();
 
 create_notification(mf_order_data.message, mf_order_data.status)
+
+// Reprocess the MF Returns from Fund Purchase Date
+
+const mf_hist_returns_response = await fetch (`/api/process_mf_hist_returns/?start_date=${purchase_date}`, {
+  method: 'GET'
+})
+
+const mf_hist_returns_data = await mf_hist_returns_response.json();
+
+create_notification(mf_hist_returns_data.message, mf_hist_returns_data.status)
+
+const process_simulate_returns_response = await fetch(`/api/process_simulate_returns/?start_date=${purchase_date}`, {
+method: 'GET'
+})
+
+const process_simulate_returns_data = await process_simulate_returns_response.json();
+
+create_notification(process_simulate_returns_data.message, process_simulate_returns_data.status)
 }
 })

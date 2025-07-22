@@ -7,7 +7,6 @@ SELECT
     ,SUB.ALLOCATION_CATEGORY                                                              AS SIM_ALLOCATION_CATEGORY
     ,SUB.FUND_PURCHASE_DATE                                                               AS SIM_PURCHASE_DATE
     ,SUB.NAV_DURING_PURCHASE                                                              AS SIM_NAV_DURING_PURCHASE
-    ,SUB.PROCESSING_DATE                                                                  AS SIM_PROCESSING_DATE
     ,SUB.HOLDING_DAYS                                                                     AS SIM_HOLDING_DAYS
     ,SUB.CURRENT_NAV                                                                      AS SIM_CURRENT_NAV
     ,SUB.INVESTED_AMOUNT                                                                  AS SIM_INVESTED_AMOUNT
@@ -16,13 +15,15 @@ SELECT
     ,ROUND((SUB.FUND_UNITS * SUB.CURRENT_NAV) - SUB.INVESTED_AMOUNT, 4)                   AS "SIM_P/L"
     ,ROUND(((SUB.FUND_UNITS * SUB.CURRENT_NAV) - SUB.INVESTED_AMOUNT) 
     / SUB.INVESTED_AMOUNT * 100 , 2)                                                      AS "SIM_%_P/L"
-    ,SUB.PREVIOUS_PROCESSING_DATE                                                         AS SIM_PREVIOUS_PROCESSING_DATE
     ,SUB.PREVIOUS_NAV                                                                     AS SIM_PREVIOUS_NAV
     ,ROUND(SUB.FUND_UNITS * SUB.PREVIOUS_NAV, 4)                                          AS SIM_PREVIOUS_AMOUNT
     ,ROUND((SUB.FUND_UNITS * SUB.CURRENT_NAV) - 
     (SUB.FUND_UNITS * SUB.PREVIOUS_NAV),4)                                                AS "SIM_DAY_P/L"
     ,ROUND(((SUB.FUND_UNITS * SUB.CURRENT_NAV) - (SUB.FUND_UNITS * SUB.PREVIOUS_NAV)) 
-    / (SUB.FUND_UNITS * SUB.PREVIOUS_NAV) * 100, 2)                                       AS "SIM_%_DAY_P/L" 
+    / (SUB.FUND_UNITS * SUB.PREVIOUS_NAV) * 100, 2)                                       AS "SIM_%_DAY_P/L"
+    ,SUB.PROCESSING_DATE                                                                  AS PROCESSING_DATE
+    ,SUB.PREVIOUS_PROCESSING_DATE                                                         AS PREVIOUS_PROCESSING_DATE
+    ,SUB.NEXT_PROCESSING_DATE                                                             AS NEXT_PROCESSING_DATE
 FROM
 (
 SELECT
@@ -43,6 +44,8 @@ SELECT
     ,(SELECT DISTINCT PREV_PROC_DATE FROM PROCESSING_DATE
     WHERE PROC_TYP_CD = 'SIM_MF_PROC')                                                    AS PREVIOUS_PROCESSING_DATE
     ,PREV_PRICE.PRICE                                                                     AS PREVIOUS_NAV
+    ,(SELECT DISTINCT NEXT_PROC_DATE FROM PROCESSING_DATE
+    WHERE PROC_TYP_CD = 'SIM_MF_PROC')                                                    AS NEXT_PROCESSING_DATE
 FROM
 (
 SELECT

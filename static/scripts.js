@@ -25,6 +25,7 @@ let process_consolidated_hist_status;
 let get_consolidated_hist_return_status;
 let process_consolidated_hist_allocation_status;
 let get_consolidated_hist_allocation_status;
+let process_simulated_returns_status;
 
 // Global Variables for Chart
 
@@ -91,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await upsert_unrealised_swing_stock_hist_returns_table()
     await upsert_consolidated_hist_returns()
     await upsert_consolidated_hist_allocation()
+    await upsert_simulated_returns()
     await get_consolidated_hist_returns()
     await get_consolidated_hist_allocation()
     await create_consolidated_notification()
@@ -211,59 +213,15 @@ create_notification(`Symbol ${duplicate.alt_symbol} is having ${duplicate.count}
 // GET /api/mf_hist_returns/max_date/
 
 async function upsert_mf_hist_returns_table(){
-const mf_hist_max_next_proc_date_response = await fetch ('/api/mf_hist_returns/max_next_proc_date/', {
-  method: 'GET'
-})
-
-const mf_hist_max_next_proc_date_data = await mf_hist_max_next_proc_date_response.json();
-const max_next_proc_date_in_mf_hist_returns = mf_hist_max_next_proc_date_data.data.max_next_processing_date
-
-// Get the Max of all Nav tables and get the minimum out of the those
-
-const price_table_max_date_response = await fetch ('/api/price_table/max_value_date?consider_for_hist_returns=1&portfolio_type=Mutual+Fund', {
-  method: 'GET'
-})
-
-const price_table_max_date_data = await price_table_max_date_response.json();
-
-let min_value_date = new Date()
-let null_counter = 0
-
-price_table_max_date_data.max_value_date_data.forEach(async element=> {
-if (element.max_value_date){
-const max_value_date = new Date(element.max_value_date)
-if(max_value_date < min_value_date){
-  min_value_date = max_value_date
-}
-}
-else{
-  null_counter += 1
-}
-})
-
-if (null_counter == 0){
-
-const year = min_value_date.getFullYear();
-const month = String(min_value_date.getMonth() + 1).padStart(2, '0');
-const day = String(min_value_date.getDate()).padStart(2, '0');
-
-const end_date = `${year}-${month}-${day}` // Least date present in all NAV Tables
-
-const mf_hist_returns_response = await fetch (`/api/mf_hist_returns/${max_next_proc_date_in_mf_hist_returns}/${end_date}`, {
+const mf_hist_returns_response = await fetch (`/api/process_mf_hist_returns/?on_start=true`, {
   method: 'GET'
 })
 
 const mf_hist_returns_data = await mf_hist_returns_response.json();
-
+console.log(mf_hist_returns_data)
 mf_hist_status = mf_hist_returns_data.status
 if(mf_hist_status != "Success"){
 create_notification(mf_hist_returns_data.message, mf_hist_returns_data.status)
-}
-
-}
-else
-{
-create_notification('Partial Load in the PRICE_TABLE', 'error')
 }
 }
 
@@ -460,6 +418,20 @@ process_consolidated_hist_allocation_status = process_consolidated_allocation_da
 if(process_consolidated_hist_allocation_status != "Success"){
 create_notification(process_consolidated_allocation_data.message, process_consolidated_allocation_data.status)
 }
+}
+
+async function upsert_simulated_returns(){
+const process_simulate_returns_response = await fetch(`/api/process_simulate_returns/?on_start=true`, {
+method: 'GET'
+})
+
+const process_simulate_returns_data = await process_simulate_returns_response.json();
+
+process_simulated_returns_status = process_simulate_returns_data.status
+if(process_simulated_returns_status != "Success"){
+create_notification(process_simulate_returns_data.message, process_simulate_returns_data.status)
+}
+
 }
 
 async function get_consolidated_hist_returns(){
@@ -1364,7 +1336,8 @@ if (create_table_status                         == "Success" &&
     process_consolidated_hist_status            == "Success" &&
     get_consolidated_hist_return_status         == "Success" &&
     process_consolidated_hist_allocation_status == "Success" &&
-    get_consolidated_hist_allocation_status     == "Success"){
+    get_consolidated_hist_allocation_status     == "Success" &&
+    (process_simulated_returns_status == "Success" || process_simulated_returns_status == "Skipped")){
     create_notification('All scheduled background processes executed successfully.', 'success')
     }
 }

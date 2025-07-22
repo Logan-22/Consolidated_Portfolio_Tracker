@@ -1,7 +1,7 @@
 import sqlite3, os
 db_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'databases', 'consolidated_portfolio.db')
 
-def upsert_scd2(process_name, table_name, payloads, process_id, processing_date, prev_processing_date, next_processing_date):
+def upsert_scd2(process_name, table_name, payloads, process_id):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     high_end_date = '9998-12-31'
@@ -37,7 +37,7 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
     scd2_columns_set = {'"UPDATE_PROCESS_NAME"', '"UPDATE_PROCESS_ID"', '"PROCESS_NAME"',\
                         '"PROCESS_ID"', '"START_DATE"', '"END_DATE"', '"RECORD_DELETED_FLAG"'}
     columns_in_table_to_be_ignored_set = {'"ID"'}
-    columns_in_payload_to_be_ignored_set = {'"PROC_DATE"'}
+    #columns_in_payload_to_be_ignored_set = {} # Add If Any
 
     value_columns_to_be_compared = [column for column in column_names_list if column not in scd2_columns_set and column not in columns_in_table_to_be_ignored_set] # column_names_list is already with ""
     column_index_map = {column: index for index, column in enumerate(value_columns_to_be_compared)} # value_columns_to_be_compared already has ""
@@ -47,9 +47,8 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
         updated = False
         logs['payload_count'] += 1
         payload_keys_set = set(f'"{key}"' for key in payload.keys())
-        missing_in_table = payload_keys_set - table_column_set - columns_in_payload_to_be_ignored_set
+        missing_in_table = payload_keys_set - table_column_set #- columns_in_payload_to_be_ignored_set
         missing_in_payload = table_column_set - payload_keys_set - scd2_columns_set - columns_in_table_to_be_ignored_set
-
         if missing_in_table or missing_in_payload:
             logs['skipped_count'] += 1
             logs['skipped_due_to_schema_mismatch'].append({
@@ -71,7 +70,7 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
             if has_changed:
                 # Soft Delete Existing Record
                 update_sql = f"UPDATE {table_name} SET UPDATE_PROCESS_NAME = ?, UPDATE_PROCESS_ID = ?, END_DATE = ?, RECORD_DELETED_FLAG = 1 WHERE {where_clause}"
-                cursor.execute(update_sql, [process_name, process_id, prev_processing_date] + where_values) # first ? is for end_date update
+                cursor.execute(update_sql, [process_name, process_id, payload['PREVIOUS_PROCESSING_DATE']] + where_values) # first ? is for end_date update
                 updated = True
                 logs['updated_count'] += 1
             else:
@@ -79,8 +78,8 @@ def upsert_scd2(process_name, table_name, payloads, process_id, processing_date,
                 continue # if Payload and existing record matches move on
 
         # Insert Latest Record
-        insert_columns = [f'"{key}"' for key in payload.keys() if f'"{key}"' not in list(columns_in_payload_to_be_ignored_set)] + ['"PROCESS_NAME"', '"PROCESS_ID"', '"START_DATE"', '"END_DATE"', '"RECORD_DELETED_FLAG"']
-        insert_values = list(payload.values())[1:] + [process_name, process_id, processing_date, high_end_date, 0] # [1:] to ignore the PROC_DATE value
+        insert_columns = [f'"{key}"' for key in payload.keys()] + ['"PROCESS_NAME"', '"PROCESS_ID"', '"START_DATE"', '"END_DATE"', '"RECORD_DELETED_FLAG"']
+        insert_values = list(payload.values()) + [process_name, process_id, payload['PROCESSING_DATE'], high_end_date, 0]
         insert_statement_placeholders = ", ".join('?' for _ in insert_values) # eg., (?, ?, ?)
         insert_clause = ", ".join(insert_columns)
 

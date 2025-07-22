@@ -7,5 +7,11 @@ def fetch_queries_as_dictionaries(query):
     cursor = conn.cursor()
     cursor.execute(query)
     rows = cursor.fetchall()
-    result = [dict(row) for row in rows]
+    if rows:
+        result = [dict(row) for row in rows]
+    else:
+        # Extract column names from the cursor description
+        column_names = [desc[0] for desc in cursor.description]
+        # Create a single dict with None values
+        result = [{col: None for col in column_names}]
     return result

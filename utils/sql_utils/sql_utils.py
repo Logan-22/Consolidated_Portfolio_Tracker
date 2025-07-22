@@ -285,6 +285,18 @@ def create_metadata_process_table():
         );''')
     conn.close()
 
+def create_metadata_process_group_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS METADATA_PROCESS_GROUP (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PROCESS_GROUP TEXT,
+            PROCESS_NAME TEXT,
+            CONSIDER_FOR_PROCESS INTEGER
+        );''')
+    conn.close()
+
 def create_execution_logs_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -295,6 +307,8 @@ def create_execution_logs_table():
             PROCESS_ID INTEGER,
             STATUS TEXT,
             LOG TEXT,
+            PROCESSING_START_DATE DATE,
+            PROCESSING_END_DATE DATE,
             PAYLOAD_COUNT INTEGER,
             INSERTED_COUNT INTEGER,
             UPDATED_COUNT INTEGER,
@@ -345,6 +359,17 @@ def get_max_value_date_for_alt_symbol(process_flag = None, consider_for_hist_ret
         max_value_date_data = [{'alt_symbol' : row[0],'exchange_symbol': row[1], 'yahoo_symbol': row[2], 'portfolio_type': row[3], 'max_value_date': row[4] or None } for row in rows]
         return jsonify(max_value_date_data)
     return [{'alt_symbol' : None,'exchange_symbol': None, 'yahoo_symbol': None, 'portfolio_type': None, 'max_value_date': None }]
+
+def get_max_value_date_by_portfolio_type(portfolio_type = None):
+    if portfolio_type:
+        max_value_date_for_each_portfolio = fetch_queries_as_dictionaries(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.PORTFOLIO_TYPE = '{portfolio_type}' GROUP BY 1,2,3,4;")
+    else:
+        max_value_date_for_each_portfolio = fetch_queries_as_dictionaries(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL GROUP BY 1,2,3,4;")
+    return max_value_date_for_each_portfolio
+
+def get_max_next_processing_date_from_table(table_name):
+    max_next_proc_date = fetch_queries_as_dictionaries(f"SELECT MAX(NEXT_PROCESSING_DATE) FROM {table_name};")
+    return max_next_proc_date
 
 def duplicate_check_on_price_table():
     conn = sqlite3.connect(db_path)
@@ -2476,7 +2501,6 @@ def create_simulated_portfolio_table():
             SIM_ALLOCATION_CATEGORY TEXT,
             SIM_PURCHASE_DATE DATE,
             SIM_NAV_DURING_PURCHASE REAL,
-            SIM_PROCESSING_DATE DATE,
             SIM_HOLDING_DAYS REAL,
             SIM_CURRENT_NAV REAL,
             SIM_INVESTED_AMOUNT REAL,
@@ -2484,11 +2508,13 @@ def create_simulated_portfolio_table():
             SIM_CURRENT_AMOUNT REAL,
             "SIM_P/L" REAL,
             "SIM_%_P/L" REAL,
-            SIM_PREVIOUS_PROCESSING_DATE DATE,
             SIM_PREVIOUS_NAV REAL,
             SIM_PREVIOUS_AMOUNT REAL,
             "SIM_DAY_P/L" REAL,
             "SIM_%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
             UPDATE_PROCESS_NAME TEXT,
             UPDATE_PROCESS_ID INTEGER,
             PROCESS_NAME TEXT,
@@ -2507,7 +2533,6 @@ def create_agg_simulated_portfolio_table():
             AGG_SIM_FUND_NAME TEXT,
             AGG_SIM_BASE_TYPE TEXT,
             AGG_SIM_ALLOCATION_CATEGORY TEXT,
-            AGG_SIM_PROCESSING_DATE DATE,
             AGG_SIM_INVESTED_AMOUNT REAL,
             AGG_SIM_FUND_UNITS REAL,
             AGG_SIM_CURRENT_AMOUNT REAL,
@@ -2517,6 +2542,9 @@ def create_agg_simulated_portfolio_table():
             "AGG_%_SIM_P/L" REAL,
             "AGG_%_SIM_DAY_P/L" REAL,
             AGG_SIM_AVG_PRICE REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
             UPDATE_PROCESS_NAME TEXT,
             UPDATE_PROCESS_ID INTEGER,
             PROCESS_NAME TEXT,
@@ -2534,7 +2562,6 @@ def create_fin_simulated_portfolio_table():
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
             FIN_SIM_FUND_NAME TEXT,
             FIN_SIM_ALLOCATION_CATEGORY TEXT,
-            FIN_SIM_PROCESSING_DATE DATE,
             FIN_SIM_INVESTED_AMOUNT REAL,
             FIN_SIM_FUND_UNITS REAL,
             FIN_SIM_CURRENT_AMOUNT REAL,
@@ -2544,6 +2571,9 @@ def create_fin_simulated_portfolio_table():
             "FIN_%_SIM_P/L" REAL,
             "FIN_%_SIM_DAY_P/L" REAL,
             FIN_SIM_AVG_PRICE REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
             UPDATE_PROCESS_NAME TEXT,
             UPDATE_PROCESS_ID INTEGER,
             PROCESS_NAME TEXT,
@@ -2566,9 +2596,102 @@ FROM
 INNER JOIN
     FIN_SIMULATED_RETURNS SIM
 ON
-    CONS.PROCESSING_DATE = SIM.FIN_SIM_PROCESSING_DATE
+    CONS.PROCESSING_DATE = SIM.PROCESSING_DATE
 WHERE
     CONS.RECORD_DELETED_FLAG = 0
     AND SIM.RECORD_DELETED_FLAG = 0
 ORDER BY CONS.PROCESSING_DATE;''')
     return jsonify(simulated_returns_dict)
+
+def create_mutual_fund_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS MUTUAL_FUND_RETURNS (
+            FUND_NAME TEXT,
+            FUND_AMC TEXT,
+            FUND_TYPE TEXT,
+            FUND_CATEGORY TEXT,
+            ALLOCATION_CATEGORY TEXT,
+            FUND_PURCHASE_DATE DATE,
+            NAV_DURING_PURCHASE REAL,
+            HOLDING_DAYS REAL,
+            CURRENT_NAV REAL,
+            INVESTED_AMOUNT REAL,
+            AMC_AMOUNT REAL,
+            STAMP_FEES_AMOUNT REAL,
+            FUND_UNITS REAL,
+            CURRENT_AMOUNT REAL,
+            "P/L" REAL,
+            "%_P/L" REAL,
+            PREVIOUS_NAV REAL,
+            PREVIOUS_AMOUNT REAL,
+            "DAY_P/L" REAL,
+            "%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_agg_mutual_fund_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_MUTUAL_FUND_RETURNS (
+            FUND_NAME TEXT,
+            FUND_AMC TEXT,
+            FUND_TYPE TEXT,
+            FUND_CATEGORY TEXT,
+            ALLOCATION_CATEGORY TEXT,
+            AGG_INVESTED_AMOUNT REAL,
+            AGG_AMC_AMOUNT REAL,
+            AGG_FUND_UNITS REAL,
+            AGG_CURRENT_AMOUNT REAL,
+            AGG_PREVIOUS_AMOUNT REAL,
+            "AGG_P/L" REAL,
+            "AGG_DAY_P/L" REAL,
+            "AGG_%_P/L" REAL,
+            "AGG_%_DAY_P/L" REAL,
+            AGG_AVG_PRICE REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_fin_mutual_fund_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FIN_MUTUAL_FUND_RETURNS (
+            "FIN_P/L" REAL,
+            FIN_AMC_AMOUNT REAL,
+            FIN_CURRENT_AMOUNT REAL,
+            FIN_PREVIOUS_AMOUNT REAL,
+            "FIN_%_P/L" REAL,
+            "FIN_DAY_P/L" REAL,
+            "FIN_%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')

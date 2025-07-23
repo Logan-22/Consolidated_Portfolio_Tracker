@@ -1,41 +1,41 @@
 import { create_notification } from './create_notification.js'
 
-// GET /api/process_unrealised_stock_hist_returns/
-// Inserts data into UNREALISED_STOCK_HIST_RETURNS table
+// GET /api/unrealised_stock_returns/
+// Gets Unrealised Stock Returns
 
-let chart;
+let unrealised_stock_returns_chart;
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('navChart')) {
-    init_unrealised_swing_stock_hist_returns_chart();
+  if (document.getElementById('unrealised_stock_returns_chart')) {
+    init_unrealised_swing_stock_returns_chart();
   }
 });
 
-async function init_unrealised_swing_stock_hist_returns_chart(){
+async function init_unrealised_swing_stock_returns_chart(){
 
-if (chart){
-  chart.destroy()
+if (unrealised_stock_returns_chart){
+  unrealised_stock_returns_chart.destroy()
 }
 
-const unrealised_stock_hist_returns_response = await fetch ('/api/unrealised_stock_hist_returns/', {
+const unrealised_stock_returns_response = await fetch ('/api/unrealised_stock_returns/', {
   method: 'GET'
 })
 
-const unrealised_stock_hist_returns_data = await unrealised_stock_hist_returns_response.json();
+const unrealised_stock_returns_data = await unrealised_stock_returns_response.json();
 
 const processing_date_array = []
 const perc_net_p_l_array = []
 const perc_day_p_l_array = []
 
-unrealised_stock_hist_returns_data.data.forEach(hist_return => {
-  processing_date_array.push(hist_return.processing_date)
-  perc_net_p_l_array.push(hist_return.perc_net_p_l)
-  perc_day_p_l_array.push(hist_return.perc_day_p_l)
+unrealised_stock_returns_data.data.forEach(unrealised_stock_return => {
+  processing_date_array.push(unrealised_stock_return.processing_date)
+  perc_net_p_l_array.push(unrealised_stock_return.perc_net_p_l)
+  perc_day_p_l_array.push(unrealised_stock_return.perc_day_p_l)
 });
 
-const ctx = document.getElementById('navChart').getContext('2d');
+const ctx = document.getElementById('unrealised_stock_returns_chart').getContext('2d');
 
-chart = new Chart(ctx, {type: 'line',
+unrealised_stock_returns_chart = new Chart(ctx, {type: 'line',
         data: {labels: processing_date_array,  // Dates on the X-axis
         datasets: [
           {
@@ -86,15 +86,15 @@ chart = new Chart(ctx, {type: 'line',
         }
       });
 
-create_notification(unrealised_stock_hist_returns_data.message, unrealised_stock_hist_returns_data.status)
+create_notification(unrealised_stock_returns_data.message, unrealised_stock_returns_data.status)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-document.getElementById('process_unrealised_stock_hist_returns_form').addEventListener('submit', async function (e) {
+document.getElementById('process_unrealised_stock_returns_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const unrealised_returns_process_response = await fetch(`/api/process_unrealised_stock_hist_returns/`, {
+const unrealised_returns_process_response = await fetch(`/api/process_unrealised_stock_returns/`, {
 method: 'GET'
 })
 

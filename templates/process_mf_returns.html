@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Process Mutual Funds Returns{% endblock %}
+
+{% block content %}
+    <div>
+    <form id = "process_mf_returns_form">
+
+    <b>Process Mutual Funds Returns</b></label></br></br>
+
+    <button type = "submit" class = "submit">Start Processing Mutual Funds Returns</button>
+    </form>
+    </div>
+    <div>
+        <canvas id="mf_returns_chart"></canvas>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='process_mf_returns_form.js') }}" defer></script>
+{% endblock %}

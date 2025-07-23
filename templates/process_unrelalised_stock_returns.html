@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Process Unrealised Swing Stock Returns{% endblock %}
+
+{% block content %}
+    <div>
+    <form id = "process_unrealised_stock_returns_form">
+
+    <b>Process Unrealised Stock Returns</b></label></br></br>
+
+    <button type = "submit" class = "submit">Start Processing Unrealised Stock Returns</button>
+    </form>
+    </div>
+    <div>
+        <canvas id="unrealised_stock_returns_chart"></canvas>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='process_unrelalised_stock_returns.js') }}" defer></script>
+{% endblock %}

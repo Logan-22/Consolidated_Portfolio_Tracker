@@ -42,7 +42,7 @@ create_mf_hist_returns_table,\
 get_date_setup_from_holiday_calendar,\
 get_metrics_from_fin_mutual_fund_portfolio_view,\
 insert_into_mf_hist_returns,\
-get_mf_hist_returns_from_mf_hist_returns_table,\
+get_mf_returns,\
 get_max_next_proc_date_from_mf_hist_returns_table,\
 get_all_symbols_list_from_metadata_store,\
 upsert_trade_entry_in_db,\
@@ -67,7 +67,7 @@ create_unrealised_swing_stock_hist_returns_table,\
 get_first_swing_trade_date_from_trades_table,\
 get_metrics_from_fin_stock_swing_unrealised_portfolio_view,\
 insert_into_unrealised_swing_stock_hist_returns,\
-get_stock_hist_returns_from_unrealised_swing_stock_hist_returns_table,\
+get_unrealised_swing_stock_returns,\
 get_max_next_proc_date_from_unrealised_swing_stock_hist_returns_table,\
 create_consolidated_portfolio_views_in_db,\
 truncate_consolidated_hist_returns_table,\
@@ -101,7 +101,12 @@ create_agg_simulated_portfolio_table,\
 create_fin_simulated_portfolio_table,\
 get_simulated_returns_from_fin_simulated_returns_table,\
 create_metadata_process_group_table,\
-create_mutual_fund_returns_table
+create_mutual_fund_returns_table,\
+create_agg_mutual_fund_returns_table,\
+create_fin_mutual_fund_returns_table,\
+create_unrealised_stock_returns_table,\
+create_agg_unrealised_stock_returns_table,\
+create_fin_unrealised_stock_returns_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -332,6 +337,9 @@ def create_managed_tables():
         create_metadata_process_table()
         create_execution_logs_table()
         create_metadata_process_group_table()
+        create_mutual_fund_returns_table()
+        create_agg_mutual_fund_returns_table()
+        create_fin_mutual_fund_returns_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'}) 
@@ -422,38 +430,31 @@ def holiday_calendar_setup():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
-@api.route('/api/process_mf_hist_returns/', methods = ['GET'])
-def process_mf_hist_returns():
+@api.route('/api/process_mf_returns/', methods = ['GET'])
+def process_mf_returns():
     try:
         start_date = request.args.get('start_date') or None
         end_date = request.args.get('end_date') or None
         on_start = request.args.get('on_start') or None
 
         create_mutual_fund_returns_table()
+        create_agg_mutual_fund_returns_table()
+        create_fin_mutual_fund_returns_table()
         
         if on_start == "true" or (start_date):
-            simulated_returns_process_group_logs = execute_process_group_using_metadata('MF_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
+            mf_returns_process_group_logs = execute_process_group_using_metadata('MF_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
-            simulated_returns_process_group_logs = execute_process_group_using_metadata('MF_RETURNS_HIST_PROCESS_GROUP')
-        return jsonify(simulated_returns_process_group_logs)
+            mf_returns_process_group_logs = execute_process_group_using_metadata('MF_RETURNS_HIST_PROCESS_GROUP')
+        return jsonify(mf_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
-@api.route('/api/mf_hist_returns/', methods = ['GET'])
-def mf_hist_returns_lookup():
+@api.route('/api/mf_returns/', methods = ['GET'])
+def mf_returns_lookup():
     try:
-        data = get_mf_hist_returns_from_mf_hist_returns_table()
+        data = get_mf_returns()
         data = data.get_json()
-        return jsonify({'data': data,'message': 'Successfully retrieved from MF_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-    
-@api.route('/api/mf_hist_returns/max_next_proc_date/', methods = ['GET'])
-def mf_hist_returns_max_date():
-    try:
-        max_date = get_max_next_proc_date_from_mf_hist_returns_table()
-        max_date = max_date.get_json()
-        return jsonify({'data': max_date,'message': 'Successfully retrieved Max Date from MF_HIST_RETURNS Table','status': 'Success'})
+        return jsonify({'data': data,'message': 'Successfully retrieved Mutual Fund Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
@@ -831,106 +832,31 @@ def insert_into_realised_swing_stock_hist_returns_table(start_date, end_date):
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/process_unrealised_stock_hist_returns/', methods = ['GET'])
-def process_unrealised_swing_stock_hist_returns():
+@api.route('/api/process_unrealised_stock_returns/', methods = ['GET'])
+def process_unrealised_swing_stock_returns():
     try:
-        truncate_unrealised_swing_stock_hist_returns_table()
-        create_unrealised_swing_stock_hist_returns_table()
+        start_date = request.args.get('start_date') or None
+        end_date = request.args.get('end_date') or None
+        on_start = request.args.get('on_start') or None
+
+        create_unrealised_stock_returns_table()
+        create_agg_unrealised_stock_returns_table()
+        create_fin_unrealised_stock_returns_table()
         
-        first_swing_trade_data = get_first_swing_trade_date_from_trades_table()
-        first_swing_trade_data = first_swing_trade_data.get_json()
-        first_swing_trade_date = first_swing_trade_data['first_trade_date']
-
-        counter_date = datetime.strptime(first_swing_trade_date,'%Y-%m-%d')
-        first_swing_trade_date = datetime.strptime(first_swing_trade_date,'%Y-%m-%d')
-
-        while(counter_date <= datetime.today() + timedelta(days = -2)):
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-            holiday_calendar_data = holiday_calendar_data.get_json()
-            processing_date = holiday_calendar_data[0]['processing_date']
-            next_processing_date = holiday_calendar_data[0]['next_processing_date']
-            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
-
-            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
-
-            hist_returns_data = get_metrics_from_fin_stock_swing_unrealised_portfolio_view()
-            hist_returns_data = hist_returns_data.get_json()
-
-            fin_invested_amount       = hist_returns_data[0]['fin_invested_amount']
-            fin_total_fees            = hist_returns_data[0]['fin_total_fees']
-            fin_total_invested_amount = hist_returns_data[0]['fin_total_invested_amount']
-            fin_current_value         = hist_returns_data[0]['fin_current_value']
-            fin_previous_value        = hist_returns_data[0]['fin_previous_value']
-            fin_p_l                   = hist_returns_data[0]['fin_p_l']
-            perc_fin_p_l              = hist_returns_data[0]['perc_fin_p_l']
-            fin_net_p_l               = hist_returns_data[0]['fin_net_p_l']
-            perc_fin_net_p_l          = hist_returns_data[0]['perc_fin_net_p_l']
-            fin_day_p_l               = hist_returns_data[0]['fin_day_p_l']
-            perc_fin_day_p_l          = hist_returns_data[0]['perc_fin_day_p_l']
-
-            insert_into_unrealised_swing_stock_hist_returns(processing_date, next_processing_date, prev_processing_date, fin_invested_amount, fin_total_fees, fin_total_invested_amount, fin_current_value, fin_previous_value, fin_p_l, perc_fin_p_l, fin_net_p_l, perc_fin_net_p_l, fin_day_p_l, perc_fin_day_p_l)
-
-            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
-
-        return jsonify({'message': 'Successfully inserted historic returns in to UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
+        if on_start == "true" or (start_date):
+            unrealised_stock_returns_process_group_logs = execute_process_group_using_metadata('UNREALISED_STOCK_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
+        elif not start_date and not end_date:
+            unrealised_stock_returns_process_group_logs = execute_process_group_using_metadata('UNREALISED_STOCK_RETURNS_HIST_PROCESS_GROUP')
+        return jsonify(unrealised_stock_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
     
-@api.route('/api/unrealised_stock_hist_returns/', methods = ['GET'])
-def unrealised_stock_hist_returns_lookup():
+@api.route('/api/unrealised_stock_returns/', methods = ['GET'])
+def unrealised_stock_returns_lookup():
     try:
-        data = get_stock_hist_returns_from_unrealised_swing_stock_hist_returns_table()
+        data = get_unrealised_swing_stock_returns()
         data = data.get_json()
-        return jsonify({'data': data,'message': 'Successfully retrieved Historic Returns from UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-
-@api.route('/api/unrealised_swing_stock_hist_returns/max_next_proc_date/', methods = ['GET'])
-def unrealised_hist_returns_max_date():
-    try:
-        max_date = get_max_next_proc_date_from_unrealised_swing_stock_hist_returns_table()
-        max_date = max_date.get_json()
-        return jsonify({'data': max_date,'message': 'Successfully retrieved Max Date from UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-
-@api.route('/api/unrealised_stock_hist_returns/<start_date>/<end_date>/', methods = ['GET'])
-def process_unrealised_stock_hist_returns_from_start_to_end_date(start_date, end_date):
-    try:
-        start_date = datetime.strptime(start_date,'%Y-%m-%d')
-        end_date = datetime.strptime(end_date,'%Y-%m-%d')
-        counter_date = start_date
-        log_date = []
-
-        while(counter_date <= end_date):
-
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-            holiday_calendar_data = holiday_calendar_data.get_json()
-            processing_date = holiday_calendar_data[0]['processing_date']
-            next_processing_date = holiday_calendar_data[0]['next_processing_date']
-            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
-
-            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
-
-            hist_returns_data = get_metrics_from_fin_stock_swing_unrealised_portfolio_view()
-            hist_returns_data = hist_returns_data.get_json()
-
-            fin_invested_amount       = hist_returns_data[0]['fin_invested_amount']
-            fin_total_fees            = hist_returns_data[0]['fin_total_fees']
-            fin_total_invested_amount = hist_returns_data[0]['fin_total_invested_amount']
-            fin_current_value         = hist_returns_data[0]['fin_current_value']
-            fin_previous_value        = hist_returns_data[0]['fin_previous_value']
-            fin_p_l                   = hist_returns_data[0]['fin_p_l']
-            perc_fin_p_l              = hist_returns_data[0]['perc_fin_p_l']
-            fin_net_p_l               = hist_returns_data[0]['fin_net_p_l']
-            perc_fin_net_p_l          = hist_returns_data[0]['perc_fin_net_p_l']
-            fin_day_p_l               = hist_returns_data[0]['fin_day_p_l']
-            perc_fin_day_p_l          = hist_returns_data[0]['perc_fin_day_p_l']
-
-            insert_into_unrealised_swing_stock_hist_returns(processing_date, next_processing_date, prev_processing_date, fin_invested_amount, fin_total_fees, fin_total_invested_amount, fin_current_value, fin_previous_value, fin_p_l, perc_fin_p_l, fin_net_p_l, perc_fin_net_p_l, fin_day_p_l, perc_fin_day_p_l)
-            log_date.append(processing_date)
-            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
-        return jsonify({'message': f'Successfully inserted historic returns for {str(log_date)} in to UNREALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
+        return jsonify({'data': data,'message': 'Successfully retrieved Unrealised Swing Stock Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 

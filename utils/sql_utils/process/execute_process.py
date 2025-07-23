@@ -40,7 +40,6 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
 
     # Get the Associated Proc Type Codes from Metadata
     proc_typ_cds_list = process_metadata['PROC_TYP_CD_LIST'].split(",")
-    print(proc_typ_cds_list)
 
     # Prepare Start Date
     if process_metadata['FREQUENCY'] == 'Ad hoc':
@@ -82,11 +81,11 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
     counter_date = datetime.strptime(start_date,'%Y-%m-%d')
 
     if counter_date > end_date and process_metadata['FREQUENCY'] == 'On Start':
-        message = f'Start Date {start_date} is greater than End Date {end_date} for {process_name}'
+        message = f'Start Date {start_date} is greater than End Date {end_date.date()} for {process_name}'
         update_log_record(process_name, process_id, 'Skipped', message, start_date, end_date, None, None, None, None, None, None)
         return({'message': message, 'status': 'Success'})
     elif counter_date > end_date and process_metadata['FREQUENCY'] != 'On Start':
-        message = f'Start Date {start_date} is greater than End Date {end_date} for {process_name}'
+        message = f'Start Date {start_date} is greater than End Date {end_date.date()} for {process_name}'
         update_log_record(process_name, process_id, 'Failed', message, start_date, end_date, None, None, None, None, None, None)
         return({'message': message, 'status': 'Failed'})
 
@@ -113,6 +112,6 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
     if process_metadata['PROCESS_TYPE'] == 'SCD2':
         logs = upsert_scd2(process_name, process_metadata['TARGET_TABLE'], payloads, process_id)
 
-    update_log_record(process_name, process_id, logs['status'], logs['message'], start_date, end_date, logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['no_change_count'], logs['skipped_count'], str(logs['skipped_due_to_schema_mismatch']))
+    update_log_record(process_name, process_id, logs['status'], logs['message'], start_date, end_date.date(), logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['no_change_count'], logs['skipped_count'], logs['null_count'], str(logs['skipped_due_to_schema_mismatch']))
 
     return({'message': logs['message'], 'status': logs['status']})

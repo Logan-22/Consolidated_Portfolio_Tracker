@@ -11,6 +11,7 @@ def upsert_scd2(process_name, table_name, payloads, process_id):
         ,'updated_count': 0
         ,'no_change_count': 0
         ,'skipped_count': 0
+        ,'null_count': 0
         ,'skipped_due_to_schema_mismatch': []
         ,'status': ''
         ,'message': ''
@@ -26,6 +27,9 @@ def upsert_scd2(process_name, table_name, payloads, process_id):
         logs['message'] = f'No Key Columns Present in Metadata Key Column Table for SCD2 Process {process_name}'
         logs['inserted_count'] = -1
         logs['updated_count'] = -1
+        logs['no_change_count'] = -1
+        logs['skipped_count'] = -1
+        logs['null_count'] = -1
         return logs
 
     # Fetch Table Schema
@@ -46,8 +50,15 @@ def upsert_scd2(process_name, table_name, payloads, process_id):
     for payload in payloads:
         updated = False
         logs['payload_count'] += 1
+
+        # Checked for NULLs in all Fields
+        all_fields_none = all(payload[value_column.replace('"','')] is None for value_column in value_columns_to_be_compared)
+        if all_fields_none:
+            logs['null_count'] += 1
+            continue # If All fields are null go to the next record
+
         payload_keys_set = set(f'"{key}"' for key in payload.keys())
-        missing_in_table = payload_keys_set - table_column_set #- columns_in_payload_to_be_ignored_set
+        missing_in_table = payload_keys_set - table_column_set # columns_in_payload_to_be_ignored_set
         missing_in_payload = table_column_set - payload_keys_set - scd2_columns_set - columns_in_table_to_be_ignored_set
         if missing_in_table or missing_in_payload:
             logs['skipped_count'] += 1

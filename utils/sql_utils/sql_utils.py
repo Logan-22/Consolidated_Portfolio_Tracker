@@ -314,6 +314,7 @@ def create_execution_logs_table():
             UPDATED_COUNT INTEGER,
             NO_CHANGE_COUNT INTEGER,
             SKIPPED_COUNT INTEGER,
+            NULL_COUNT INTEGER,
             SKIPPED_DUE_TO_SCHEMA TEXT,
             START_TS TEXT,
             END_TS TEXT
@@ -629,7 +630,7 @@ def insert_into_mf_hist_returns(processing_date, next_processing_date, prev_proc
     conn.commit()
     conn.close()
 
-def get_mf_hist_returns_from_mf_hist_returns_table():
+def get_mf_returns():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(f'SELECT PROCESSING_DATE, "%TOTAL_P/L", "%DAY_P/L" FROM MF_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
@@ -1044,7 +1045,7 @@ def insert_into_unrealised_swing_stock_hist_returns(processing_date, next_proces
     conn.commit()
     conn.close()
 
-def get_stock_hist_returns_from_unrealised_swing_stock_hist_returns_table():
+def get_unrealised_swing_stock_returns():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(f'SELECT PROCESSING_DATE, "%_NET_P/L", "%_DAY_P/L" FROM UNREALISED_SWING_STOCK_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
@@ -2682,6 +2683,103 @@ def create_fin_mutual_fund_returns_table():
             FIN_CURRENT_AMOUNT REAL,
             FIN_PREVIOUS_AMOUNT REAL,
             "FIN_%_P/L" REAL,
+            "FIN_DAY_P/L" REAL,
+            "FIN_%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_unrealised_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS UNREALISED_STOCK_RETURNS (
+            STOCK_NAME TEXT,
+            ALLOCATION_CATEGORY TEXT,
+            TRADE_DATE DATE,
+            STOCK_QUANTITY REAL,
+            TRADE_PRICE REAL,
+            CURRENT_PRICE REAL,
+            INVESTED_AMOUNT REAL,
+            TOTAL_FEES REAL,
+            TOTAL_INVESTED_AMOUNT REAL,
+            CURRENT_VALUE REAL,
+            "P/L" REAL,
+            "%_P/L" REAL,
+            "NET_P/L" REAL,
+            "%_NET_P/L" REAL,
+            PREVIOUS_PRICE REAL,
+            PREVIOUS_VALUE REAL,
+            "DAY_P/L" REAL,
+            "%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_agg_unrealised_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_UNREALISED_STOCK_RETURNS (
+            STOCK_NAME TEXT,
+            ALLOCATION_CATEGORY TEXT,
+            CURRENT_PRICE REAL,
+            PREVIOUS_PRICE REAL,
+            AGG_STOCK_QUANTITY REAL,
+            AVG_TRADE_PRICE REAL,
+            AGG_INVESTED_AMOUNT REAL,
+            AGG_TOTAL_FEES REAL,
+            AGG_TOTAL_INVESTED_AMOUNT REAL,
+            AGG_CURRENT_VALUE REAL,
+            "AGG_P/L" REAL,
+            "AGG_%_P/L" REAL,
+            "AGG_NET_P/L" REAL,
+            "AGG_%_NET_P/L" REAL,
+            AGG_PREVIOUS_VALUE REAL,
+            "AGG_DAY_P/L" REAL,
+            "AGG_%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_fin_unrealised_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FIN_UNREALISED_STOCK_RETURNS (
+            FIN_INVESTED_AMOUNT REAL,
+            FIN_TOTAL_FEES REAL,
+            FIN_TOTAL_INVESTED_AMOUNT REAL,
+            FIN_CURRENT_VALUE REAL,
+            FIN_PREVIOUS_VALUE REAL,
+            "FIN_P/L" REAL,
+            "FIN_%_P/L" REAL,
+            "FIN_NET_P/L" REAL,
+            "FIN_NET_%_P/L" REAL,
             "FIN_DAY_P/L" REAL,
             "FIN_%_DAY_P/L" REAL,
             PROCESSING_DATE DATE,

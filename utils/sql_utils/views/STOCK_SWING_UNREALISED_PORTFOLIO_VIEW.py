@@ -6,7 +6,6 @@ SELECT
     ,SUB.TRADE_DATE                                                                       AS TRADE_DATE
     ,SUB.STOCK_QUANTITY                                                                   AS STOCK_QUANTITY
     ,SUB.TRADE_PRICE                                                                      AS TRADE_PRICE
-    ,SUB.PROCESSING_DATE                                                                  AS PROCESSING_DATE
     ,SUB.CURRENT_PRICE                                                                    AS CURRENT_PRICE
     ,SUB.INVESTED_AMOUNT                                                                  AS INVESTED_AMOUNT
     ,SUB.TOTAL_FEES                                                                       AS TOTAL_FEES
@@ -17,11 +16,13 @@ SELECT
     ,ROUND(SUB.CURRENT_VALUE - SUB.TOTAL_INVESTED_AMOUNT,4)                               AS "NET_P/L"
     ,ROUND((SUB.CURRENT_VALUE - SUB.TOTAL_INVESTED_AMOUNT)
     /SUB.TOTAL_INVESTED_AMOUNT * 100,2)                                                   AS "%_NET_P/L"
-    ,SUB.PREVIOUS_PROCESSING_DATE                                                         AS PREVIOUS_PROCESSING_DATE
     ,SUB.PREVIOUS_PRICE                                                                   AS PREVIOUS_PRICE
     ,SUB.PREVIOUS_VALUE                                                                   AS PREVIOUS_VALUE
     ,ROUND(SUB.CURRENT_VALUE - SUB.PREVIOUS_VALUE,4)                                      AS "DAY_P/L"
     ,ROUND((SUB.CURRENT_VALUE - SUB.PREVIOUS_VALUE)/SUB.PREVIOUS_VALUE * 100,2)           AS "%_DAY_P/L"
+    ,SUB.PROCESSING_DATE                                                                  AS PROCESSING_DATE
+    ,SUB.PREVIOUS_PROCESSING_DATE                                                         AS PREVIOUS_PROCESSING_DATE
+    ,SUB.NEXT_PROCESSING_DATE                                                             AS NEXT_PROCESSING_DATE
 FROM
 (
 SELECT
@@ -50,6 +51,8 @@ SELECT
           THEN TRD.END_DATE
           ELSE FSSRPV_OPEN.TRADE_CLOSE_DATE END                                           AS TRADE_CLOSE_DATE
     ,FSSRPV_CLOSE.CLOSING_FEE_ID                                                          AS CLOSED_FEE_ID
+    ,(SELECT DISTINCT NEXT_PROC_DATE FROM PROCESSING_DATE
+    WHERE PROC_TYP_CD = 'STOCK_PROC')                                                     AS NEXT_PROCESSING_DATE
 FROM
     TRADES TRD
 LEFT OUTER JOIN

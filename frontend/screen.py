@@ -30,9 +30,9 @@ def stock_order_pdf():
 def processing_date():
     return render_template('processing_date.html')
 
-@frontend.route('/process_mf_hist_returns/')
-def process_mf_hist_returns():
-    return render_template('process_mf_hist_returns.html')
+@frontend.route('/process_mf_returns/')
+def process_mf_returns():
+    return render_template('process_mf_returns.html')
 
 @frontend.route('/process_realised_stock_hist_returns/')
 def process_realised_stock_hist_returns():
@@ -50,9 +50,9 @@ def additional_links():
 def close_trades():
     return render_template('close_trades.html')
 
-@frontend.route('/process_unrealised_stock_hist_returns/')
-def process_unrealised_stock_hist_returns():
-    return render_template('process_unrelalised_stock_hist_returns.html')
+@frontend.route('/process_unrealised_stock_returns/')
+def process_unrealised_stock__returns():
+    return render_template('process_unrelalised_stock_returns.html')
 
 @frontend.route('/process_consolidated_hist_returns')
 def process_consolidated_hist_returns():

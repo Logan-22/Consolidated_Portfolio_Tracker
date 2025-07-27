@@ -18,14 +18,14 @@ let create_table_status;
 let create_view_status;
 let dup_check_status;
 let mf_returns_status;
-let realised_intraday_hist_status;
-let realised_swing_hist_status;
+let realised_intraday_stock_returns_status;
+let realised_swing_stock_returns_status;
 let unrealised_stock_returns_status;
-let process_consolidated_hist_status;
+let consolidated_returns_status;
 let get_consolidated_hist_return_status;
-let process_consolidated_hist_allocation_status;
+let consolidated_allocation_status;
 let get_consolidated_hist_allocation_status;
-let process_simulated_returns_status;
+let simulated_returns_status;
 
 // Global Variables for Chart
 
@@ -84,14 +84,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (document.getElementById('container')) {
     await create_managed_folders_in_directory()
     await create_managed_tables_in_db()
-    await create_portfolio_views_in_db()
+    await create_managed_views_in_db()
     await upsert_price_table()
-    await upsert_mf_hist_returns_table()
-    await upsert_realised_intraday_stock_hist_returns_table()
-    await upsert_realised_swing_stock_hist_returns_table()
+    await upsert_mf_returns_table()
+    await upsert_realised_intraday_stock_returns_table()
+    await upsert_realised_swing_stock_returns_table()
     await upsert_unrealised_swing_stock_returns_table()
-    await upsert_consolidated_hist_returns()
-    await upsert_consolidated_hist_allocation()
+    await upsert_consolidated_returns()
+    await upsert_consolidated_allocation()
     await upsert_simulated_returns()
     await get_consolidated_hist_returns()
     await get_consolidated_hist_allocation()
@@ -99,8 +99,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 );
-
-// Create Managed Folders in Directory
 
 async function create_managed_folders_in_directory(){
 const create_folder_response=  await fetch ('/api/create_managed_folders/', {
@@ -114,8 +112,6 @@ if(create_folder_status != "Success"){
 create_notification(create_folder_data.message, create_folder_data.status)
 }
 }
-
-// Create Managed Tables in DB
 
 async function create_managed_tables_in_db(){
 
@@ -132,11 +128,9 @@ create_notification(create_table_data.message, create_table_data.status)
 
 }
 
-// Create Portfolio Views in DB
+async function create_managed_views_in_db(){
 
-async function create_portfolio_views_in_db(){
-
-const create_view_response=  await fetch ('/api/create_portfolio_views/', {
+const create_view_response=  await fetch ('/api/create_managed_views/', {
   method: 'GET'
 })
 
@@ -210,9 +204,7 @@ create_notification(`Symbol ${duplicate.alt_symbol} is having ${duplicate.count}
 
 }
 
-// GET /api/mf_hist_returns/max_date/
-
-async function upsert_mf_hist_returns_table(){
+async function upsert_mf_returns_table(){
 const mf_returns_response = await fetch (`/api/process_mf_returns/?on_start=true`, {
   method: 'GET'
 })
@@ -225,67 +217,31 @@ create_notification(mf_returns_data.message, mf_returns_data.status)
 }
 }
 
-// GET /api/realised_intraday_stock_hist_returns/max_trade_date/
-
-async function upsert_realised_intraday_stock_hist_returns_table(){
-const realised_stock_hist_max_trade_date_response = await fetch ('/api/realised_intraday_stock_hist_returns/max_trade_date/', {
+async function upsert_realised_intraday_stock_returns_table(){
+const realised_intraday_stock_returns_response = await fetch (`/api/process_realised_intraday_stock_returns/?on_start=true`, {
   method: 'GET'
 })
 
-const realised_stock_hist_max_trade_date_data = await realised_stock_hist_max_trade_date_response.json();
-const realised_stock_hist_max_trade_date = realised_stock_hist_max_trade_date_data.data.max_trade_date
+const realised_intraday_stock_returns_data = await realised_intraday_stock_returns_response.json();
 
-const today = new Date();
-const year = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, '0');
-const day = String(today.getDate()).padStart(2, '0');
+realised_intraday_stock_returns_status = realised_intraday_stock_returns_data.status
+if(realised_intraday_stock_returns_status != "Success"){
+create_notification(realised_intraday_stock_returns_data.message, realised_intraday_stock_returns_data.status)
+}
+}
 
-const end_date = `${year}-${month}-${day}`
-
-const realised_intraday_hist_returns_response = await fetch (`/api/realised_intraday_stock_hist_returns/${realised_stock_hist_max_trade_date}/${end_date}`, {
+async function upsert_realised_swing_stock_returns_table(){
+const realised_swing_stock_returns_response = await fetch (`/api/process_realised_swing_stock_returns/?on_start=true`, {
   method: 'GET'
 })
 
-const realised_intraday_hist_returns_data = await realised_intraday_hist_returns_response.json();
+const realised_swing_stock_returns_data = await realised_swing_stock_returns_response.json();
 
-realised_intraday_hist_status = realised_intraday_hist_returns_data.status
-if(realised_intraday_hist_status != "Success"){
-create_notification(realised_intraday_hist_returns_data.message, realised_intraday_hist_returns_data.status)
+realised_swing_stock_returns_status = realised_swing_stock_returns_data.status
+if(realised_swing_stock_returns_status != "Success"){
+create_notification(realised_swing_stock_returns_data.message, realised_swing_stock_returns_data.status)
 }
-
 }
-
-// GET /api/realised_swing_stock_hist_returns/max_trade_date/
-
-async function upsert_realised_swing_stock_hist_returns_table(){
-const realised_swing_stock_hist_max_trade_date_response = await fetch ('/api/realised_swing_stock_hist_returns/max_trade_close_date/', {
-  method: 'GET'
-})
-
-const realised_swing_stock_hist_max_trade_date_data = await realised_swing_stock_hist_max_trade_date_response.json();
-const realised_swing_stock_hist_max_trade_close_date = realised_swing_stock_hist_max_trade_date_data.data.max_trade_close_date
-
-const today = new Date();
-const year = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, '0');
-const day = String(today.getDate()).padStart(2, '0');
-
-const end_date = `${year}-${month}-${day}`
-
-const realised_swing_hist_returns_response = await fetch (`/api/realised_swing_stock_hist_returns/${realised_swing_stock_hist_max_trade_close_date}/${end_date}`, {
-  method: 'GET'
-})
-
-const realised_swing_hist_returns_data = await realised_swing_hist_returns_response.json();
-
-realised_swing_hist_status = realised_swing_hist_returns_data.status
-if(realised_swing_hist_status != "Success"){
-create_notification(realised_swing_hist_returns_data.message, realised_swing_hist_returns_data.status)
-}
-
-}
-
-// GET /api/realised_swing_stock_hist_returns/max_next_proc_date/
 
 async function upsert_unrealised_swing_stock_returns_table(){
 const unrealised_stock_returns_response = await fetch (`/api/process_unrealised_stock_returns/?on_start=true`, {
@@ -300,81 +256,29 @@ create_notification(unrealised_stock_returns_data.message, unrealised_stock_retu
 }
 }
 
-async function upsert_consolidated_hist_returns(){
-const consolidated_returns_max_next_proc_date_response = await fetch ('/api/consolidated_hist_returns/max_next_proc_date/', {
+async function upsert_consolidated_returns(){
+const consolidated_returns_response = await fetch (`/api/process_consolidated_returns/?on_start=true`, {
   method: 'GET'
 })
 
-const consolidated_returns_max_next_proc_date_data = await consolidated_returns_max_next_proc_date_response.json();
-const max_next_proc_date_in_consolidated_returns = consolidated_returns_max_next_proc_date_data.data.max_next_processing_date
+const consolidated_returns_data = await consolidated_returns_response.json();
 
-// Get the Max of all Hist Returns tables and get the minimum out of the those
-
-const min_date_from_hist_returns_table_max_date_response = await fetch ('/api/hist_returns_tables/max_processing_date/', {
-  method: 'GET'
-})
-
-const min_date_from_hist_returns_table_max_date_data = await min_date_from_hist_returns_table_max_date_response.json();
-const min_date_from_hist_returns_table_max_date = min_date_from_hist_returns_table_max_date_data.max_proc_date_data.min_of_max_proc_date_from_hist_tables
-
-const today = new Date();
-const year = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, '0');
-const day = String(today.getDate()).padStart(2, '0');
-
-let end_date = `${year}-${month}-${day}`
-if(min_date_from_hist_returns_table_max_date){
-end_date = min_date_from_hist_returns_table_max_date
-}
-
-const process_consolidated_returns_response = await fetch (`/api/consolidated_stock_hist_returns/${max_next_proc_date_in_consolidated_returns}/${end_date}`, {
-  method: 'GET'
-})
-
-const process_consolidated_returns_data = await process_consolidated_returns_response.json();
-
-process_consolidated_hist_status = process_consolidated_returns_data.status
-if(process_consolidated_hist_status != "Success"){
-create_notification(process_consolidated_returns_data.message, process_consolidated_returns_data.status)
+consolidated_returns_status = consolidated_returns_data.status
+if(consolidated_returns_status != "Success"){
+create_notification(consolidated_returns_data.message, consolidated_returns_data.status)
 }
 }
 
-async function upsert_consolidated_hist_allocation(){
-const consolidated_allocation_max_next_proc_date_response = await fetch ('/api/consolidated_hist_allocation/max_next_proc_date/', {
+async function upsert_consolidated_allocation(){
+const consolidated_allocation_response = await fetch (`/api/process_consolidated_allocation/?on_start=true`, {
   method: 'GET'
 })
 
-const consolidated_allocation_max_next_proc_date_data = await consolidated_allocation_max_next_proc_date_response.json();
-const max_next_proc_date_in_consolidated_allocation = consolidated_allocation_max_next_proc_date_data.data.max_next_processing_date
+const consolidated_allocation_data = await consolidated_allocation_response.json();
 
-// Get the Max of all Hist Returns tables and get the minimum out of the those
-
-const min_date_from_hist_returns_table_max_date_response = await fetch ('/api/hist_returns_tables/max_processing_date/', {
-  method: 'GET'
-})
-
-const min_date_from_hist_returns_table_max_date_data = await min_date_from_hist_returns_table_max_date_response.json();
-const min_date_from_hist_returns_table_max_date = min_date_from_hist_returns_table_max_date_data.max_proc_date_data.min_of_max_proc_date_from_hist_tables
-
-const today = new Date();
-const year = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, '0');
-const day = String(today.getDate()).padStart(2, '0');
-
-let end_date = `${year}-${month}-${day}`
-if(min_date_from_hist_returns_table_max_date){
-end_date = min_date_from_hist_returns_table_max_date
-}
-
-const process_consolidated_allocation_response = await fetch (`/api/process_consolidated_hist_allocation?start_date=${max_next_proc_date_in_consolidated_allocation}&end_date=${end_date}`, {
-  method: 'GET'
-})
-
-const process_consolidated_allocation_data = await process_consolidated_allocation_response.json();
-
-process_consolidated_hist_allocation_status = process_consolidated_allocation_data.status
-if(process_consolidated_hist_allocation_status != "Success"){
-create_notification(process_consolidated_allocation_data.message, process_consolidated_allocation_data.status)
+consolidated_allocation_status = consolidated_allocation_data.status
+if(consolidated_allocation_status != "Success"){
+create_notification(consolidated_allocation_data.message, consolidated_allocation_data.status)
 }
 }
 
@@ -385,11 +289,10 @@ method: 'GET'
 
 const process_simulate_returns_data = await process_simulate_returns_response.json();
 
-process_simulated_returns_status = process_simulate_returns_data.status
-if(process_simulated_returns_status != "Success"){
+simulated_returns_status = process_simulate_returns_data.status
+if(simulated_returns_status != "Success"){
 create_notification(process_simulate_returns_data.message, process_simulate_returns_data.status)
 }
-
 }
 
 async function get_consolidated_hist_returns(){
@@ -1288,14 +1191,14 @@ if (create_table_status                         == "Success" &&
     create_view_status                          == "Success" &&
     dup_check_status                            == "Success" &&
     mf_returns_status                           == "Success" &&
-    realised_intraday_hist_status               == "Success" &&
-    realised_swing_hist_status                  == "Success" &&
+    realised_intraday_stock_returns_status      == "Success" &&
+    realised_swing_stock_returns_status         == "Success" &&
     unrealised_stock_returns_status             == "Success" &&
-    process_consolidated_hist_status            == "Success" &&
+    consolidated_returns_status                 == "Success" &&
     get_consolidated_hist_return_status         == "Success" &&
-    process_consolidated_hist_allocation_status == "Success" &&
+    consolidated_allocation_status              == "Success" &&
     get_consolidated_hist_allocation_status     == "Success" &&
-    (process_simulated_returns_status           == "Success" )){
+    simulated_returns_status                    == "Success" ){
     create_notification('All scheduled background processes executed successfully.', 'success')
     }
 }

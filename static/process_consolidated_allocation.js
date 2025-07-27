@@ -1,27 +1,28 @@
 import { create_notification } from './create_notification.js'
 
-// GET /api/process_consolidated_hist_allocation/
-// Inserts data into CONSOLIDATED_HIST_ALLOCATION table
+// GET /api/consolidated_allocation/
+// Get Consolidated Allocation Data
 
-let chart;
+let consolidated_allocation_chart;
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('allocation_chart')) {
-    init_consolidated_hist_allocation_chart();
+  if (document.getElementById('consolidated_allocation_chart')) {
+    init_consolidated_allocation_chart();
   }
 });
 
-async function init_consolidated_hist_allocation_chart(){
+async function init_consolidated_allocation_chart(){
 
-if (chart){
-  chart.destroy()
+if (consolidated_allocation_chart){
+  consolidated_allocation_chart.destroy()
 }
 
-const get_consolidated_hist_allocation_portfolio_response = await fetch (`/api/consolidated_hist_allocation_portfolio/`, {
+const get_consolidated_allocation_response = await fetch (`/api/consolidated_allocation/`, {
   method: 'GET'
 })
 
-const get_consolidated_hist_allocation_portfolio_data = await get_consolidated_hist_allocation_portfolio_response.json();
+const get_consolidated_allocation_data = await get_consolidated_allocation_response.json();
+
 const processing_date_array        = []
 const mf_allocation_perc_array     = []
 const equity_allocation_perc_array = []
@@ -31,9 +32,9 @@ let mf_allocation_present_flag     = 0
 let equity_allocation_present_flag = 0
 let gold_allocation_present_flag   = 0
 
-if(get_consolidated_hist_allocation_portfolio_data.data){
-get_consolidated_hist_allocation_portfolio_data.data.forEach(consolidated_hist_allocation_portfolio => {
-processing_date_array.push(consolidated_hist_allocation_portfolio.processing_date)
+if(get_consolidated_allocation_data.data){
+get_consolidated_allocation_data.data.forEach(consolidated_allocation_portfolio => {
+processing_date_array.push(consolidated_allocation_portfolio.processing_date)
 })
 }
 
@@ -42,18 +43,18 @@ processing_date_array.forEach(proc_date => {
 mf_allocation_present_flag     = 0
 equity_allocation_present_flag = 0
 gold_allocation_present_flag   = 0
-get_consolidated_hist_allocation_portfolio_data.data.forEach(consolidated_hist_allocation_portfolio => {
-if(proc_date == consolidated_hist_allocation_portfolio.processing_date){
-  if(consolidated_hist_allocation_portfolio.portfolio_type == 'Mutual Fund'){
-    mf_allocation_perc_array.push(consolidated_hist_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
+get_consolidated_allocation_data.data.forEach(consolidated_allocation_portfolio => {
+if(proc_date == consolidated_allocation_portfolio.processing_date){
+  if(consolidated_allocation_portfolio.portfolio_type == 'Mutual Fund'){
+    mf_allocation_perc_array.push(consolidated_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
     mf_allocation_present_flag = 1
   }
-  if(consolidated_hist_allocation_portfolio.portfolio_type == 'Equity'){
-    equity_allocation_perc_array.push(consolidated_hist_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
+  if(consolidated_allocation_portfolio.portfolio_type == 'Equity'){
+    equity_allocation_perc_array.push(consolidated_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
     equity_allocation_present_flag = 1
   }
-  if(consolidated_hist_allocation_portfolio.portfolio_type == 'Gold'){
-    gold_allocation_perc_array.push(consolidated_hist_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
+  if(consolidated_allocation_portfolio.portfolio_type == 'Gold'){
+    gold_allocation_perc_array.push(consolidated_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
     gold_allocation_present_flag = 1
   }
 }
@@ -71,11 +72,11 @@ if (gold_allocation_present_flag == 0){
 })
 }
 
-if(get_consolidated_hist_allocation_portfolio_data.data)
+if(get_consolidated_allocation_data.data)
 {
-const ctx = document.getElementById('allocation_chart').getContext('2d');
+const ctx = document.getElementById('consolidated_allocation_chart').getContext('2d');
 
-chart = new Chart(ctx, {type: 'line',
+consolidated_allocation_chart = new Chart(ctx, {type: 'line',
         data: {labels: processing_date_array,  // Dates on the X-axis
         datasets: [
           {
@@ -135,23 +136,23 @@ chart = new Chart(ctx, {type: 'line',
       });
 }
 
-create_notification(get_consolidated_hist_allocation_portfolio_data.message, get_consolidated_hist_allocation_portfolio_data.status)
+create_notification(get_consolidated_allocation_data.message, get_consolidated_allocation_data.status)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-document.getElementById('process_consolidated_hist_allocation_form').addEventListener('submit', async function (e) {
+document.getElementById('process_consolidated_allocation_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const process_consolidated_hist_allocation_response = await fetch(`/api/process_consolidated_hist_allocation/`, {
+const process_consolidated_allocation_response = await fetch(`/api/process_consolidated_allocation/`, {
 method: 'GET'
 })
 
-const process_consolidated_hist_allocation_data = await process_consolidated_hist_allocation_response.json();
+const process_consolidated_allocation_data = await process_consolidated_allocation_response.json();
 
-if(process_consolidated_hist_allocation_data.status === "Success"){
-    init_consolidated_hist_allocation_chart()
+if(process_consolidated_allocation_data.status === "Success"){
+    init_consolidated_allocation_chart()
 }
 
-create_notification(process_consolidated_hist_allocation_data.message, process_consolidated_hist_allocation_data.status)
+create_notification(process_consolidated_allocation_data.message, process_consolidated_allocation_data.status)
 })

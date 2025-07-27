@@ -28,6 +28,9 @@ SELECT
      * 100,2)                                                  AS "NET_%_P/L_WITHOUT_LEVERAGE_INCL_CHARGES"
     ,ROUND(SUB."NET_P/L_MINUS_CHARGES"/SUB.AGG_ACTUAL_DEPLOYED_CAPITAL
      * 100,2)                                                  AS "NET_%_P/L_WITH_LEVERAGE_INCL_CHARGES"
+    ,SUB.PROCESSING_DATE                                       AS PROCESSING_DATE
+    ,SUB.PREVIOUS_PROCESSING_DATE                              AS PREVIOUS_PROCESSING_DATE
+    ,SUB.NEXT_PROCESSING_DATE                                  AS NEXT_PROCESSING_DATE
 FROM
 (
 SELECT
@@ -67,6 +70,9 @@ SELECT
      FEE.SEBI_TURN_OVER_FEES) - 
      (FEE.AUTO_SQUARE_OFF_CHARGES + 
      FEE.DEPOSITORY_CHARGES)                                   AS "NET_P/L_MINUS_CHARGES"
+    ,ASRPV.PROCESSING_DATE                                     AS PROCESSING_DATE
+    ,ASRPV.PREVIOUS_PROCESSING_DATE                            AS PREVIOUS_PROCESSING_DATE
+    ,ASRPV.NEXT_PROCESSING_DATE                                AS NEXT_PROCESSING_DATE
 FROM
     AGG_STOCK_INTRADAY_REALISED_PORTFOLIO_VIEW ASRPV
 LEFT OUTER JOIN
@@ -76,6 +82,5 @@ ON
     AND FEE.RECORD_DELETED_FLAG = 0
 GROUP BY 1,2,3
 ) SUB
-ORDER BY 1,2,3
 ;
 '''

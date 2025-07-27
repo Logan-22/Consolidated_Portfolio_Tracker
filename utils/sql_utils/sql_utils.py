@@ -19,9 +19,9 @@ from utils.sql_utils.views.FIN_STOCK_SWING_UNREALISED_PORTFOLIO_VIEW import FIN_
 from utils.sql_utils.views.CONSOLIDATED_PORTFOLIO_VIEW import CONSOLIDATED_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_CONSOLIDATED_PORTFOLIO_VIEW import AGG_CONSOLIDATED_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_CONSOLIDATED_PORTFOLIO_VIEW import FIN_CONSOLIDATED_PORTFOLIO_VIEW
+from utils.sql_utils.views.CONSOLIDATED_ALLOCATION_VIEW import CONSOLIDATED_ALLOCATION_VIEW
 from utils.sql_utils.views.AGG_CONSOLIDATED_ALLOCATION_VIEW import AGG_CONSOLIDATED_ALLOCATION_VIEW
 from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_VIEW import FIN_CONSOLIDATED_ALLOCATION_VIEW
-from utils.sql_utils.views.FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW import FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW
 from utils.sql_utils.views.SIMULATED_PORTFOLIO_VIEW import SIMULATED_PORTFOLIO_VIEW
 from utils.sql_utils.views.AGG_SIMULATED_PORTFOLIO_VIEW import AGG_SIMULATED_PORTFOLIO_VIEW
 from utils.sql_utils.views.FIN_SIMULATED_PORTFOLIO_VIEW import FIN_SIMULATED_PORTFOLIO_VIEW
@@ -449,12 +449,12 @@ def create_consolidated_portfolio_views_in_db():
     cursor.execute("DROP VIEW IF EXISTS FIN_CONSOLIDATED_PORTFOLIO_VIEW;")
     cursor.execute(FIN_CONSOLIDATED_PORTFOLIO_VIEW)
 
+    cursor.execute("DROP VIEW IF EXISTS CONSOLIDATED_ALLOCATION_VIEW;")
+    cursor.execute(CONSOLIDATED_ALLOCATION_VIEW)
     cursor.execute("DROP VIEW IF EXISTS AGG_CONSOLIDATED_ALLOCATION_VIEW;")
     cursor.execute(AGG_CONSOLIDATED_ALLOCATION_VIEW)
     cursor.execute("DROP VIEW IF EXISTS FIN_CONSOLIDATED_ALLOCATION_VIEW;")
     cursor.execute(FIN_CONSOLIDATED_ALLOCATION_VIEW)
-    cursor.execute("DROP VIEW IF EXISTS FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW;")
-    cursor.execute(FIN_CONSOLIDATED_ALLOCATION_PORTFOLIO_VIEW)
 
     conn.commit()
     conn.close()
@@ -687,7 +687,7 @@ def create_trade_table():
             END_DATE DATE,
             RECORD_DELETED_FLAG INTEGER
         )''')
-    
+
 def create_fee_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -707,7 +707,6 @@ def create_fee_table():
             END_DATE DATE,
             RECORD_DELETED_FLAG INTEGER
         )''')
-    
 
 def upsert_trade_entry_in_db(trade_id, fee_id, trade_set_id, stock_symbol, stock_isin, trade_date, order_number, order_time, trade_number, trade_time, buy_or_sell, stock_quantity, brokerage_per_trade, net_trade_price_per_unit, net_total_before_levies, trade_set, trade_position, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, trade_type, leverage):
     conn = sqlite3.connect(db_path)
@@ -834,7 +833,7 @@ def insert_into_realised_intraday_stock_hist_returns(start_date = '1900-01-01', 
     conn.commit()
     conn.close()
 
-def get_stock_hist_returns_from_realised_intraday_stock_and_swing_stock_hist_returns_table():
+def get_realised_intraday_and_swing_stock_returns():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(f'''SELECT * FROM
@@ -1121,7 +1120,6 @@ def create_agg_consolidated_hist_returns_table():
             END_DATE DATE,
             RECORD_DELETED_FLAG INTEGER
         );''')
-
 
 def get_first_purchase_date_from_all_portfolios():
     conn = sqlite3.connect(db_path)
@@ -2782,6 +2780,438 @@ def create_fin_unrealised_stock_returns_table():
             "FIN_NET_%_P/L" REAL,
             "FIN_DAY_P/L" REAL,
             "FIN_%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_realised_intraday_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS REALISED_INTRADAY_STOCK_RETURNS (
+            TRADE_DATE DATE,
+            STOCK_NAME TEXT,
+            TRADE_SET_ID TEXT,
+            TRADE_SET INTEGER,
+            LEVERAGE INTEGER,
+            TRADE_TYPE TEXT,
+            TRADE_POSITION TEXT,
+            FEE_ID TEXT,
+            STOCK_QUANTITY INTEGER,
+            PERCEIVED_BUY_PRICE REAL,
+            PERCEIVED_SELL_PRICE REAL,
+            ACTUAL_BUY_PRICE REAL,
+            ACTUAL_SELL_PRICE REAL,
+            "P/L" REAL,
+            PERCEIVED_DEPLOYED_CAPITAL REAL,
+            ACTUAL_DEPLOYED_CAPITAL REAL,
+            "%_P/L_WITHOUT_LEVERAGE" REAL,
+            "%_P/L_WITH_LEVERAGE" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_agg_realised_intraday_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_REALISED_INTRADAY_STOCK_RETURNS (
+            TRADE_DATE TEXT,
+            STOCK_NAME TEXT,
+            LEVERAGE REAL,
+            TRADE_TYPE TEXT,
+            FEE_ID TEXT,
+            AGG_PERCEIVED_DEPLOYED_CAPITAL REAL,
+            AGG_ACTUAL_DEPLOYED_CAPITAL REAL,
+            "AGG_P/L" REAL,
+            "%_P/L_WITHOUT_LEVERAGE" REAL,
+            "%_P/L_WITH_LEVERAGE" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_fin_realised_intraday_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FIN_REALISED_INTRADAY_STOCK_RETURNS (
+            TRADE_DATE DATE,
+            TRADE_TYPE TEXT,
+            FEE_ID TEXT,
+            AGG_PERCEIVED_DEPLOYED_CAPITAL REAL,
+            AGG_ACTUAL_DEPLOYED_CAPITAL REAL,
+            "AGG_P/L" REAL,
+            "%_P/L_WITHOUT_LEVERAGE" REAL,
+            "%_P/L_WITH_LEVERAGE" REAL,
+            NET_OBLIGATION REAL,
+            "AGG_P/L_NET_OBLIGATION_MATCH_STATUS" TEXT,
+            BROKERAGE REAL,
+            EXCHANGE_TRANSACTION_CHARGES REAL,
+            IGST REAL,
+            SECURITIES_TRANSACTION_TAX REAL,
+            SEBI_TURN_OVER_FEES REAL,
+            TOTAL_FEES REAL,
+            "NET_P/L" REAL,
+            "NET_%_P/L_WITHOUT_LEVERAGE" REAL,
+            "NET_%_P/L_WITH_LEVERAGE" REAL,
+            TOTAL_CHARGES REAL,
+            "NET_P/L_MINUS_CHARGES" REAL,
+            "NET_%_P/L_WITHOUT_LEVERAGE_INCL_CHARGES" REAL,
+            "NET_%_P/L_WITH_LEVERAGE_INCL_CHARGES" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_realised_swing_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS REALISED_SWING_STOCK_RETURNS (
+            STOCK_NAME TEXT,
+            OPENING_TRADE_ID TEXT,
+            CLOSING_TRADE_ID TEXT,
+            OPENING_FEE_ID TEXT,
+            CLOSING_FEE_ID TEXT,
+            OPENING_STOCK_QUANTITY REAL,
+            CLOSING_STOCK_QUANTITY REAL,
+            TRADE_OPEN_DATE DATE,
+            TRADE_CLOSE_DATE DATE,
+            BUY_PRICE REAL,
+            SELL_PRICE REAL,
+            SELL_MINUS_BUY_PRICE REAL,
+            "P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_agg_realised_swing_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_REALISED_SWING_STOCK_RETURNS (
+            STOCK_NAME TEXT,
+            OPENING_FEE_ID INTEGER,
+            CLOSING_FEE_ID INTEGER,
+            TRADE_OPEN_DATE TEXT,
+            TRADE_CLOSE_DATE TEXT,
+            AGG_OPENING_STOCK_QUANTITY REAL,
+            AGG_CLOSING_STOCK_QUANTITY REAL,
+            REMAINING_STOCK_BALANCE REAL,
+            TRADES_CLOSE_STATUS TEXT,
+            AGG_OPENING_BUY_PRICE REAL,
+            AGG_CLOSING_SELL_PRICE REAL,
+            "AGG_P/L" REAL,
+            "AGG_%_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_fin_realised_swing_stock_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FIN_REALISED_SWING_STOCK_RETURNS (
+            STOCK_NAME TEXT,
+            OPENING_FEE_ID INTEGER,
+            CLOSING_FEE_ID INTEGER,
+            TRADE_OPEN_DATE TEXT,
+            TRADE_CLOSE_DATE TEXT,
+            AGG_OPENING_STOCK_QUANTITY REAL,
+            AGG_CLOSING_STOCK_QUANTITY REAL,
+            REMAINING_STOCK_BALANCE REAL,
+            TRADES_CLOSE_STATUS TEXT,
+            AGG_OPENING_BUY_PRICE REAL,
+            OPEN_NET_OBLIGATION REAL,
+            OPEN_MATCH_STATUS TEXT,
+            OPEN_TOTAL_BROKERAGE REAL,
+            OPEN_TOTAL_CHARGES REAL,
+            OPEN_TOTAL_FEES REAL,
+            AGG_CLOSING_SELL_PRICE REAL,
+            CLOSE_NET_OBLIGATION REAL,
+            CLOSE_MATCH_STATUS TEXT,
+            CLOSE_TOTAL_BROKERAGE REAL,
+            CLOSE_TOTAL_CHARGES REAL,
+            CLOSE_TOTAL_FEES REAL,
+            TOTAL_FEES REAL,
+            "AGG_P/L" REAL,
+            "AGG_%_P/L" REAL,
+            "NET_P/L" REAL,
+            "NET_%_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_consolidated_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS CONSOLIDATED_RETURNS (
+            PORTFOLIO_TYPE TEXT,
+            INVESTED_AMOUNT REAL,
+            CURRENT_VALUE REAL,
+            PREVIOUS_VALUE REAL,
+            "TOTAL_P/L" REAL,
+            "DAY_P/L" REAL,
+            "%_TOTAL_P/L" REAL,
+            "%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_agg_consolidated_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_CONSOLIDATED_RETURNS (
+            PORTFOLIO_TYPE TEXT,
+            AGG_INVESTED_AMOUNT REAL,
+            AGG_CURRENT_VALUE REAL,
+            AGG_PREVIOUS_VALUE REAL,
+            "AGG_TOTAL_P/L" REAL,
+            "AGG_DAY_P/L" REAL,
+            "%_AGG_TOTAL_P/L" REAL,
+            "%_AGG_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_fin_consolidated_returns_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FIN_CONSOLIDATED_RETURNS (
+            FIN_INVESTED_AMOUNT REAL,
+            FIN_CURRENT_VALUE REAL,
+            FIN_PREVIOUS_VALUE REAL,
+            "FIN_TOTAL_P/L" REAL,
+            "FIN_DAY_P/L" REAL,
+            "%_FIN_TOTAL_P/L" REAL,
+            "%_FIN_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_consolidated_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS CONSOLIDATED_ALLOCATION (
+            PORTFOLIO_TYPE TEXT,
+            PORTFOLIO_NAME TEXT,
+            PORTFOLIO_HOUSE TEXT,
+            PORTFOLIO_SUB_TYPE TEXT,
+            PORTFOLIO_CATEGORY TEXT,
+            INVESTED_AMOUNT REAL,
+            INVESTED_AMOUNT_EXCLUDING_FEES REAL,
+            QUANTITY REAL,
+            CURRENT_VALUE REAL,
+            PREVIOUS_VALUE REAL,
+            "P/L" REAL,
+            "%_P_L" REAL,
+            "DAY_P/L" REAL,
+            "%_DAY_P/L" REAL,
+            AVERAGE_PRICE REAL,
+            AGG_INVESTED_AMOUNT REAL,
+            AGG_INVESTED_AMOUNT_EXCLUDING_FEES REAL,
+            AGG_QUANTITY REAL,
+            AGG_CURRENT_AMOUNT REAL,
+            AGG_PREVIOUS_AMOUNT REAL,
+            "AGG_P/L" REAL,
+            "AGG_DAY_P/L" REAL,
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD" TEXT,
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT" REAL,
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD" TEXT,
+            "AGG_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES" REAL,
+            "AGG_ALLOC_%_QUANTITY_TYP_CD" TEXT,
+            "AGG_ALLOC_%_QUANTITY" REAL,
+            "AGG_ALLOC_%_CURRENT_VALUE_TYP_CD" TEXT,
+            "AGG_ALLOC_%_CURRENT_VALUE" REAL,
+            "AGG_ALLOC_%_PREVIOUS_VALUE_TYP_CD" TEXT,
+            "AGG_ALLOC_%_PREVIOUS_VALUE" REAL,
+            "AGG_ALLOC_%_P/L_TYP_CD" TEXT,
+            "AGG_ALLOC_%_P/L" REAL,
+            "AGG_ALLOC_%_DAY_P/L_TYP_CD" TEXT,
+            "AGG_ALLOC_%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_agg_consolidated_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AGG_CONSOLIDATED_ALLOCATION (
+            PORTFOLIO_TYPE TEXT,
+            PORTFOLIO_NAME TEXT,
+            PORTFOLIO_HOUSE TEXT,
+            PORTFOLIO_SUB_TYPE TEXT,
+            PORTFOLIO_CATEGORY TEXT,
+            INVESTED_AMOUNT REAL,
+            INVESTED_AMOUNT_EXCLUDING_FEES REAL,
+            QUANTITY REAL,
+            CURRENT_VALUE REAL,
+            PREVIOUS_VALUE REAL,
+            "P/L" REAL,
+            "%_P_L" REAL,
+            "DAY_P/L" REAL,
+            "%_DAY_P/L" REAL,
+            AVERAGE_PRICE REAL,
+            FIN_INVESTED_AMOUNT REAL,
+            FIN_INVESTED_AMOUNT_EXCLUDING_FEES REAL,
+            FIN_QUANTITY REAL,
+            FIN_CURRENT_AMOUNT REAL,
+            FIN_PREVIOUS_AMOUNT REAL,
+            "FIN_P/L" REAL,
+            "FIN_DAY_P/L" REAL,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD" TEXT,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT" REAL,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD" TEXT,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES" REAL,
+            "FIN_ALLOC_%_QUANTITY_TYP_CD" TEXT,
+            "FIN_ALLOC_%_QUANTITY" REAL,
+            "FIN_ALLOC_%_CURRENT_VALUE_TYP_CD" TEXT,
+            "FIN_ALLOC_%_CURRENT_VALUE" REAL,
+            "FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD" TEXT,
+            "FIN_ALLOC_%_PREVIOUS_VALUE" REAL,
+            "FIN_ALLOC_%_P/L_TYP_CD" TEXT,
+            "FIN_ALLOC_%_P/L" REAL,
+            "FIN_ALLOC_%_DAY_P/L_TYP_CD" TEXT,
+            "FIN_ALLOC_%_DAY_P/L" REAL,
+            PROCESSING_DATE DATE,
+            PREVIOUS_PROCESSING_DATE DATE,
+            NEXT_PROCESSING_DATE DATE,
+            UPDATE_PROCESS_NAME TEXT,
+            UPDATE_PROCESS_ID INTEGER,
+            PROCESS_NAME TEXT,
+            PROCESS_ID INTEGER,
+            START_DATE DATE,
+            END_DATE DATE,
+            RECORD_DELETED_FLAG INTEGER
+);''')
+
+def create_fin_consolidated_allocation_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS FIN_CONSOLIDATED_ALLOCATION (
+            PORTFOLIO_TYPE TEXT,
+            FIN_INVESTED_AMOUNT REAL,
+            FIN_INVESTED_AMOUNT_EXCLUDING_FEES REAL,
+            FIN_QUANTITY REAL,
+            FIN_CURRENT_VALUE REAL,
+            FIN_PREVIOUS_VALUE REAL,
+            "P/L" REAL,
+            "DAY_P/L" REAL,
+            AVERAGE_PRICE REAL,
+            FIN_AGG_INVESTED_AMOUNT REAL,
+            FIN_AGG_INVESTED_AMOUNT_EXCLUDING_FEES REAL,
+            FIN_AGG_QUANTITY REAL,
+            FIN_AGG_CURRENT_AMOUNT REAL,
+            FIN_AGG_PREVIOUS_AMOUNT REAL,
+            "FIN_AGG_P/L" REAL,
+            "FIN_AGG_DAY_P/L" REAL,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_TYP_CD" TEXT,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT" REAL,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES_TYP_CD" TEXT,
+            "FIN_ALLOC_%_PORTFOLIO_INVESTED_AMOUNT_EXCLUDING_FEES" REAL,
+            "FIN_ALLOC_%_QUANTITY_TYP_CD" TEXT,
+            "FIN_ALLOC_%_QUANTITY" REAL,
+            "FIN_ALLOC_%_CURRENT_VALUE_TYP_CD" TEXT,
+            "FIN_ALLOC_%_CURRENT_VALUE" REAL,
+            "FIN_ALLOC_%_PREVIOUS_VALUE_TYP_CD" TEXT,
+            "FIN_ALLOC_%_PREVIOUS_VALUE" REAL,
+            "FIN_ALLOC_%_P/L_TYP_CD" TEXT,
+            "FIN_ALLOC_%_P/L" REAL,
+            "FIN_ALLOC_%_DAY_P/L_TYP_CD" TEXT,
+            "FIN_ALLOC_%_DAY_P/L" REAL,
             PROCESSING_DATE DATE,
             PREVIOUS_PROCESSING_DATE DATE,
             NEXT_PROCESSING_DATE DATE,

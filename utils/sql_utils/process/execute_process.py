@@ -23,17 +23,17 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
     process_metadata_row = fetch_queries_as_dictionaries(f"SELECT * FROM METADATA_PROCESS WHERE PROCESS_NAME = '{process_name}';")
     if not process_metadata_row[0]['PROCESS_NAME']:
         message = f'Process {process_name} is Not Present in METADATA_PROCESS table'
-        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date, None, None, None, None, None, None)
+        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date.date(), None, None, None, None, None, None)
         return({'message': message, 'status': 'Failed'})
     # Check for Duplicate Process Entry
     elif len(process_metadata_row) > 1:
         message = f'Duplicate entry present for Process {process_name} in METADATA_PROCESS table'
-        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date, None, None, None, None, None, None)
+        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date.date(), None, None, None, None, None, None)
         return({'message': message, 'status': 'Failed'})
     # Check if Process is decommissioned
     elif process_metadata_row[0]['PROCESS_DECOMMISSIONED'] == 1:
         message = f'Process {process_name} has been Decommissioned in METADATA_PROCESS table'
-        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date, None, None, None, None, None, None)
+        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date.date(), None, None, None, None, None, None)
         return({'message': message, 'status': 'Failed'})
 
     process_metadata = process_metadata_row[0]
@@ -82,11 +82,11 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
 
     if counter_date > end_date and process_metadata['FREQUENCY'] == 'On Start':
         message = f'Start Date {start_date} is greater than End Date {end_date.date()} for {process_name}'
-        update_log_record(process_name, process_id, 'Skipped', message, start_date, end_date, None, None, None, None, None, None)
+        update_log_record(process_name, process_id, 'Skipped', message, start_date, end_date.date(), None, None, None, None, None, None)
         return({'message': message, 'status': 'Success'})
     elif counter_date > end_date and process_metadata['FREQUENCY'] != 'On Start':
         message = f'Start Date {start_date} is greater than End Date {end_date.date()} for {process_name}'
-        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date, None, None, None, None, None, None)
+        update_log_record(process_name, process_id, 'Failed', message, start_date, end_date.date(), None, None, None, None, None, None)
         return({'message': message, 'status': 'Failed'})
 
     # Prepare Loop

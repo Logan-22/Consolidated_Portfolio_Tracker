@@ -50,7 +50,7 @@ create_trade_table,\
 create_fee_table,\
 upsert_fee_entry_in_db,\
 create_stock_portfolio_views_in_db,\
-get_stock_hist_returns_from_realised_intraday_stock_and_swing_stock_hist_returns_table,\
+get_realised_intraday_and_swing_stock_returns,\
 truncate_realised_intraday_stock_hist_returns_table,\
 create_realised_intraday_stock_hist_returns_table,\
 insert_into_realised_intraday_stock_hist_returns,\
@@ -106,7 +106,19 @@ create_agg_mutual_fund_returns_table,\
 create_fin_mutual_fund_returns_table,\
 create_unrealised_stock_returns_table,\
 create_agg_unrealised_stock_returns_table,\
-create_fin_unrealised_stock_returns_table
+create_fin_unrealised_stock_returns_table,\
+create_realised_intraday_stock_returns_table,\
+create_agg_realised_intraday_stock_returns_table,\
+create_fin_realised_intraday_stock_returns_table,\
+create_realised_swing_stock_returns_table,\
+create_agg_realised_swing_stock_returns_table,\
+create_fin_realised_swing_stock_returns_table,\
+create_consolidated_returns_table,\
+create_agg_consolidated_returns_table,\
+create_fin_consolidated_returns_table,\
+create_consolidated_allocation_table,\
+create_agg_consolidated_allocation_table,\
+create_fin_consolidated_allocation_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -182,7 +194,7 @@ def metadata_entry():
         return jsonify({'message': "Successfully inserted metadata into METADATA_STORE table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
-    
+
 @api.route('/api/metadata_store/symbols/', methods = ['GET'])
 def get_all_symbols_list():
     try:
@@ -192,7 +204,7 @@ def get_all_symbols_list():
         return jsonify({'all_symbols_list': all_symbols_data, 'message': "Successfully retrieved All Symbols List from METADATA_STORE Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
-    
+
 @api.route('/api/price_table/close_price/', methods = ['GET'])
 def price_table_lookup():
     try:
@@ -221,7 +233,7 @@ def mf_order():
         return jsonify({'message': "Successfully inserted data into MF_ORDER table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
-    
+
 @api.route('/api/processing_date/', methods = ['GET'])
 def proc_date_lookup():
     try:
@@ -285,9 +297,9 @@ def duplicate_check_price_table():
             return ({'message': 'Successfully completed Duplicate Check On PRICE_TABLE for All Alt Symbols','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
-@api.route('/api/create_portfolio_views/', methods = ['GET'])
-def create_portfolio_views():
+
+@api.route('/api/create_managed_views/', methods = ['GET'])
+def create_managed_views():
     try:
         create_mf_portfolio_views_in_db()
         create_stock_portfolio_views_in_db()
@@ -340,10 +352,25 @@ def create_managed_tables():
         create_mutual_fund_returns_table()
         create_agg_mutual_fund_returns_table()
         create_fin_mutual_fund_returns_table()
+        create_unrealised_stock_returns_table()
+        create_agg_unrealised_stock_returns_table()
+        create_fin_unrealised_stock_returns_table()
+        create_realised_intraday_stock_returns_table()
+        create_agg_realised_intraday_stock_returns_table()
+        create_fin_realised_intraday_stock_returns_table()
+        create_realised_swing_stock_returns_table()
+        create_agg_realised_swing_stock_returns_table()
+        create_fin_realised_swing_stock_returns_table()
+        create_consolidated_returns_table()
+        create_agg_consolidated_returns_table()
+        create_fin_consolidated_returns_table()
+        create_consolidated_allocation_table()
+        create_agg_consolidated_allocation_table()
+        create_fin_consolidated_allocation_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'}) 
-    
+
 @api.route('/api/holiday_date/', methods = ['POST'])
 def holiday_date_entry():
     try:
@@ -356,7 +383,7 @@ def holiday_date_entry():
         return jsonify({'message': 'Successfully inserted holiday into HOLIDAY_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/holiday_date/', methods = ['GET'])
 def holiday_date_lookup():
     try:
@@ -366,7 +393,7 @@ def holiday_date_lookup():
         return jsonify({'data': data,'message': 'Successfully retrieved from HOLIDAY_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/working_date/', methods = ['POST'])
 def working_date_entry():
     try:
@@ -379,7 +406,7 @@ def working_date_entry():
         return jsonify({'message': 'Successfully inserted working date into WORKING_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/working_date/', methods = ['GET'])
 def working_date_lookup():
     try:
@@ -429,13 +456,13 @@ def holiday_calendar_setup():
         return jsonify({'message': 'Successfully inserted holiday calendar into HOLIDAY_CALENDAR Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/process_mf_returns/', methods = ['GET'])
 def process_mf_returns():
     try:
         start_date = request.args.get('start_date') or None
-        end_date = request.args.get('end_date') or None
-        on_start = request.args.get('on_start') or None
+        end_date   = request.args.get('end_date') or None
+        on_start   = request.args.get('on_start') or None
 
         create_mutual_fund_returns_table()
         create_agg_mutual_fund_returns_table()
@@ -448,7 +475,7 @@ def process_mf_returns():
         return jsonify(mf_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/mf_returns/', methods = ['GET'])
 def mf_returns_lookup():
     try:
@@ -457,7 +484,7 @@ def mf_returns_lookup():
         return jsonify({'data': data,'message': 'Successfully retrieved Mutual Fund Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/stock_pdf/', methods = ['POST'])
 def stock_order_entry_from_pdf():
     try:
@@ -734,44 +761,34 @@ def upsert_trade_entry():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/realised_intraday_and_swing_stock_hist_returns/', methods = ['GET'])
-def realised_stock_hist_returns_lookup():
+@api.route('/api/realised_intraday_and_swing_stock_returns/', methods = ['GET'])
+def realised_stock_returns_lookup():
     try:
-        data = get_stock_hist_returns_from_realised_intraday_stock_and_swing_stock_hist_returns_table()
+        data = get_realised_intraday_and_swing_stock_returns()
         data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from REALISED_INTRADAY_STOCK_HIST_RETURNS and REALISED_SWING_STOCK_HIST_RETURNS Tables','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/process_realised_intraday_stock_hist_returns/', methods = ['GET'])
-def process_realised_intraday_stock_hist_returns():
+@api.route('/api/process_realised_intraday_stock_returns/', methods = ['GET'])
+def process_realised_intraday_stock_returns():
     try:
-        truncate_realised_intraday_stock_hist_returns_table()
-        create_realised_intraday_stock_hist_returns_table()
+        start_date = request.args.get('start_date') or None
+        end_date   = request.args.get('end_date') or None
+        on_start   = request.args.get('on_start') or None
+
+        create_realised_intraday_stock_returns_table()
+        create_agg_realised_intraday_stock_returns_table()
+        create_fin_realised_intraday_stock_returns_table()
         
-        insert_into_realised_intraday_stock_hist_returns()
-
-        return jsonify({'message': 'Successfully inserted historic returns in to REALISED_INTRADAY_STOCK_HIST_RETURNS Table','status': 'Success'})
+        if on_start == "true" or (start_date):
+            realised_intraday_stock_returns_process_group_logs = execute_process_group_using_metadata('REALISED_INTRADAY_STOCK_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
+        elif not start_date and not end_date:
+            realised_intraday_stock_returns_process_group_logs = execute_process_group_using_metadata('REALISED_INTRADAY_STOCK_RETURNS_HIST_PROCESS_GROUP')
+        return jsonify(realised_intraday_stock_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/realised_intraday_stock_hist_returns/max_trade_date/', methods = ['GET'])
-def get_max_trade_date_from_realised_stock_hist_returns():
-    try:
-        max_trade_date = get_max_trade_date_from_realised_intraday_stock_hist_returns_table()
-        max_trade_date = max_trade_date.get_json()
-        return jsonify({'data': max_trade_date,'message': 'Successfully retrieved Max Trade Date from REALISED_INTRADAY_STOCK_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-    
-@api.route('/api/realised_intraday_stock_hist_returns/<start_date>/<end_date>/', methods = ['GET'])
-def insert_into_realised_stock_hist_returns_table(start_date, end_date):
-    try:
-        insert_into_realised_intraday_stock_hist_returns(start_date, end_date)
-        return jsonify({'message': f'Successfully inserted historic returns in to REALISED_INTRADAY_STOCK_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-    
 @api.route('/api/trades/open/', methods = ['GET'])
 def get_open_trades_list():
     try:
@@ -803,32 +820,23 @@ def close_trade_entry():
         return jsonify({'message': 'Successfully inserted into CLOSE_TRADES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
-@api.route('/api/process_realised_swing_stock_hist_returns/', methods = ['GET'])
-def process_realised_swing_stock_hist_returns():
-    try:
-        truncate_realised_swing_stock_hist_returns_table()
-        create_realised_swing_stock_hist_returns_table()
-        
-        insert_into_realised_swing_stock_hist_returns()
-        return jsonify({'message': 'Successfully inserted historic Swing Stock returns into REALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/realised_swing_stock_hist_returns/max_trade_close_date/', methods = ['GET'])
-def get_max_trade_close_date_from_realised_swing_stock_hist_returns():
+@api.route('/api/process_realised_swing_stock_returns/', methods = ['GET'])
+def process_realised_swing_stock_returns():
     try:
-        max_trade_close_date = get_max_trade_close_date_from_realised_swing_stock_hist_returns_table()
-        max_trade_close_date = max_trade_close_date.get_json()
-        return jsonify({'data': max_trade_close_date,'message': 'Successfully retrieved Max Trade Close Date from REALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-    
-@api.route('/api/realised_swing_stock_hist_returns/<start_date>/<end_date>/', methods = ['GET'])
-def insert_into_realised_swing_stock_hist_returns_table(start_date, end_date):
-    try:
-        insert_into_realised_swing_stock_hist_returns(start_date, end_date)
-        return jsonify({'message': f'Successfully inserted historic returns in to REALISED_SWING_STOCK_HIST_RETURNS Table','status': 'Success'})
+        start_date = request.args.get('start_date') or None
+        end_date   = request.args.get('end_date') or None
+        on_start   = request.args.get('on_start') or None
+
+        create_realised_swing_stock_returns_table()
+        create_agg_realised_swing_stock_returns_table()
+        create_fin_realised_swing_stock_returns_table()
+        
+        if on_start == "true" or (start_date):
+            realised_swing_stock_returns_process_group_logs = execute_process_group_using_metadata('REALISED_SWING_STOCK_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
+        elif not start_date and not end_date:
+            realised_swing_stock_returns_process_group_logs = execute_process_group_using_metadata('REALISED_SWING_STOCK_RETURNS_HIST_PROCESS_GROUP')
+        return jsonify(realised_swing_stock_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -836,8 +844,8 @@ def insert_into_realised_swing_stock_hist_returns_table(start_date, end_date):
 def process_unrealised_swing_stock_returns():
     try:
         start_date = request.args.get('start_date') or None
-        end_date = request.args.get('end_date') or None
-        on_start = request.args.get('on_start') or None
+        end_date   = request.args.get('end_date') or None
+        on_start   = request.args.get('on_start') or None
 
         create_unrealised_stock_returns_table()
         create_agg_unrealised_stock_returns_table()
@@ -850,7 +858,7 @@ def process_unrealised_swing_stock_returns():
         return jsonify(unrealised_stock_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/unrealised_stock_returns/', methods = ['GET'])
 def unrealised_stock_returns_lookup():
     try:
@@ -860,69 +868,26 @@ def unrealised_stock_returns_lookup():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/process_consolidated_hist_returns/', methods = ['GET'])
-def process_consolidated_hist_returns():
+@api.route('/api/process_consolidated_returns/', methods = ['GET'])
+def process_consolidated_returns():
     try:
-        truncate_consolidated_hist_returns_table()
-        create_consolidated_hist_returns_table()
+        start_date = request.args.get('start_date') or None
+        end_date   = request.args.get('end_date') or None
+        on_start   = request.args.get('on_start') or None
 
-        truncate_agg_consolidated_hist_returns_table()
-        create_agg_consolidated_hist_returns_table()
+        create_consolidated_returns_table()
+        create_agg_consolidated_returns_table()
+        create_fin_consolidated_returns_table()
         
-        first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios()
-        first_purchase_data_across_portfolio_type = first_purchase_data_across_portfolio_type.get_json()
-        first_purchase_date = first_purchase_data_across_portfolio_type['first_purchase_date']
-
-        counter_date = datetime.strptime(first_purchase_date,'%Y-%m-%d')
-        first_purchase_date = datetime.strptime(first_purchase_date,'%Y-%m-%d')
-
-        while(counter_date <= datetime.today() + timedelta(days = -2)):
-
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-            holiday_calendar_data = holiday_calendar_data.get_json()
-            processing_date = holiday_calendar_data[0]['processing_date']
-            next_processing_date = holiday_calendar_data[0]['next_processing_date']
-            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
-
-            update_proc_date_in_processing_date_table('MF_PROC', processing_date, next_processing_date, prev_processing_date)
-            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
-
-            agg_hist_returns_data = get_metrics_from_agg_consolidated_portfolio_view()
-            agg_hist_returns_data = agg_hist_returns_data.get_json()
-            for agg_hist_returns_data_pf in agg_hist_returns_data:
-                portfolio_type                = agg_hist_returns_data_pf['portfolio_type']
-                agg_invested_amount           = agg_hist_returns_data_pf['agg_invested_amount']
-                agg_current_value             = agg_hist_returns_data_pf['agg_current_value']
-                agg_previous_value            = agg_hist_returns_data_pf['agg_previous_value']
-                agg_total_p_l                 = agg_hist_returns_data_pf['agg_total_p_l']
-                agg_day_p_l                   = agg_hist_returns_data_pf['agg_day_p_l']
-                perc_agg_total_p_l            = agg_hist_returns_data_pf['perc_agg_total_p_l']
-                perc_agg_day_p_l              = agg_hist_returns_data_pf['perc_agg_day_p_l']
-
-                insert_into_agg_consolidated_hist_returns(portfolio_type, processing_date, prev_processing_date, next_processing_date, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, agg_day_p_l, perc_agg_total_p_l, perc_agg_day_p_l)
-
-            fin_hist_returns_data = get_metrics_from_fin_consolidated_portfolio_view()
-            fin_hist_returns_data = fin_hist_returns_data.get_json()
-            processing_date_from_fin      = fin_hist_returns_data[0]['processing_date']
-            prev_processing_date_from_fin = fin_hist_returns_data[0]['prev_processing_date']
-            next_processing_date_from_fin = fin_hist_returns_data[0]['next_processing_date']
-            fin_invested_amount           = fin_hist_returns_data[0]['fin_invested_amount']
-            fin_current_value             = fin_hist_returns_data[0]['fin_current_value']
-            fin_previous_value            = fin_hist_returns_data[0]['fin_previous_value']
-            fin_total_p_l                 = fin_hist_returns_data[0]['fin_total_p_l']
-            fin_day_p_l                   = fin_hist_returns_data[0]['fin_day_p_l']
-            perc_fin_total_p_l            = fin_hist_returns_data[0]['perc_fin_total_p_l']
-            perc_fin_day_p_l              = fin_hist_returns_data[0]['perc_fin_day_p_l']
-
-            insert_into_consolidated_hist_returns(processing_date_from_fin, prev_processing_date_from_fin, next_processing_date_from_fin, fin_invested_amount, fin_current_value, fin_previous_value, fin_total_p_l, fin_day_p_l, perc_fin_total_p_l, perc_fin_day_p_l)
-
-            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
-
-        return jsonify({'message': 'Successfully inserted historic returns in to AGG_CONSOLIDATED_HIST_RETURNS and CONSOLIDATED_HIST_RETURNS Table','status': 'Success'})
+        if on_start == "true" or (start_date):
+            consolidated_returns_process_group_logs = execute_process_group_using_metadata('CONSOLIDATED_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
+        elif not start_date and not end_date:
+            consolidated_returns_process_group_logs = execute_process_group_using_metadata('CONSOLIDATED_RETURNS_HIST_PROCESS_GROUP')
+        return jsonify(consolidated_returns_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/consolidated_hist_returns/', methods = ['GET'])
+@api.route('/api/consolidated_returns/', methods = ['GET'])
 def consolidated_hist_returns_lookup():
     try:
         data = get_consolidated_hist_returns_from_consolidated_hist_returns_table()
@@ -939,7 +904,7 @@ def consolidated_hist_returns_max_proc_date():
         return jsonify({'data': max_proc_date,'message': 'Successfully retrieved Max Processing Date from CONSOLIDATED_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/hist_returns_tables/max_processing_date/', methods = ['GET'])
 def get_max_processing_date_from_all_hist_returns_table():
     try:
@@ -949,60 +914,6 @@ def get_max_processing_date_from_all_hist_returns_table():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
-@api.route('/api/consolidated_stock_hist_returns/<start_date>/<end_date>/', methods = ['GET'])
-def process_consolidated_hist_returns_from_start_date_to_end_date(start_date, end_date):
-    try:
-        start_date = datetime.strptime(start_date,'%Y-%m-%d')
-        end_date = datetime.strptime(end_date,'%Y-%m-%d')
-        counter_date = start_date
-        log_date = []
-
-        while(counter_date <= end_date):
-
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-            holiday_calendar_data = holiday_calendar_data.get_json()
-            processing_date = holiday_calendar_data[0]['processing_date']
-            next_processing_date = holiday_calendar_data[0]['next_processing_date']
-            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
-
-            update_proc_date_in_processing_date_table('MF_PROC', processing_date, next_processing_date, prev_processing_date)
-            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
-
-            agg_hist_returns_data = get_metrics_from_agg_consolidated_portfolio_view()
-            agg_hist_returns_data = agg_hist_returns_data.get_json()
-            for agg_hist_returns_data_pf in agg_hist_returns_data:
-                portfolio_type                = agg_hist_returns_data_pf['portfolio_type']
-                agg_invested_amount           = agg_hist_returns_data_pf['agg_invested_amount']
-                agg_current_value             = agg_hist_returns_data_pf['agg_current_value']
-                agg_previous_value            = agg_hist_returns_data_pf['agg_previous_value']
-                agg_total_p_l                 = agg_hist_returns_data_pf['agg_total_p_l']
-                agg_day_p_l                   = agg_hist_returns_data_pf['agg_day_p_l']
-                perc_agg_total_p_l            = agg_hist_returns_data_pf['perc_agg_total_p_l']
-                perc_agg_day_p_l              = agg_hist_returns_data_pf['perc_agg_day_p_l']
-
-                insert_into_agg_consolidated_hist_returns(portfolio_type, processing_date, prev_processing_date, next_processing_date, agg_invested_amount, agg_current_value, agg_previous_value, agg_total_p_l, agg_day_p_l, perc_agg_total_p_l, perc_agg_day_p_l)
-
-            fin_hist_returns_data = get_metrics_from_fin_consolidated_portfolio_view()
-            fin_hist_returns_data = fin_hist_returns_data.get_json()
-            processing_date_from_fin      = fin_hist_returns_data[0]['processing_date']
-            prev_processing_date_from_fin = fin_hist_returns_data[0]['prev_processing_date']
-            next_processing_date_from_fin = fin_hist_returns_data[0]['next_processing_date']
-            fin_invested_amount           = fin_hist_returns_data[0]['fin_invested_amount']
-            fin_current_value             = fin_hist_returns_data[0]['fin_current_value']
-            fin_previous_value            = fin_hist_returns_data[0]['fin_previous_value']
-            fin_total_p_l                 = fin_hist_returns_data[0]['fin_total_p_l']
-            fin_day_p_l                   = fin_hist_returns_data[0]['fin_day_p_l']
-            perc_fin_total_p_l            = fin_hist_returns_data[0]['perc_fin_total_p_l']
-            perc_fin_day_p_l              = fin_hist_returns_data[0]['perc_fin_day_p_l']
-
-            insert_into_consolidated_hist_returns(processing_date_from_fin, prev_processing_date_from_fin, next_processing_date_from_fin, fin_invested_amount, fin_current_value, fin_previous_value, fin_total_p_l, fin_day_p_l, perc_fin_total_p_l, perc_fin_day_p_l)
-            log_date.append(processing_date)
-            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
-
-        return jsonify({'message': f'Successfully inserted historic returns for {str(log_date)} in to CONSOLIDATED_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-
 @api.route('/api/consolidated_hist_returns/all/', methods = ['GET'])
 def consolidated_hist_returns_fetch_all():
     try:
@@ -1011,7 +922,7 @@ def consolidated_hist_returns_fetch_all():
         return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS and AGG_CONSOLIDATED_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-    
+
 @api.route('/api/consolidated_hist_allocation/max_next_proc_date/', methods = ['GET'])
 def consolidated_hist_allocation_max_next_proc_date():
     try:
@@ -1021,54 +932,26 @@ def consolidated_hist_allocation_max_next_proc_date():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/process_consolidated_hist_allocation/', methods = ['GET'])
+@api.route('/api/process_consolidated_allocation/', methods = ['GET'])
 def process_consolidated_hist_allocation():
     try:
         start_date = request.args.get('start_date') or None
-        end_date = request.args.get('end_date') or None
-        if not start_date and not end_date:
-            truncate_consolidated_hist_allocation_table()
-            truncate_consolidated_hist_allocation_portfolio_table()
-            truncate_agg_consolidated_hist_allocation_table()
+        end_date   = request.args.get('end_date') or None
+        on_start   = request.args.get('on_start') or None
 
-        create_consolidated_hist_allocation_table()
-        create_consolidated_hist_allocation_portfolio_table()
-        create_agg_consolidated_hist_allocation_table()
-
-        if not start_date:
-            first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios()
-            first_purchase_data_across_portfolio_type = first_purchase_data_across_portfolio_type.get_json()
-            start_date = first_purchase_data_across_portfolio_type['first_purchase_date']
-
-        if end_date:
-            end_date = datetime.strptime(end_date,'%Y-%m-%d')
-        else:
-            end_date = datetime.today() + timedelta(days = -5)
-
-        counter_date = datetime.strptime(start_date,'%Y-%m-%d')
-
-        while(counter_date <= end_date):
-
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-            holiday_calendar_data = holiday_calendar_data.get_json()
-            processing_date = holiday_calendar_data[0]['processing_date']
-            next_processing_date = holiday_calendar_data[0]['next_processing_date']
-            prev_processing_date = holiday_calendar_data[0]['prev_processing_date']
-
-            update_proc_date_in_processing_date_table('MF_PROC', processing_date, next_processing_date, prev_processing_date)
-            update_proc_date_in_processing_date_table('STOCK_PROC', processing_date, next_processing_date, prev_processing_date)
-
-            get_metrics_from_agg_consolidated_allocation_view_and_insert_into_agg_consolidated_allocation_table()
-            get_metrics_from_fin_consolidated_allocation_view_and_insert_into_fin_consolidated_allocation_table()
-            get_metrics_from_fin_consolidated_allocation_portfolio_view_and_insert_into_fin_consolidated_allocation_portfolio_table()
-
-            counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
-
-        return jsonify({'message': 'Successfully inserted historic Allocation in to AGG_CONSOLIDATED_HIST_ALLOCATION, CONSOLIDATED_HIST_ALLOCATION and CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO Table','status': 'Success'})
+        create_consolidated_allocation_table()
+        create_agg_consolidated_allocation_table()
+        create_fin_consolidated_allocation_table()
+        
+        if on_start == "true" or (start_date):
+            consolidated_allocation_process_group_logs = execute_process_group_using_metadata('CONSOLIDATED_ALLOCATION_DAILY_PROCESS_GROUP', start_date, end_date)
+        elif not start_date and not end_date:
+            consolidated_allocation_process_group_logs = execute_process_group_using_metadata('CONSOLIDATED_ALLOCATION_HIST_PROCESS_GROUP')
+        return jsonify(consolidated_allocation_process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/consolidated_hist_allocation_portfolio/', methods = ['GET'])
+@api.route('/api/consolidated_allocation/', methods = ['GET'])
 def consolidated_hist_allocation_portfolio_lookup():
     try:
         data = get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table()

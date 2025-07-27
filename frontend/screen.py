@@ -34,9 +34,9 @@ def processing_date():
 def process_mf_returns():
     return render_template('process_mf_returns.html')
 
-@frontend.route('/process_realised_stock_hist_returns/')
-def process_realised_stock_hist_returns():
-    return render_template('process_realised_stock_hist_returns.html')
+@frontend.route('/process_realised_stock_returns/')
+def process_realised_stock_returns():
+    return render_template('process_realised_stock_returns.html')
 
 @frontend.route('/holiday_calendar_setup/')
 def holiday_calendar_setup():
@@ -54,10 +54,10 @@ def close_trades():
 def process_unrealised_stock__returns():
     return render_template('process_unrelalised_stock_returns.html')
 
-@frontend.route('/process_consolidated_hist_returns')
-def process_consolidated_hist_returns():
-    return render_template('process_consolidated_hist_returns.html')
+@frontend.route('/process_consolidated_returns')
+def process_consolidated_returns():
+    return render_template('process_consolidated_returns.html')
 
-@frontend.route('/process_consolidated_hist_allocation')
-def process_consolidated_hist_allocation():
-    return render_template('process_consolidated_hist_allocation.html')
+@frontend.route('/process_consolidated_allocation')
+def process_consolidated_allocation():
+    return render_template('process_consolidated_allocation.html')

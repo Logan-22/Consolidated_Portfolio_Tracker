@@ -1,9 +1,12 @@
 FIN_CONSOLIDATED_PORTFOLIO_VIEW = '''
 CREATE VIEW FIN_CONSOLIDATED_PORTFOLIO_VIEW AS
 SELECT
-     MAX(ACPV.PROCESSING_DATE)                                                        AS PROCESSING_DATE
-    ,MAX(ACPV.PREV_PROCESSING_DATE)                                                   AS PREV_PROCESSING_DATE
-    ,MAX(ACPV.NEXT_PROCESSING_DATE)                                                   AS NEXT_PROCESSING_DATE
+    (SELECT DISTINCT PROC_DATE FROM PROCESSING_DATE WHERE PROC_TYP_CD 
+     IN ('MF_PROC','STOCK_PROC'))                                                     AS PROCESSING_DATE
+    ,(SELECT DISTINCT PREV_PROC_DATE FROM PROCESSING_DATE WHERE PROC_TYP_CD 
+     IN ('MF_PROC','STOCK_PROC'))                                                     AS PREVIOUS_PROCESSING_DATE
+    ,(SELECT DISTINCT NEXT_PROC_DATE FROM PROCESSING_DATE WHERE PROC_TYP_CD 
+     IN ('MF_PROC','STOCK_PROC'))                                                     AS NEXT_PROCESSING_DATE
     ,ROUND(SUM(ACPV.AGG_INVESTED_AMOUNT),4)                                           AS FIN_INVESTED_AMOUNT
     ,ROUND(SUM(ACPV.AGG_CURRENT_VALUE),4)                                             AS FIN_CURRENT_VALUE
     ,ROUND(SUM(ACPV.AGG_PREVIOUS_VALUE),4)                                            AS FIN_PREVIOUS_VALUE

@@ -13,8 +13,11 @@ SELECT
      * 100,2)                                                  AS "%_P/L_WITHOUT_LEVERAGE"
     ,ROUND(SUM(SRPV."P/L")/SUM(SRPV.ACTUAL_DEPLOYED_CAPITAL)
      * 100,2)                                                  AS "%_P/L_WITH_LEVERAGE"
+    ,SRPV.PROCESSING_DATE                                      AS PROCESSING_DATE
+    ,SRPV.PREVIOUS_PROCESSING_DATE                             AS PREVIOUS_PROCESSING_DATE
+    ,SRPV.NEXT_PROCESSING_DATE                                 AS NEXT_PROCESSING_DATE
 FROM
     STOCK_INTRADAY_REALISED_PORTFOLIO_VIEW SRPV
-GROUP BY 1,2,3,4,5
+GROUP BY 1,2,3,4,5,11,12,13
 ;
 '''

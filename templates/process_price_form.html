@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}Historic Prices{% endblock %}
+{% block title %}Process Prices{% endblock %}
 
 {% block content %}
-<form id="hist_price_form">
+<form id="procss_price_form">
     <label for = "exchange_symbol">
     <b>Exchange Symbol</b></label></br>
     <select id = "exchange_symbol" name = "exchange_symbol" placeholder="Enter the Exchange Symbol of Stock/Mutual Fund" required></select></br>
@@ -21,11 +21,11 @@
     <input type = "text" id = "portfolio_type" name = "portfolio_type" placeholder="Enter the Exchange Symbol of Stock/Mutual Fund" readonly></br>
 
     <label for = "start_date">
-    <b>Start Date</b></br></br>
+    <b>Start Date</b></label></br>
     <input type = "date" id = "start_date" name = "start_date" placeholder = "Enter the Start Date">
 
     <label for = "end_date">
-    <b>End Date</b></br></br>
+    <b>End Date</b></label></br>
     <input type = "date" id = "end_date" name="end_date" placeholder = "Enter the End Date">
 
     <button type = "submit" class="submit">Submit</button>
@@ -33,5 +33,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script type ="module" src="{{ url_for('static', filename='hist_price_form.js') }}" defer></script>
+<script type ="module" src="{{ url_for('static', filename='process_price_form.js') }}" defer></script>
 {% endblock %}

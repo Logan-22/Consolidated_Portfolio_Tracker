@@ -85,13 +85,13 @@ create_notification(mf_order_data.message, mf_order_data.status)
 
 // Reprocess the MF Returns, Consolidated Returns and Simulated Returns from Fund Purchase Date
 
-const mf_hist_returns_response = await fetch (`/api/process_mf_returns/?start_date=${purchase_date}`, {
+const mf_returns_response = await fetch (`/api/process_mf_returns/?start_date=${purchase_date}`, {
   method: 'GET'
 })
 
-const mf_hist_returns_data = await mf_hist_returns_response.json();
+const mf_returns_data = await mf_returns_response.json();
 
-create_notification(mf_hist_returns_data.message, mf_hist_returns_data.status)
+create_notification(mf_returns_data.message, mf_returns_data.status)
 
 const process_simulate_returns_response = await fetch(`/api/process_simulate_returns/?start_date=${purchase_date}`, {
 method: 'GET'

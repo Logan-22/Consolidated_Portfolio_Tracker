@@ -118,7 +118,11 @@ create_agg_consolidated_returns_table,\
 create_fin_consolidated_returns_table,\
 create_consolidated_allocation_table,\
 create_agg_consolidated_allocation_table,\
-create_fin_consolidated_allocation_table
+create_fin_consolidated_allocation_table,\
+get_component_info_from_db,\
+insert_into_metadata_process_group_table,\
+insert_into_metadata_process_table,\
+insert_into_metadata_key_columns_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -996,3 +1000,24 @@ def fetch_simulated_returns():
         return jsonify({'data': data,'message': 'Successfully retrieved from FIN_SIMULATED_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
+
+@api.route('/api/table_and_view_info/', methods = ['GET'])
+def get_table_and_view_info_from_db():
+    table_info = get_component_info_from_db('table')
+    view_info  = get_component_info_from_db('view')
+    return jsonify({'table_info': table_info, 'view_info': view_info})
+
+@api.route('/api/process_entry/', methods = ['POST'])
+def add_process_entry():
+    try:
+        process_entry_values = loads(request.form.get('process_entry_values')) # json.loads
+        for process_entry_value in process_entry_values:
+            auto_trigger_on_launch = 1 if process_entry_value['process_auto_trigger_on_launch'] else 0
+            process_decommed       = 1 if process_entry_value['process_decommissioned']         else 0
+            insert_into_metadata_process_group_table(process_entry_value['process_group'],process_entry_value['process_name'])
+            insert_into_metadata_process_table(process_entry_value['process_name'], process_entry_value['process_type'], process_entry_value['process_type_codes'], process_entry_value['process_input_view'], process_entry_value['process_target_table'], process_entry_value['process_description'], auto_trigger_on_launch, process_decommed, process_entry_value['process_frequency'], process_entry_value['process_default_start_date_type_code'])
+            for key_column in process_entry_value['process_keycolumns']:
+                insert_into_metadata_key_columns_table(process_entry_value['process_name'], key_column)
+        return jsonify({'message': "Successfully inserted Process data into Metadata tables", 'status': "Success"})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})

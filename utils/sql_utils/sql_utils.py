@@ -3223,3 +3223,35 @@ def create_fin_consolidated_allocation_table():
             END_DATE DATE,
             RECORD_DELETED_FLAG INTEGER
 );''')
+
+def get_component_info_from_db(component = None):
+    component_info_dict = {}
+    component_list = fetch_queries_as_dictionaries(f"SELECT NAME AS COMPONENT_NAME FROM SQLITE_MASTER WHERE TYPE = '{component}' AND NAME NOT LIKE 'sqlite_%' ORDER BY 1;")
+    for component in component_list:
+        component_column_data = fetch_queries_as_dictionaries(f"PRAGMA TABLE_INFO({component['COMPONENT_NAME']});")
+        component_info_dict[component['COMPONENT_NAME']] = component_column_data
+    return component_info_dict
+
+def insert_into_metadata_process_group_table(process_group, process_name):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO METADATA_PROCESS_GROUP (PROCESS_GROUP, PROCESS_NAME, CONSIDER_FOR_PROCESS) VALUES (?, ?, ?)",
+                   (process_group, process_name, 1))
+    conn.commit()
+    conn.close()
+
+def insert_into_metadata_process_table(process_name, process_type, process_type_codes, process_input_view, process_target_table, process_description, auto_trigger_on_launch, process_decommed, process_frequency, process_default_start_date_type_code):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO METADATA_PROCESS (PROCESS_NAME, PROCESS_TYPE, PROC_TYP_CD_LIST, INPUT_VIEW, TARGET_TABLE, PROCESS_DESCRIPTION, AUTO_TRIGGER_ON_LAUNCH, PROCESS_DECOMMISSIONED, FREQUENCY, DEFAULT_START_DATE_TYPE_CD) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                   (process_name, process_type, process_type_codes, process_input_view, process_target_table, process_description, auto_trigger_on_launch, process_decommed, process_frequency, process_default_start_date_type_code))
+    conn.commit()
+    conn.close()
+
+def insert_into_metadata_key_columns_table(process_name, key_column):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO METADATA_KEY_COLUMNS (PROCESS_NAME, KEYCOLUMN_NAME, CONSIDER_FOR_PROCESSING) VALUES (?, ?, ?)",
+                   (process_name, key_column, 1))
+    conn.commit()
+    conn.close()

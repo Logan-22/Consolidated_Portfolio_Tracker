@@ -1,9 +1,9 @@
 import { create_notification } from './create_notification.js'
 
-// Historical data fetch
+// Process Prices
 
 // Method : POST
-// URL    : /get_hist_price/${symbol}
+// URL    : /api/price_table/close_price/${alt_symbol}/
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('exchange_symbol')) {
@@ -54,7 +54,7 @@ portfolio_type.value = element.portfolio_type
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-document.getElementById('hist_price_form').addEventListener('submit', async function (e) {
+document.getElementById('procss_price_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 const yahoo_symbol    = document.getElementById('yahoo_symbol').value
 const portfolio_type  = document.getElementById('portfolio_type').value

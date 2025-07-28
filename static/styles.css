@@ -156,9 +156,104 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background-color: var(--half-accent);
 }
 
-#processing_date{
+#processing_date {
   width: auto !important;/* Processing Date Input In Index Page*/
   margin-left: auto !important;
+}
+/* Process Entry Form */
+
+#process_entry_form {
+  max-width:inherit;
+}
+
+.process-entry {
+  background: var(--card-gradient);
+  padding: 1rem;
+  border: 1px solid var(--text);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: var(--box-shadow);
+}
+
+.field-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.checkbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--half-neutral);
+}
+
+.checkbox-row .field {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-row label{
+  margin: 0;
+  font-size: 1rem;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.2);
+}
+
+.key-columns {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--half-neutral);
+}
+
+.key-columns label {
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.key-columns select {
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.selected-values {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selected-values span{
+  background-color: var(--accent);
+  color: var(--text);
+  padding: 0.3rem;
+  border-radius: 12px;
+  font-size: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 /* Read Only Items */
@@ -368,18 +463,6 @@ canvas {
 }
 
 /* Custom Selectors */
-
-
-/* Glow Definition */
-
-@keyframes glow {
-0% {
-  text-shadow: 0 0 5px var(--half-accent), 0 0 10px var(--half-accent);
-}
-100% {
-  text-shadow: 0 0 20px var(--accent), 0 0 30px var(--accent);
-}
-}
 
 /* Notifications */
 

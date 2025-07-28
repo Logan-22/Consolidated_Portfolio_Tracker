@@ -10,9 +10,9 @@ def index():
 def simulate_returns():
     return render_template('simulate_returns.html')
 
-@frontend.route('/hist_price/')
-def hist_price_form():
-    return render_template('hist_price_form.html')
+@frontend.route('/process_price/')
+def process_price_form():
+    return render_template('process_price_form.html')
 
 @frontend.route('/metadata/')
 def metadata_entry():
@@ -61,3 +61,7 @@ def process_consolidated_returns():
 @frontend.route('/process_consolidated_allocation')
 def process_consolidated_allocation():
     return render_template('process_consolidated_allocation.html')
+
+@frontend.route('/process_entry')
+def process_entry():
+    return render_template('process_entry.html')

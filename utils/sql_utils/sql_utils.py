@@ -30,19 +30,26 @@ def create_price_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-            CREATE TABLE IF NOT EXISTS PRICE_TABLE 
-            (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            ALT_SYMBOL TEXT NOT NULL,
-            PORTFOLIO_TYPE TEXT NOT NULL,
-            VALUE_DATE DATE NOT NULL,
-            VALUE_TIME TIME,
-            PRICE NUMERIC NOT NULL,
-            PRICE_TYP_CD TEXT NOT NULL,
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER DEFAULT 0
-            );
+CREATE TABLE IF NOT EXISTS PRICE_TABLE 
+(
+    ID                       INTEGER PRIMARY KEY AUTOINCREMENT,
+    ALT_SYMBOL               TEXT    NOT NULL,
+    PORTFOLIO_TYPE           TEXT    NOT NULL,
+    VALUE_DATE               DATE    NOT NULL,
+    VALUE_TIME               TIME,
+    PRICE                    NUMERIC NOT NULL,
+    PRICE_TYP_CD             TEXT    NOT NULL,
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER DEFAULT 0
+);
     ''')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_alt_symbol ON PRICE_TABLE (ALT_SYMBOL);')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_symbol_date_type ON PRICE_TABLE (ALT_SYMBOL, VALUE_DATE, PRICE_TYP_CD);')
@@ -178,7 +185,7 @@ def get_price_from_price_table(alt_symbol = None, purchase_date = None):
         return jsonify(price_data)
     price_data = [{'price' : None, 'alt_symbol': None, 'value_date': None}]
     return jsonify(price_data)
-    
+
 def create_mf_order_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -196,7 +203,7 @@ def create_mf_order_table():
             END_DATE DATE,
             RECORD_DELETED_FLAG INTEGER
         )''')
-    
+
 def insert_mf_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -340,7 +347,7 @@ def get_all_tables_list():
             tables_list.append(row)
         return jsonify(tables_list)
     return
-    
+
 def get_max_value_date_for_alt_symbol(process_flag = None, consider_for_hist_returns = None, portfolio_type = None):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -505,18 +512,23 @@ def create_holiday_calendar_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS HOLIDAY_CALENDAR (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            PROCESSING_DATE DATE,
-            PROCESSING_DAY VARCHAR(15),
-            NEXT_PROCESSING_DATE DATE,
-            NEXT_PROCESSING_DAY VARCHAR(15),
-            PREV_PROCESSING_DATE DATE,
-            PREV_PROCESSING_DAY VARCHAR(15),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+CREATE TABLE IF NOT EXISTS HOLIDAY_CALENDAR (
+    ID                       INTEGER      PRIMARY KEY AUTOINCREMENT,
+    PROCESSING_DATE          DATE,
+    PROCESSING_DAY           VARCHAR (15),
+    NEXT_PROCESSING_DATE     DATE,
+    NEXT_PROCESSING_DAY      VARCHAR (15),
+    PREVIOUS_PROCESSING_DATE DATE,
+    PREVIOUS_PROCESSING_DAY  VARCHAR (15),
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER DEFAULT 0
+);
+    ''')
     
 def insert_into_holiday_calendar_table(counter_date, counter_day, next_counter_date, next_counter_day, prev_counter_date, prev_counter_day):
     conn = sqlite3.connect(db_path)
@@ -603,7 +615,7 @@ def get_first_purchase_date_from_mf_order_date_table():
 def get_date_setup_from_holiday_calendar(counter_date):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT PROCESSING_DATE, NEXT_PROCESSING_DATE, PREV_PROCESSING_DATE FROM HOLIDAY_CALENDAR WHERE PROCESSING_DATE = '{counter_date}';")
+    cursor.execute(f"SELECT DISTINCT PROCESSING_DATE, NEXT_PROCESSING_DATE, PREVIOUS_PROCESSING_DATE FROM HOLIDAY_CALENDAR WHERE PROCESSING_DATE = '{counter_date}';")
     rows = cursor.fetchall()
     conn.close()
     if rows:
@@ -3255,3 +3267,33 @@ def insert_into_metadata_key_columns_table(process_name, key_column):
                    (process_name, key_column, 1))
     conn.commit()
     conn.close()
+
+def get_missing_prices_from_price_table():
+    missing_prices_data = fetch_queries_as_dictionaries('''
+SELECT
+    META.ALT_SYMBOL
+    ,HC.PROCESSING_DATE AS VALUE_DATE
+    ,PR.PRICE
+    ,META.PORTFOLIO_TYPE
+FROM
+    METADATA_STORE META
+LEFT OUTER JOIN
+    HOLIDAY_CALENDAR HC
+ON
+    HC.PROCESSING_DATE        <= (SELECT DISTINCT HC.PREVIOUS_PROCESSING_DATE FROM HOLIDAY_CALENDAR HC WHERE HC.PROCESSING_DATE = CURRENT_DATE)
+    AND HC.PROCESSING_DATE    >= META.LAUNCHED_ON
+    AND HC.PROCESSING_DATE    >= STRFTIME('%Y-01-01')
+    AND HC.RECORD_DELETED_FLAG = 0
+LEFT OUTER JOIN
+    PRICE_TABLE PR
+ON
+    PR.ALT_SYMBOL              = META.ALT_SYMBOL
+    AND PR.VALUE_DATE          = HC.PROCESSING_DATE
+    AND PR.RECORD_DELETED_FLAG = 0
+WHERE
+    PR.PRICE IS NULL
+    AND HC.PROCESSING_DATE NOT IN (SELECT DISTINCT WORKING_DATE FROM WORKING_DATES)
+GROUP BY 1,2,3,4
+ORDER BY 2
+    ''')
+    return missing_prices_data

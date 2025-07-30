@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Missing Prices Entry Form{% endblock %}
+
+{% block content %}
+
+    <form id = "missing_prices_entry_form">
+        <div id = "missing_entry_list_div" class="missing-prices-field-grid"></div>
+        <button type = "submit" class = "submit">Submit</button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='missing_prices_entry.js') }}" defer></script>
+{% endblock %}

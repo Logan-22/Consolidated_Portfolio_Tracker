@@ -65,10 +65,8 @@ const end_date        = document.getElementById('end_date').value;
 const formData = new FormData();
 formData.append('yahoo_symbol', yahoo_symbol);
 formData.append('portfolio_type', portfolio_type);
-formData.append('start_date', start_date);
-formData.append('end_date', end_date);
 
-const price_table_refresh_response = await fetch(`/api/price_table/close_price/${alt_symbol}/`, {
+const price_table_refresh_response = await fetch(`/api/price_table/close_price/${alt_symbol}?start_date=${start_date}&end_date=${end_date}`, {
 method: 'POST',
 body: formData
 })

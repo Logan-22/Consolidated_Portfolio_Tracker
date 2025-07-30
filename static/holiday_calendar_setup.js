@@ -160,7 +160,7 @@ if(working_day_list){
 formData.append('holiday_data', JSON.stringify(holiday_data));
 formData.append('working_day_data', JSON.stringify(working_day_data));
 
-const setup_holiday_calendar_response = await fetch(`/api/holiday_calendar_setup/`, {
+const setup_holiday_calendar_response = await fetch(`/api/holiday_calendar_setup/?start_date=${holiday_calendar_start_date}&end_date=${holiday_calendar_end_date}`, {
 method: 'POST',
 body: formData
 })

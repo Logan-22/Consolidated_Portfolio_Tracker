@@ -26,8 +26,9 @@
         </select>
     </nav>
 </header>
+<div class="wrapper">
     {% block content %}{% endblock %}
-
+</div>
     <!-- Shared theme toggle script -->
     <script type="module" src="{{ url_for('static', filename='change_theme.js') }}" defer></script>
 

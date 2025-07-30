@@ -101,6 +101,11 @@ def upsert_scd2(process_name, table_name, payloads, process_id):
     conn.commit()
 
     logs['status'] = 'Success'
-    logs['message'] = f'SCD2 Completed for Process {process_name}'
-
+    try:
+        if payloads[0]['ALT_SYMBOL']:
+            logs['message'] = f'SCD2 Completed for Process {process_name} for {payloads[0]["ALT_SYMBOL"]}'
+        else:
+            logs['message'] = f'SCD2 Completed for Process {process_name}'
+    except Exception as e:
+        logs['message'] = f'SCD2 Completed for Process {process_name}'
     return logs

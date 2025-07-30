@@ -35,6 +35,7 @@ async function add_process_entry_block(e){
   const process_entry_block_div = document.createElement("div")
   process_entry_block_div.className = 'process-entry'
 
+  view_list.push("None")
   for (let view in table_and_view_data.view_info){
     view_list.push(view)
   }
@@ -53,7 +54,7 @@ async function add_process_entry_block(e){
     ${create_input_element("Target Table", "select", "process_target_table", table_list)}
     ${create_input_element("Process Description", "text", "process_description")}
     ${create_input_element("Process Frequency", "select", "process_frequency", frequency_list)}
-    ${create_input_element("Default Start Date Type Code", "select", "process_default_start_date_type_code", ["ALL", "MUTUAL_FUND", "STOCK"])}
+    ${create_input_element("Default Start Date Type Code", "select", "process_default_start_date_type_code", ["NONE","ALL", "MUTUAL_FUND", "STOCK"])}
   </div>
   
   <div class="checkbox-row">
@@ -112,15 +113,11 @@ function create_input_element(input_label, input_type, input_name, input_options
     return `
     <div class="field">
       <label for = "${input_name}-${process_count}">${input_label}</label>
-      <input type = "text" name = "${input_name}" id = "${input_name}-${process_count}" placeholder="Enter the ${input_label}" autocomplete="off" required>
+      <input type = "text" name = "${input_name}" id = "${input_name}-${process_count}" placeholder="Enter the ${input_label}" autocomplete="off" ${input_name != "process_type_codes" ? "required" : ""}>
     </div>
     `
   }
 }
-
-document.getElementById("get_process_values_button").addEventListener("click",(e)=>{
-
-})
 
 function get_column_list_options(process_count_of_the_selected_field){
 const key_column_select_list = document.getElementById(`key-column-list-${process_count_of_the_selected_field}`)
@@ -147,7 +144,7 @@ return {
   process_name : entry.querySelector('[name="process_name"]').value.trim(),
   process_type : entry.querySelector('[name="process_type"]').value.trim(),
   process_type_codes : entry.querySelector('[name="process_type_codes"]').value.trim(),
-  process_input_view : entry.querySelector('[name="process_input_view"]').value.trim(),
+  process_input_view : entry.querySelector('[name="process_input_view"]').value.trim() != "None" ? entry.querySelector('[name="process_input_view"]').value.trim() : "",
   process_target_table : entry.querySelector('[name="process_target_table"]').value.trim(),
   process_description : entry.querySelector('[name="process_description"]').value.trim(),
   process_frequency : entry.querySelector('[name="process_frequency"]').value.trim(),

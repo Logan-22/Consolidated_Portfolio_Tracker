@@ -122,7 +122,8 @@ create_fin_consolidated_allocation_table,\
 get_component_info_from_db,\
 insert_into_metadata_process_group_table,\
 insert_into_metadata_process_table,\
-insert_into_metadata_key_columns_table
+insert_into_metadata_key_columns_table,\
+get_missing_prices_from_price_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -154,27 +155,54 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
     try:
         yahoo_symbol   = request.form.get('yahoo_symbol')
         portfolio_type = request.form.get('portfolio_type')
-        start_date     = request.form.get('start_date')
-        end_date       = request.form.get('end_date')
-        start_from     = request.args.get('start_from') or None
-        end_till       = request.args.get('end_till') or None
+        start_date     = request.args.get('start_date') or None
+        end_date       = request.args.get('end_date') or None
+        on_start       = request.args.get('on_start') or None
 
         create_price_table()
-        if not start_from or not end_till:
-            delete_alt_symbol_from_price_table(alt_symbol)
-        if start_from and end_till:
-            start_date = start_from
-            end_date   = end_till
+        price_payloads = []
 
         ticker = yf.Ticker(yahoo_symbol)
         pandas_data = ticker.history(start = start_date, end = end_date)
+
         for index, value in pandas_data['Close'].items():
             value_date = str(index)[:10]
             if (parser.parse(value_date, fuzzy = 'fuzzy')):
-                upsert_into_price_table(alt_symbol, portfolio_type, value_date, '15:30:00', round(value,4), 'CLOSE_PRICE', value_date, '9998-12-31', 0)
-        return jsonify({'message': f"Successfully inserted Close Price data into PRICE_TABLE table for {alt_symbol} from {start_date} and {end_date}", 'status': "Success"})
+                value_date = datetime.strptime(value_date,'%Y-%m-%d')
+                value_date = value_date.strftime('%Y-%m-%d')
+
+                holiday_calendar_data = get_date_setup_from_holiday_calendar(value_date)
+                holiday_calendar_data = holiday_calendar_data.get_json()
+                processing_date       = holiday_calendar_data[0]['processing_date']
+                next_processing_date  = holiday_calendar_data[0]['next_processing_date']
+                prev_processing_date  = holiday_calendar_data[0]['prev_processing_date']
+
+                price_payload_from_yahoo_finance = {
+                    'ALT_SYMBOL'               : alt_symbol
+                    ,'PORTFOLIO_TYPE'          : portfolio_type
+                    ,'VALUE_DATE'              : value_date
+                    ,'VALUE_TIME'              : '15:30:00'
+                    ,'PRICE'                   : round(value,4)
+                    ,'PRICE_TYP_CD'            : 'CLOSE_PRICE'
+                    ,'PROCESSING_DATE'         : processing_date
+                    ,'PREVIOUS_PROCESSING_DATE': prev_processing_date
+                    ,'NEXT_PROCESSING_DATE'    : next_processing_date
+                }
+                price_payloads.append(price_payload_from_yahoo_finance)
+            else:
+                return jsonify({'message': f'Invalid Date from Yahoo Finance for {alt_symbol}', 'status': "Failed"})
+
+        if on_start == "true":
+            process_price_logs = execute_process_group_using_metadata('PRICE_DAILY_PROCESS_GROUP', start_date, end_date, price_payloads, "true")
+            return jsonify(process_price_logs)
+        elif start_date and end_date:
+            process_price_logs = execute_process_group_using_metadata('PRICE_HIST_PROCESS_GROUP', start_date, end_date, price_payloads, "true")
+            return jsonify(process_price_logs)
+        else:
+            return jsonify({'message': 'Start Date and End Date are required to Process Prices', 'status': 'Failed'})
+
     except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
+        return jsonify({'message': repr(e), 'status': 'Failed'})
 
 @api.route('/api/metadata_store/', methods = ['POST'])
 def metadata_entry():
@@ -426,18 +454,19 @@ def working_date_lookup():
 @api.route('/api/holiday_calendar_setup/', methods = ['POST'])
 def holiday_calendar_setup():
     try:
-        holiday_calendar_start_date = request.form.get('holiday_calendar_start_date')
-        holiday_calendar_end_date   = request.form.get('holiday_calendar_end_date')
-        holiday_data                = request.form.get('holiday_data')
-        working_day_data            = request.form.get('working_day_data')
+        start_date       = request.args.get('start_date')
+        end_date         = request.args.get('end_date')
+        holiday_data     = request.form.get('holiday_data')
+        working_day_data = request.form.get('working_day_data')
         
-        holiday_dates = holiday_data.replace("[","").replace("]","").replace('"','').split(",")
-        working_dates = working_day_data.replace("[","").replace("]","").replace('"','').split(",")
+        holiday_dates = loads(holiday_data)
+        working_dates = loads(working_day_data)
 
         create_holiday_calendar_table()
+        holiday_payloads = []
 
-        counter_date = datetime.strptime(holiday_calendar_start_date,'%Y-%m-%d')
-        while(counter_date <= datetime.strptime(holiday_calendar_end_date,'%Y-%m-%d')):
+        counter_date = datetime.strptime(start_date,'%Y-%m-%d')
+        while(counter_date <= datetime.strptime(end_date,'%Y-%m-%d')):
             counter_day = convert_weekday_from_int_to_char(counter_date.weekday())
             next_counter_date = counter_date
             prev_counter_date = counter_date
@@ -455,9 +484,22 @@ def holiday_calendar_setup():
                 next_counter_day = convert_weekday_from_int_to_char(next_counter_date.weekday())
                 prev_counter_day = convert_weekday_from_int_to_char(prev_counter_date.weekday())
                 
-                insert_into_holiday_calendar_table(counter_date.strftime('%Y-%m-%d'), counter_day, next_counter_date.strftime('%Y-%m-%d'), next_counter_day, prev_counter_date.strftime('%Y-%m-%d'), prev_counter_day)
+                holiday_computed_payload = {
+                    'PROCESSING_DATE'          :  counter_date.strftime('%Y-%m-%d')
+                    ,'PROCESSING_DAY'          : counter_day
+                    ,'NEXT_PROCESSING_DATE'    : next_counter_date.strftime('%Y-%m-%d')
+                    ,'NEXT_PROCESSING_DAY'      : next_counter_day
+                    ,'PREVIOUS_PROCESSING_DATE' : prev_counter_date.strftime('%Y-%m-%d')
+                    ,'PREVIOUS_PROCESSING_DAY' : prev_counter_day
+                }
+                holiday_payloads.append(holiday_computed_payload)
             counter_date = counter_date + timedelta(days = 1)
-        return jsonify({'message': 'Successfully inserted holiday calendar into HOLIDAY_CALENDAR Table','status': 'Success'})
+
+        if start_date and end_date:
+            process_price_logs = execute_process_group_using_metadata('HOLIDAY_CALENDAR_HIST_PROCESS_GROUP', start_date, end_date, holiday_payloads, "true")
+            return jsonify(process_price_logs)
+        else:
+            return jsonify({'message': 'Start Date and End Date is required for Holiday Calendar Setup', 'status': 'Failed'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -1003,9 +1045,12 @@ def fetch_simulated_returns():
 
 @api.route('/api/table_and_view_info/', methods = ['GET'])
 def get_table_and_view_info_from_db():
-    table_info = get_component_info_from_db('table')
-    view_info  = get_component_info_from_db('view')
-    return jsonify({'table_info': table_info, 'view_info': view_info})
+    try:
+        table_info = get_component_info_from_db('table')
+        view_info  = get_component_info_from_db('view')
+        return jsonify({'table_info': table_info, 'view_info': view_info, 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
 
 @api.route('/api/process_entry/', methods = ['POST'])
 def add_process_entry():
@@ -1019,5 +1064,35 @@ def add_process_entry():
             for key_column in process_entry_value['process_keycolumns']:
                 insert_into_metadata_key_columns_table(process_entry_value['process_name'], key_column)
         return jsonify({'message': "Successfully inserted Process data into Metadata tables", 'status': "Success"})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/missing_prices/', methods = ['GET'])
+def get_missing_prices():
+    try:
+        missing_price_data = get_missing_prices_from_price_table()
+        return jsonify({'missing_price_data': missing_price_data, 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/missing_prices/', methods = ['POST'])
+def insert_missing_prices():
+    try:
+        missing_price_payloads = loads(request.form.get('missing_price_payload'))
+        filtered_payloads = []
+        for missing_price_payload in missing_price_payloads:
+            if missing_price_payload['PRICE']:
+                value_date = datetime.strptime(missing_price_payload['VALUE_DATE'],'%Y-%m-%d')
+                value_date = value_date.strftime('%Y-%m-%d')
+
+                holiday_calendar_data = get_date_setup_from_holiday_calendar(value_date)
+                holiday_calendar_data = holiday_calendar_data.get_json()
+                missing_price_payload['PROCESSING_DATE']          = holiday_calendar_data[0]['processing_date']
+                missing_price_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data[0]['next_processing_date']
+                missing_price_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data[0]['prev_processing_date']
+                filtered_payloads.append(missing_price_payload)
+
+        process_price_logs = execute_process_group_using_metadata('PRICE_DAILY_PROCESS_GROUP', None, None, filtered_payloads, "true")
+        return jsonify(process_price_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})

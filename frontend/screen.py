@@ -65,3 +65,7 @@ def process_consolidated_allocation():
 @frontend.route('/process_entry')
 def process_entry():
     return render_template('process_entry.html')
+
+@frontend.route('/missing_prices_entry')
+def missing_prices_entry():
+    return render_template('missing_prices_entry.html')

@@ -16,6 +16,7 @@ let processing_date_value;
 let create_folder_status;
 let create_table_status;
 let create_view_status;
+let upsert_price_status = "Success";
 let dup_check_status;
 let mf_returns_status;
 let realised_intraday_stock_returns_status;
@@ -162,7 +163,7 @@ max_value_date_data_from_response.max_value_date_data.forEach(async element=> {
 const alt_symbol      = element.alt_symbol
 let start_date        = ""
 if(element.max_value_date){
-start_date      = element.max_value_date
+start_date = element.max_value_date
 }
 else{
 const week_before = new Date();
@@ -184,10 +185,17 @@ formData.append('yahoo_symbol', yahoo_symbol);
 formData.append('exchange_symbol', exchange_symbol);
 formData.append('portfolio_type', portfolio_type);
 
-await fetch(`/api/price_table/close_price/${alt_symbol}?start_from=${start_date}&end_till=${end_date}`, {
+const upsert_price_response = await fetch(`/api/price_table/close_price/${alt_symbol}?start_date=${start_date}&end_date=${end_date}&on_start=true`, {
 method: 'POST',
 body: formData
 })
+
+const upsert_price_data = await upsert_price_response.json()
+
+if(upsert_price_data.status != "Success"){
+upsert_price_status = "Failed"
+create_notification(upsert_price_data.message, upsert_price_data.status)
+}
 })
 
 const dup_check_response = await fetch(`/api/price_table/duplicate_check/`, {
@@ -1189,6 +1197,7 @@ consolidated_allocation_chart_profit_or_loss_by_portfolio_name = new Chart(ctx_p
 async function create_consolidated_notification(){
 if (create_table_status                         == "Success" &&
     create_view_status                          == "Success" &&
+    upsert_price_status                         == "Success" &&
     dup_check_status                            == "Success" &&
     mf_returns_status                           == "Success" &&
     realised_intraday_stock_returns_status      == "Success" &&

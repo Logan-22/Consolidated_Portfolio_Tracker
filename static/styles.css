@@ -36,7 +36,7 @@ body.Dark_Theme {
   --box-shadow: 0 4px 10px rgba(255, 255, 255, 0.5);
 }
 
-body.Zerodha_Theme{
+body.Zerodha_Theme {
   --bg: #181818;
   --half-bg: rgba(24, 24, 24, 0.5); /* bg in RGB and reduced Alpha to 50% opacity*/
   --text: #fafafa;
@@ -54,12 +54,24 @@ body.Zerodha_Theme{
   --box-shadow: 0 4px 10px rgb(246, 70, 26, 0.3); /* accent in RGB and reduced Alpha to 30% opacity*/
 }
 
-body{
+html{
+  height: 100%;
+}
+
+body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font);
   margin: 0;
   transition: background 0.3s, color 0.3s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wrapper {
+  flex: 1;
+  padding: 0.5rem;
 }
 
 /* Navbar */
@@ -81,22 +93,22 @@ body{
 }
 
 /* Theme Change */
-#light-theme-option{
+#light-theme-option {
   background-color: #3f51b5;
   color: #121212;
 }
 
-#dark-theme-option{
+#dark-theme-option {
   background-color: #bb86fc;
   color: #f5f5f5;
 }
 
-#zerodha-theme-option{
+#zerodha-theme-option {
   background-color: #f6461a;
   color: #bbbbbb;
 }
 
-#change-theme{
+#change-theme {
   border: none;
   background-color: var(--accent);
   padding: 0.4rem;
@@ -162,7 +174,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 /* Process Entry Form */
 
-#process_entry_form {
+#process_entry_form, #missing_prices_entry_form {
   max-width:inherit;
 }
 
@@ -178,6 +190,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .field-grid {
   display:grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.missing-prices-field-grid {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-bottom: 0.5rem;
 }

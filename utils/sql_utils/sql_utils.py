@@ -88,28 +88,37 @@ def create_metadata_store_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS METADATA_STORE (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            EXCHANGE_SYMBOL TEXT(100),
-            YAHOO_SYMBOL TEXT(100),
-            ALT_SYMBOL TEXT(100),
-            ALLOCATION_CATEGORY TEXT(100),
-            PORTFOLIO_TYPE TEXT(50),
-            AMC TEXT(50),
-            MF_TYPE TEXT(100),
-            FUND_CATEGORY TEXT(100),
-            LAUNCHED_ON DATE,
-            EXIT_LOAD NUMERIC(2,2),
-            EXPENSE_RATIO NUMERIC(2,2),
-            FUND_MANAGER TEXT(100),
-            FUND_MANAGER_STARTED_ON DATE,
-            ISIN TEXT(100),
-            PROCESS_FLAG INTEGER,
-            CONSIDER_FOR_HIST_RETURNS INTEGER,
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+CREATE TABLE IF NOT EXISTS METADATA_STORE
+(
+    ID                       INTEGER        PRIMARY KEY AUTOINCREMENT,
+    EXCHANGE_SYMBOL          TEXT (100),
+    YAHOO_SYMBOL             TEXT (100),
+    ALT_SYMBOL               TEXT (100),
+    ALLOCATION_CATEGORY      TEXT (100),
+    PORTFOLIO_TYPE           TEXT (50),
+    AMC                      TEXT (50),
+    MF_TYPE                  TEXT (100),
+    FUND_CATEGORY            TEXT (100),
+    LAUNCHED_ON              DATE,
+    EXIT_LOAD                NUMERIC (2, 2),
+    EXPENSE_RATIO            NUMERIC (2, 2),
+    FUND_MANAGER             TEXT (100),
+    FUND_MANAGER_STARTED_ON  DATE,
+    ISIN                     TEXT (100),
+    PROCESS_FLAG             INTEGER,
+    CONSIDER_FOR_RETURNS     INTEGER,
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER        DEFAULT 0
+);
+    ''')
 
 def create_metadata_key_columns_table():
     conn = sqlite3.connect(db_path)
@@ -127,7 +136,7 @@ def insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, alloc
     cursor = conn.cursor()
     today = datetime.date.today()
     today = today.strftime("%Y-%m-%d")
-    cursor.execute("INSERT INTO METADATA_STORE (EXCHANGE_SYMBOL, YAHOO_SYMBOL, ALT_SYMBOL, ALLOCATION_CATEGORY, PORTFOLIO_TYPE, AMC, MF_TYPE, FUND_CATEGORY, LAUNCHED_ON, EXIT_LOAD, EXPENSE_RATIO, FUND_MANAGER, FUND_MANAGER_STARTED_ON, ISIN, PROCESS_FLAG, CONSIDER_FOR_HIST_RETURNS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    cursor.execute("INSERT INTO METADATA_STORE (EXCHANGE_SYMBOL, YAHOO_SYMBOL, ALT_SYMBOL, ALLOCATION_CATEGORY, PORTFOLIO_TYPE, AMC, MF_TYPE, FUND_CATEGORY, LAUNCHED_ON, EXIT_LOAD, EXPENSE_RATIO, FUND_MANAGER, FUND_MANAGER_STARTED_ON, ISIN, PROCESS_FLAG, CONSIDER_FOR_RETURNS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                    (exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin, 1, 1, today, '9998-12-31', 0  ))
     conn.commit()
     conn.close()
@@ -319,6 +328,7 @@ def create_execution_logs_table():
             PAYLOAD_COUNT INTEGER,
             INSERTED_COUNT INTEGER,
             UPDATED_COUNT INTEGER,
+            DELETED_COUNT INTEGER,
             NO_CHANGE_COUNT INTEGER,
             SKIPPED_COUNT INTEGER,
             NULL_COUNT INTEGER,
@@ -348,15 +358,15 @@ def get_all_tables_list():
         return jsonify(tables_list)
     return
 
-def get_max_value_date_for_alt_symbol(process_flag = None, consider_for_hist_returns = None, portfolio_type = None):
+def get_max_value_date_for_alt_symbol(process_flag = None, consider_for_returns = None, portfolio_type = None):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    if consider_for_hist_returns and portfolio_type:
-        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.CONSIDER_FOR_HIST_RETURNS = {consider_for_hist_returns} AND MS.PORTFOLIO_TYPE = '{portfolio_type}' GROUP BY 1,2,3,4;")
+    if consider_for_returns and portfolio_type:
+        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.CONSIDER_FOR_RETURNS = {consider_for_returns} AND MS.PORTFOLIO_TYPE = '{portfolio_type}' GROUP BY 1,2,3,4;")
     elif process_flag:
         cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.PROCESS_FLAG = {process_flag} GROUP BY 1,2,3,4;")
-    elif consider_for_hist_returns:
-        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.CONSIDER_FOR_HIST_RETURNS = {consider_for_hist_returns} GROUP BY 1,2,3,4;")
+    elif consider_for_returns:
+        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.CONSIDER_FOR_RETURNS = {consider_for_returns} GROUP BY 1,2,3,4;")
     elif portfolio_type:
         cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.PORTFOLIO_TYPE = '{portfolio_type}' GROUP BY 1,2,3,4;")
     else:
@@ -612,16 +622,9 @@ def get_first_purchase_date_from_mf_order_date_table():
         return jsonify(data)
     return
 
-def get_date_setup_from_holiday_calendar(counter_date):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT DISTINCT PROCESSING_DATE, NEXT_PROCESSING_DATE, PREVIOUS_PROCESSING_DATE FROM HOLIDAY_CALENDAR WHERE PROCESSING_DATE = '{counter_date}';")
-    rows = cursor.fetchall()
-    conn.close()
-    if rows:
-        data = [{'processing_date': row[0], 'next_processing_date': row[1], 'prev_processing_date': row[2]} for row in rows]
-        return jsonify(data)
-    return
+def get_date_setup_from_holiday_calendar(input_date):
+    holiday_calendar_payload = fetch_queries_as_dictionaries(f"SELECT DISTINCT PROCESSING_DATE, NEXT_PROCESSING_DATE, PREVIOUS_PROCESSING_DATE FROM HOLIDAY_CALENDAR WHERE PROCESSING_DATE = '{input_date}';")
+    return holiday_calendar_payload
 
 def get_metrics_from_fin_mutual_fund_portfolio_view():
     conn = sqlite3.connect(db_path)
@@ -2598,12 +2601,12 @@ def get_simulated_returns_from_fin_simulated_returns_table():
     simulated_returns_dict = fetch_queries_as_dictionaries('''
 SELECT
     CONS.PROCESSING_DATE
-    ,CONS."%_P/L"
-    ,CONS."%_DAY_P/L"
+    ,CONS."%_FIN_TOTAL_P/L"
+    ,CONS."%_FIN_DAY_P/L"
     ,SIM."FIN_%_SIM_P/L"
     ,SIM."FIN_%_SIM_DAY_P/L"
 FROM
-    CONSOLIDATED_HIST_RETURNS CONS
+    FIN_CONSOLIDATED_RETURNS CONS
 INNER JOIN
     FIN_SIMULATED_RETURNS SIM
 ON

@@ -31,8 +31,8 @@ const sim_perc_day_p_l_array = []
 
 simulated_returns_data.data.forEach(simulated_return => {
   processing_date_array.push(simulated_return['PROCESSING_DATE'])
-  perc_total_p_l_array.push(simulated_return['%_P/L'])
-  perc_day_p_l_array.push(simulated_return['%_DAY_P/L'])
+  perc_total_p_l_array.push(simulated_return['%_FIN_TOTAL_P/L'])
+  perc_day_p_l_array.push(simulated_return['%_FIN_DAY_P/L'])
   sim_perc_total_p_l_array.push(simulated_return['FIN_%_SIM_P/L'])
   sim_perc_day_p_l_array.push(simulated_return['FIN_%_SIM_DAY_P/L'])
 });
@@ -100,7 +100,6 @@ simulated_returns_chart = new Chart(ctx, {type: 'line',
 
 create_notification(simulated_returns_data.message, simulated_returns_data.status)
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 

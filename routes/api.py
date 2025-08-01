@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 import yfinance as yf
 from dateutil import parser
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import os
 from json import loads
 from uuid import NAMESPACE_URL,uuid5
@@ -142,9 +142,9 @@ app_namespace = uuid5(NAMESPACE_URL,"Consolidated_Portfolio_Tracker") # Change L
 def get_max_value_date_from_price_table():
     try:
         process_flag              = request.args.get('process_flag') or None
-        consider_for_hist_returns = request.args.get('consider_for_hist_returns') or None
+        consider_for_returns      = request.args.get('consider_for_returns') or None
         portfolio_type            = request.args.get('portfolio_type') or None
-        max_value_date_data = get_max_value_date_for_alt_symbol(process_flag, consider_for_hist_returns, portfolio_type)
+        max_value_date_data = get_max_value_date_for_alt_symbol(process_flag, consider_for_returns, portfolio_type)
         max_value_date_data = max_value_date_data.get_json()
         return jsonify({'max_value_date_data':max_value_date_data, 'message': "Successfully retrieved Maximum Value Date data from PRICE_TABLE table", 'status': "Success"})
     except Exception as e:
@@ -172,10 +172,9 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
                 value_date = value_date.strftime('%Y-%m-%d')
 
                 holiday_calendar_data = get_date_setup_from_holiday_calendar(value_date)
-                holiday_calendar_data = holiday_calendar_data.get_json()
-                processing_date       = holiday_calendar_data[0]['processing_date']
-                next_processing_date  = holiday_calendar_data[0]['next_processing_date']
-                prev_processing_date  = holiday_calendar_data[0]['prev_processing_date']
+                processing_date       = holiday_calendar_data[0]['PROCESSING_DATE']
+                next_processing_date  = holiday_calendar_data[0]['NEXT_PROCESSING_DATE']
+                prev_processing_date  = holiday_calendar_data[0]['PREVIOUS_PROCESSING_DATE']
 
                 price_payload_from_yahoo_finance = {
                     'ALT_SYMBOL'               : alt_symbol
@@ -207,23 +206,15 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
 @api.route('/api/metadata_store/', methods = ['POST'])
 def metadata_entry():
     try:
-        exchange_symbol         = request.form.get('exchange_symbol')
-        yahoo_symbol            = request.form.get('yahoo_symbol')
-        alt_symbol              = request.form.get('alt_symbol')
-        allocation_category     = request.form.get('allocation_category')
-        portfolio_type          = request.form.get('portfolio_type')
-        amc                     = request.form.get('amc') or None
-        mf_type                 = request.form.get('type') or None
-        fund_category           = request.form.get('fund_category') or None
-        launched_on             = request.form.get('launched_on') or None
-        exit_load               = request.form.get('exit_load') or None
-        expense_ratio           = request.form.get('expense_ratio') or None
-        fund_manager            = request.form.get('fund_manager') or None
-        fund_manager_started_on = request.form.get('fund_manager_started_on') or None
-        isin                    = request.form.get('isin') or None
+        metadata_payload = loads(request.form.get('metadata_payload'))
         create_metadata_store_table()
-        insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin)
-        return jsonify({'message': "Successfully inserted metadata into METADATA_STORE table", 'status': "Success"})
+        holiday_calendar_data                        = get_date_setup_from_holiday_calendar(date.today().strftime('"%Y-%m-%d"'))
+        metadata_payload['PROCESSING_DATE']          = holiday_calendar_data[0]['PROCESSING_DATE']
+        metadata_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data[0]['NEXT_PROCESSING_DATE']
+        metadata_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data[0]['PREVIOUS_PROCESSING_DATE']
+
+        metadata_entry_logs = execute_process_group_using_metadata('METADATA_STORE_ENTRY_PROCESS_GROUP', None, None, metadata_payload, "true")
+        return jsonify(metadata_entry_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
@@ -1027,7 +1018,7 @@ def process_simulated_returns():
         create_fin_simulated_portfolio_table()
 
         if on_start == "true" or (start_date):
-            simulated_returns_process_group_logs = execute_process_group_using_metadata('SIMULATED_RETURNS_DAILY_PROCESS_GROUP')
+            simulated_returns_process_group_logs = execute_process_group_using_metadata('SIMULATED_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
             simulated_returns_process_group_logs = execute_process_group_using_metadata('SIMULATED_RETURNS_HIST_PROCESS_GROUP')
         return jsonify(simulated_returns_process_group_logs)
@@ -1085,11 +1076,10 @@ def insert_missing_prices():
                 value_date = datetime.strptime(missing_price_payload['VALUE_DATE'],'%Y-%m-%d')
                 value_date = value_date.strftime('%Y-%m-%d')
 
-                holiday_calendar_data = get_date_setup_from_holiday_calendar(value_date)
-                holiday_calendar_data = holiday_calendar_data.get_json()
-                missing_price_payload['PROCESSING_DATE']          = holiday_calendar_data[0]['processing_date']
-                missing_price_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data[0]['next_processing_date']
-                missing_price_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data[0]['prev_processing_date']
+                holiday_calendar_data                             = get_date_setup_from_holiday_calendar(value_date)
+                missing_price_payload['PROCESSING_DATE']          = holiday_calendar_data[0]['PROCESSING_DATE']
+                missing_price_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data[0]['NEXT_PROCESSING_DATE']
+                missing_price_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data[0]['PREVIOUS_PROCESSING_DATE']
                 filtered_payloads.append(missing_price_payload)
 
         process_price_logs = execute_process_group_using_metadata('PRICE_DAILY_PROCESS_GROUP', None, None, filtered_payloads, "true")

@@ -201,6 +201,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin-bottom: 0.5rem;
 }
 
+.metadata-field-grid {
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
 .field {
   display: flex;
   flex-direction: column;

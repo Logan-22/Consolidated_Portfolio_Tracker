@@ -315,58 +315,58 @@ if(get_consolidated_hist_return_status != "Success"){
 create_notification(consolidated_returns_data.message, consolidated_returns_data.status)
 }
 
-if(consolidated_returns_data.data.latest_cons_data){
-latest_consolidated_returns_data = consolidated_returns_data.data.latest_cons_data[0]
+if(consolidated_returns_data.data.latest_consolidated_returns_data){
+latest_consolidated_returns_data = consolidated_returns_data.data.latest_consolidated_returns_data[0]
 
-total_invested_amount.textContent = `₹ ${latest_consolidated_returns_data.fin_invested_amount.toLocaleString('en-IN')}`
-current_value.textContent         = `₹ ${latest_consolidated_returns_data.fin_current_value.toLocaleString('en-IN')}`
-previous_value.textContent        = `₹ ${latest_consolidated_returns_data.fin_previous_value.toLocaleString('en-IN')}`
-p_l.textContent                   = `₹ ${latest_consolidated_returns_data.fin_total_p_l.toLocaleString('en-IN')}`
-perc_p_l.textContent              = `${latest_consolidated_returns_data.perc_fin_total_p_l} %`
-day_p_l.textContent               = `₹ ${latest_consolidated_returns_data.fin_day_p_l.toLocaleString('en-IN')}`
-perc_day_p_l.textContent          = `${latest_consolidated_returns_data.perc_fin_day_p_l} %`
+total_invested_amount.textContent = `₹ ${latest_consolidated_returns_data['INVESTED_AMOUNT'].toLocaleString('en-IN')}`
+current_value.textContent         = `₹ ${latest_consolidated_returns_data['CURRENT_VALUE'].toLocaleString('en-IN')}`
+previous_value.textContent        = `₹ ${latest_consolidated_returns_data['PREVIOUS_VALUE'].toLocaleString('en-IN')}`
+p_l.textContent                   = `₹ ${latest_consolidated_returns_data['TOTAL_P/L'].toLocaleString('en-IN')}`
+perc_p_l.textContent              = `${latest_consolidated_returns_data['%_TOTAL_P/L']} %`
+day_p_l.textContent               = `₹ ${latest_consolidated_returns_data['DAY_P/L'].toLocaleString('en-IN')}`
+perc_day_p_l.textContent          = `${latest_consolidated_returns_data['%_DAY_P/L']} %`
 }
 
-if(consolidated_returns_data.data.latest_agg_data){
-latest_agg_returns_data = consolidated_returns_data.data.latest_agg_data
+if(consolidated_returns_data.data.latest_agg_consolidated_returns_data){
+latest_agg_returns_data = consolidated_returns_data.data.latest_agg_consolidated_returns_data
 
 latest_agg_returns_data.forEach(element => {
-if(element.portfolio_type == "Mutual Funds"){
-mf_invested_amount.textContent                     = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
-mf_current_value.textContent                       = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
-mf_previous_value.textContent                      = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
-mf_p_l.textContent                                 = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
-mf_perc_p_l.textContent                            = `${element.perc_agg_total_p_l} %`
-mf_day_p_l.textContent                             = `₹ ${element.agg_day_p_l.toLocaleString('en-IN')}`
-mf_perc_day_p_l.textContent                        = `${element.perc_agg_day_p_l} %`
+if(element['PORTFOLIO_TYPE'] == "Mutual Funds"){
+mf_invested_amount.textContent                     = `₹ ${element['AGG_INVESTED_AMOUNT'].toLocaleString('en-IN')}`
+mf_current_value.textContent                       = `₹ ${element['AGG_CURRENT_VALUE'].toLocaleString('en-IN')}`
+mf_previous_value.textContent                      = `₹ ${element['AGG_PREVIOUS_VALUE'].toLocaleString('en-IN')}`
+mf_p_l.textContent                                 = `₹ ${element['AGG_TOTAL_P/L'].toLocaleString('en-IN')}`
+mf_perc_p_l.textContent                            = `${element['%_AGG_TOTAL_P/L']} %`
+mf_day_p_l.textContent                             = `₹ ${element['AGG_DAY_P/L'].toLocaleString('en-IN')}`
+mf_perc_day_p_l.textContent                        = `${element['%_AGG_DAY_P/L']} %`
 }
-else if(element.portfolio_type == "Unrealised Swing Stocks"){
-unrealised_swing_invested_amount.textContent       = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
-unrealised_swing_current_value.textContent         = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
-unrealised_swing_previous_value.textContent        = `₹ ${element.agg_previous_value.toLocaleString('en-IN')}`
-unrealised_swing_p_l.textContent                   = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
-unrealised_swing_perc_p_l.textContent              = `${element.perc_agg_total_p_l} %`
-unrealised_swing_day_p_l.textContent               = `₹ ${element.agg_day_p_l.toLocaleString('en-IN')}`
-unrealised_swing_perc_day_p_l.textContent          = `${element.perc_agg_day_p_l} %`
+else if(element['PORTFOLIO_TYPE'] == "Unrealised Swing Stocks"){
+unrealised_swing_invested_amount.textContent       = `₹ ${element['AGG_INVESTED_AMOUNT'].toLocaleString('en-IN')}`
+unrealised_swing_current_value.textContent         = `₹ ${element['AGG_CURRENT_VALUE'].toLocaleString('en-IN')}`
+unrealised_swing_previous_value.textContent        = `₹ ${element['AGG_PREVIOUS_VALUE'].toLocaleString('en-IN')}`
+unrealised_swing_p_l.textContent                   = `₹ ${element['AGG_TOTAL_P/L'].toLocaleString('en-IN')}`
+unrealised_swing_perc_p_l.textContent              = `${element['%_AGG_TOTAL_P/L']} %`
+unrealised_swing_day_p_l.textContent               = `₹ ${element['AGG_DAY_P/L'].toLocaleString('en-IN')}`
+unrealised_swing_perc_day_p_l.textContent          = `${element['%_AGG_DAY_P/L']} %`
 }
-else if(element.portfolio_type == "Realised Swing Stocks"){
-realised_swing_invested_amount.textContent         = `₹ ${element.agg_total_invested_amount.toLocaleString('en-IN')}`
-realised_swing_current_value.textContent           = `₹ ${element.agg_current_value.toLocaleString('en-IN')}`
-realised_swing_p_l.textContent                     = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
-realised_swing_perc_p_l.textContent                = `${element.perc_agg_total_p_l} %`
+else if(element['PORTFOLIO_TYPE'] == "Realised Swing Stocks"){
+realised_swing_invested_amount.textContent         = `₹ ${element['AGG_INVESTED_AMOUNT'].toLocaleString('en-IN')}`
+realised_swing_current_value.textContent           = `₹ ${element['AGG_CURRENT_VALUE'].toLocaleString('en-IN')}`
+realised_swing_p_l.textContent                     = `₹ ${element['AGG_TOTAL_P/L'].toLocaleString('en-IN')}`
+realised_swing_perc_p_l.textContent                = `${element['%_AGG_TOTAL_P/L']} %`
 }
-else if(element.portfolio_type == "Intraday Stocks"){
-realised_intraday_p_l.textContent                  = `₹ ${element.agg_total_p_l.toLocaleString('en-IN')}`
+else if(element['PORTFOLIO_TYPE'] == "Intraday Stocks"){
+realised_intraday_p_l.textContent                  = `₹ ${element['AGG_TOTAL_P/L'].toLocaleString('en-IN')}`
 }
 })
 }
 
-if(consolidated_returns_data.data.agg_data){
-agg_returns_data = consolidated_returns_data.data.agg_data
+if(consolidated_returns_data.data.agg_consolidated_returns_data){
+agg_returns_data = consolidated_returns_data.data.agg_consolidated_returns_data
 }
 
-if(consolidated_returns_data.data.cons_data){
-cons_returns_data = consolidated_returns_data.data.cons_data
+if(consolidated_returns_data.data.consolidated_returns_data){
+cons_returns_data = consolidated_returns_data.data.consolidated_returns_data
 }
 
 // Reveal Processing Date Picker
@@ -375,7 +375,7 @@ const processing_date = document.getElementsByName("processing_date")
 processing_date.forEach(element => element.classList = "")
 
 const processing_date_input = document.getElementById("processing_date")
-processing_date_input.value = latest_consolidated_returns_data.processing_date
+processing_date_input.value = latest_consolidated_returns_data['PROCESSING_DATE']
 
 await add_class_list_based_on_value();
 

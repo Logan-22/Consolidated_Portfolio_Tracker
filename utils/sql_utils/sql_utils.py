@@ -199,19 +199,28 @@ def create_mf_order_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS MF_ORDER (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            NAME TEXT(200),
-            PURCHASED_ON DATE,
-            INVESTED_AMOUNT NUMERIC(10,4),
-            STAMP_FEES_AMOUNT NUMERIC(10,4),
-            AMC_AMOUNT NUMERIC(10,4),
-            NAV_DURING_PURCHASE NUMERIC(10,4),
-            UNITS NUMERIC(10,4),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+CREATE TABLE IF NOT EXISTS MF_ORDER
+(
+    ID                       INTEGER         PRIMARY KEY AUTOINCREMENT,
+    NAME                     TEXT (200),
+    PURCHASED_ON             DATE,
+    INVESTED_AMOUNT          NUMERIC (10, 4),
+    STAMP_FEES_AMOUNT        NUMERIC (10, 4),
+    AMC_AMOUNT               NUMERIC (10, 4),
+    NAV_DURING_PURCHASE      NUMERIC (10, 4),
+    UNITS                    NUMERIC (10, 4),
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER        DEFAULT 0
+);
+    ''')
 
 def insert_mf_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units):
     conn = sqlite3.connect(db_path)
@@ -623,8 +632,18 @@ def get_first_purchase_date_from_mf_order_date_table():
     return
 
 def get_date_setup_from_holiday_calendar(input_date):
-    holiday_calendar_payload = fetch_queries_as_dictionaries(f"SELECT DISTINCT PROCESSING_DATE, NEXT_PROCESSING_DATE, PREVIOUS_PROCESSING_DATE FROM HOLIDAY_CALENDAR WHERE PROCESSING_DATE = '{input_date}';")
-    return holiday_calendar_payload
+    holiday_calendar_payload = fetch_queries_as_dictionaries(f"""
+SELECT DISTINCT
+    PROCESSING_DATE
+    ,NEXT_PROCESSING_DATE
+    ,PREVIOUS_PROCESSING_DATE
+FROM HOLIDAY_CALENDAR
+WHERE
+    PROCESSING_DATE <= '{input_date}'
+ORDER BY PROCESSING_DATE DESC
+LIMIT 1;
+    """)
+    return holiday_calendar_payload[0]
 
 def get_metrics_from_fin_mutual_fund_portfolio_view():
     conn = sqlite3.connect(db_path)
@@ -673,55 +692,70 @@ def create_trade_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS TRADES (
-            TRADE_ID VARCHAR(200),
-            FEE_ID VARCHAR(200),
-            TRADE_SET_ID VARCHAR(200),
-            STOCK_NAME VARCHAR(200),
-            STOCK_ISIN VARCHAR(100),
-            TRADE_DATE DATE,
-            ORDER_NUMBER VARCHAR(100),
-            ORDER_TIME TIME,
-            TRADE_NUMBER VARCHAR(100),
-            TRADE_TIME TIME,
-            BUY_OR_SELL CHAR(1),
-            STOCK_QUANTITY INTEGER,
-            BROKERAGE_PER_TRADE NUMERIC(10,4),
-            NET_TRADE_PRICE_PER_UNIT NUMERIC(10,4),
-            NET_TOTAL_BEFORE_LEVIES NUMERIC(10,4),
-            TRADE_SET INTEGER,
-            TRADE_POSITION VARCHAR(10),
-            TRADE_ENTRY_DATE DATE,
-            TRADE_ENTRY_TIME TIME,
-            TRADE_EXIT_DATE DATE,
-            TRADE_EXIT_TIME TIME,
-            TRADE_TYPE TEXT(20),
-            LEVERAGE INTEGER,
-            CLOSING_TRADE_ID VARCHAR(200),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+CREATE TABLE IF NOT EXISTS TRADES (
+    TRADE_ID                 VARCHAR (200),
+    FEE_ID                   VARCHAR (200),
+    TRADE_SET_ID             VARCHAR (200),
+    STOCK_NAME               VARCHAR (200),
+    STOCK_ISIN               VARCHAR (100),
+    TRADE_DATE               DATE,
+    ORDER_NUMBER             VARCHAR (100),
+    ORDER_TIME               TIME,
+    TRADE_NUMBER             VARCHAR (100),
+    TRADE_TIME               TIME,
+    BUY_OR_SELL              CHAR (1),
+    STOCK_QUANTITY           INTEGER,
+    BROKERAGE_PER_TRADE      NUMERIC (10, 4),
+    NET_TRADE_PRICE_PER_UNIT NUMERIC (10, 4),
+    NET_TOTAL_BEFORE_LEVIES  NUMERIC (10, 4),
+    TRADE_SET                INTEGER,
+    TRADE_POSITION           VARCHAR (10),
+    TRADE_ENTRY_DATE         DATE,
+    TRADE_ENTRY_TIME         TIME,
+    TRADE_EXIT_DATE          DATE,
+    TRADE_EXIT_TIME          TIME,
+    TRADE_TYPE               TEXT (20),
+    LEVERAGE                 INTEGER,
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER         DEFAULT 0
+);
+    ''')
 
 def create_fee_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS FEE_COMPONENT (
-            FEE_ID VARCHAR(200),
-            TRADE_DATE DATE,
-            NET_OBLIGATION NUMERIC(10,4),
-            BROKERAGE NUMERIC(10,4),
-            EXCHANGE_TRANSACTION_CHARGES NUMERIC(10,4),
-            IGST NUMERIC(10,4),
-            SECURITIES_TRANSACTION_TAX NUMERIC(10,4),
-            SEBI_TURN_OVER_FEES NUMERIC(10,4),
-            AUTO_SQUARE_OFF_CHARGES NUMERIC(10,4),
-            DEPOSITORY_CHARGES NUMERIC(10,4),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+CREATE TABLE IF NOT EXISTS FEE_COMPONENT (
+    FEE_ID                       VARCHAR (200),
+    TRADE_DATE                   DATE,
+    NET_OBLIGATION               NUMERIC (10, 4),
+    BROKERAGE                    NUMERIC (10, 4),
+    EXCHANGE_TRANSACTION_CHARGES NUMERIC (10, 4),
+    IGST                         NUMERIC (10, 4),
+    SECURITIES_TRANSACTION_TAX   NUMERIC (10, 4),
+    SEBI_TURN_OVER_FEES          NUMERIC (10, 4),
+    AUTO_SQUARE_OFF_CHARGES      NUMERIC (10, 4),
+    DEPOSITORY_CHARGES           NUMERIC (10, 4),
+    PROCESSING_DATE              DATE,
+    PREVIOUS_PROCESSING_DATE     DATE,
+    NEXT_PROCESSING_DATE         DATE,
+    UPDATE_PROCESS_NAME          TEXT,
+    UPDATE_PROCESS_ID            INTEGER,
+    PROCESS_NAME                 TEXT,
+    PROCESS_ID                   INTEGER,
+    START_DATE                   DATE,
+    END_DATE                     DATE,
+    RECORD_DELETED_FLAG          INTEGER         DEFAULT 0
+);
+    ''')
 
 def upsert_trade_entry_in_db(trade_id, fee_id, trade_set_id, stock_symbol, stock_isin, trade_date, order_number, order_time, trade_number, trade_time, buy_or_sell, stock_quantity, brokerage_per_trade, net_trade_price_per_unit, net_total_before_levies, trade_set, trade_position, trade_entry_date, trade_entry_time, trade_exit_date, trade_exit_time, trade_type, leverage):
     conn = sqlite3.connect(db_path)
@@ -892,39 +926,50 @@ def get_max_trade_date_from_realised_intraday_stock_hist_returns_table():
     return jsonify(data)
 
 def get_open_trades_from_trades_table():
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute(f"""SELECT TRADE_ID, STOCK_NAME, TRADE_DATE, STOCK_QUANTITY, BUY_OR_SELL FROM TRADES WHERE TRADE_EXIT_DATE IS NULL
-                       AND TRADE_ID NOT IN(SELECT DISTINCT TRD.TRADE_ID FROM TRADES TRD INNER JOIN FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW FSSRPV ON TRD.FEE_ID = FSSRPV.OPENING_FEE_ID AND FSSRPV.TRADES_CLOSE_STATUS = 'TRADES_COMPLETELY_CLOSED')
-                       AND TRADE_ID NOT IN(SELECT DISTINCT TRD.TRADE_ID FROM TRADES TRD INNER JOIN FIN_STOCK_SWING_REALISED_PORTFOLIO_VIEW FSSRPV ON TRD.FEE_ID = FSSRPV.CLOSING_FEE_ID AND FSSRPV.TRADES_CLOSE_STATUS = 'TRADES_COMPLETELY_CLOSED') ;""")
-    rows = cursor.fetchall()
-    conn.close()
-    if rows:
-
-        data = [{'trade_id': row[0], 'stock_name': row[1], 'trade_date': row[2], 'stock_quantity': row[3], 'buy_or_sell': row[4]} for row in rows]
-        return jsonify(data)
-    data = [{'trade_id': None, 'stock_name': None, 'trade_date': None, 'stock_quantity': None, 'buy_or_sell': None}]
-    return jsonify(data)
+    open_trades_payload = fetch_queries_as_dictionaries(f"""
+SELECT
+    TRADE_ID
+    ,STOCK_NAME
+    ,TRADE_DATE
+    ,STOCK_QUANTITY
+    ,BUY_OR_SELL
+FROM
+    TRADES
+WHERE
+    TRADE_EXIT_DATE IS NULL
+    AND TRADE_ID NOT IN (SELECT DISTINCT TRD.TRADE_ID FROM TRADES TRD INNER JOIN FIN_REALISED_SWING_STOCK_RETURNS FSSRPV ON TRD.FEE_ID = FSSRPV.OPENING_FEE_ID AND FSSRPV.TRADES_CLOSE_STATUS = 'TRADES_COMPLETELY_CLOSED')
+    AND TRADE_ID NOT IN (SELECT DISTINCT TRD.TRADE_ID FROM TRADES TRD INNER JOIN FIN_REALISED_SWING_STOCK_RETURNS FSSRPV ON TRD.FEE_ID = FSSRPV.CLOSING_FEE_ID AND FSSRPV.TRADES_CLOSE_STATUS = 'TRADES_COMPLETELY_CLOSED');
+    """)
+    return open_trades_payload
 
 def create_close_trades_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS CLOSE_TRADES (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            STOCK_SYMBOL VARCHAR(100),
-            OPENING_TRADE_ID VARCHAR(200),
-            OPENING_TRADE_DATE DATE,
-            OPENING_TRADE_STOCK_QUANTITY INTEGER,
-            OPENING_TRADE_BUY_OR_SELL VARCHAR(10),
-            CLOSING_TRADE_ID VARCHAR(200),
-            CLOSING_TRADE_DATE DATE,
-            CLOSING_TRADE_STOCK_QUANTITY INTEGER,
-            CLOSING_TRADE_BUY_OR_SELL VARCHAR(10),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+CREATE TABLE IF NOT EXISTS CLOSE_TRADES
+(
+    ID                           INTEGER       PRIMARY KEY AUTOINCREMENT,
+    STOCK_SYMBOL                 VARCHAR (100),
+    OPENING_TRADE_ID             VARCHAR (200),
+    OPENING_TRADE_DATE           DATE,
+    OPENING_TRADE_STOCK_QUANTITY INTEGER,
+    OPENING_TRADE_BUY_OR_SELL    VARCHAR (10),
+    CLOSING_TRADE_ID             VARCHAR (200),
+    CLOSING_TRADE_DATE           DATE,
+    CLOSING_TRADE_STOCK_QUANTITY INTEGER,
+    CLOSING_TRADE_BUY_OR_SELL    VARCHAR (10),
+    PROCESSING_DATE              DATE,
+    PREVIOUS_PROCESSING_DATE     DATE,
+    NEXT_PROCESSING_DATE         DATE,
+    UPDATE_PROCESS_NAME          TEXT,
+    UPDATE_PROCESS_ID            INTEGER,
+    PROCESS_NAME                 TEXT,
+    PROCESS_ID                   INTEGER,
+    START_DATE                   DATE,
+    END_DATE                     DATE,
+    RECORD_DELETED_FLAG          INTEGER        DEFAULT 0
+);
+    ''')
     
 def insert_into_close_trades_table(opening_trade_id, opening_alt_symbol, opening_trade_date, opening_trade_stock_quantity, opening_trade_buy_or_sell, closing_trade_id, closing_alt_symbol, closing_trade_date, closing_trade_stock_quantity, closing_trade_buy_or_sell):
     conn = sqlite3.connect(db_path)
@@ -1223,38 +1268,88 @@ def get_max_proc_date_from_all_hist_tables():
         return jsonify(min_of_max_proc_date_from_hist_tables)
     return jsonify({'min_of_max_proc_date_from_hist_tables' : None})
 
-def get_all_from_consolidated_hist_returns_table():
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('SELECT PORTFOLIO_TYPE, PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2) FROM AGG_CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
-    agg_rows = cursor.fetchall()
-    if agg_rows:
-        agg_data = [{'portfolio_type': row[0],'processing_date': row[1], 'prev_processing_date': row[2], 'next_processing_date': row[3], 'agg_total_invested_amount': row[4], 'agg_current_value': row[5], 'agg_previous_value': row[6], 'agg_total_p_l': row[7], 'perc_agg_total_p_l': row[8], 'agg_day_p_l': row[9], 'perc_agg_day_p_l': row[10]} for row in agg_rows]
-    else:
-        agg_data = [{'portfolio_type': None,'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'agg_total_invested_amount': None, 'agg_current_value': None, 'agg_previous_value': None, 'agg_total_p_l': None, 'perc_agg_total_p_l': None, 'agg_day_p_l': None, 'perc_agg_day_p_l': None}]
-    cursor.execute('SELECT PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2)  FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 ORDER BY PROCESSING_DATE;')
-    cons_rows = cursor.fetchall()
-    if cons_rows:
-        cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'perc_fin_total_p_l': row[7], 'fin_day_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in cons_rows]
-    else:
-        cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'perc_fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_day_p_l': None}]
-
-    # Latest Data Fetch
-    cursor.execute('SELECT PORTFOLIO_TYPE, PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2) FROM AGG_CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0  AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM AGG_CONSOLIDATED_HIST_RETURNS);')
-    latest_agg_rows = cursor.fetchall()
-    if latest_agg_rows:
-        latest_agg_data = [{'portfolio_type': row[0],'processing_date': row[1], 'prev_processing_date': row[2], 'next_processing_date': row[3], 'agg_total_invested_amount': row[4], 'agg_current_value': row[5], 'agg_previous_value': row[6], 'agg_total_p_l': row[7], 'perc_agg_total_p_l': row[8], 'agg_day_p_l': row[9], 'perc_agg_day_p_l': row[10]} for row in latest_agg_rows]
-    else:
-        latest_agg_data = [{'portfolio_type': None,'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'agg_total_invested_amount': None, 'agg_current_value': None, 'agg_previous_value': None, 'agg_total_p_l': None, 'perc_agg_total_p_l': None, 'agg_day_p_l': None, 'perc_agg_day_p_l': None}]
-    cursor.execute('SELECT PROCESSING_DATE, PREV_PROCESSING_DATE, NEXT_PROCESSING_DATE, ROUND(AMOUNT_INVESTED_AS_ON_PROCESSING_DATE,2), ROUND(CURRENT_VALUE,2), ROUND(PREVIOUS_VALUE,2), ROUND("P/L",2), ROUND("%_P/L",2), ROUND("DAY_P/L",2), ROUND("%_DAY_P/L",2)  FROM CONSOLIDATED_HIST_RETURNS WHERE RECORD_DELETED_FLAG = 0 AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM CONSOLIDATED_HIST_RETURNS);')
-    latest_cons_rows = cursor.fetchall()
-    if latest_cons_rows:
-        latest_cons_data = [{'processing_date': row[0], 'prev_processing_date': row[1], 'next_processing_date': row[2], 'fin_invested_amount': row[3], 'fin_current_value': row[4], 'fin_previous_value': row[5], 'fin_total_p_l': row[6], 'perc_fin_total_p_l': row[7], 'fin_day_p_l': row[8], 'perc_fin_day_p_l': row[9]} for row in latest_cons_rows]
-    else:
-        latest_cons_data = [{'processing_date': None, 'prev_processing_date': None, 'next_processing_date': None, 'fin_invested_amount': None, 'fin_current_value': None, 'fin_previous_value': None, 'fin_total_p_l': None, 'perc_fin_total_p_l': None, 'fin_day_p_l': None, 'perc_fin_day_p_l': None}]
-    conn.close()
-    data = {'agg_data': agg_data, 'cons_data': cons_data, 'latest_agg_data': latest_agg_data, 'latest_cons_data' : latest_cons_data}
-    return jsonify(data)
+def get_all_from_consolidated_returns_table():
+    agg_consolidated_returns_data = fetch_queries_as_dictionaries('''
+SELECT
+    PORTFOLIO_TYPE                   AS PORTFOLIO_TYPE
+    ,PROCESSING_DATE                 AS PROCESSING_DATE
+    ,PREVIOUS_PROCESSING_DATE        AS PREVIOUS_PROCESSING_DATE
+    ,NEXT_PROCESSING_DATE            AS NEXT_PROCESSING_DATE
+    ,ROUND(AGG_INVESTED_AMOUNT, 2)   AS AGG_INVESTED_AMOUNT
+    ,ROUND(AGG_CURRENT_VALUE, 2)     AS AGG_CURRENT_VALUE
+    ,ROUND(AGG_PREVIOUS_VALUE, 2)    AS AGG_PREVIOUS_VALUE
+    ,ROUND("AGG_TOTAL_P/L", 2)       AS "AGG_TOTAL_P/L"
+    ,ROUND("%_AGG_TOTAL_P/L", 2)     AS "%_AGG_TOTAL_P/L"
+    ,ROUND("AGG_DAY_P/L", 2)         AS "AGG_DAY_P/L"
+    ,ROUND("%_AGG_DAY_P/L", 2)       AS "%_AGG_DAY_P/L"
+FROM
+    AGG_CONSOLIDATED_RETURNS
+WHERE
+    RECORD_DELETED_FLAG = 0
+ ORDER BY PROCESSING_DATE;
+''')
+    latest_agg_consolidated_returns_data = fetch_queries_as_dictionaries('''
+SELECT
+    PORTFOLIO_TYPE                   AS PORTFOLIO_TYPE
+    ,PROCESSING_DATE                 AS PROCESSING_DATE
+    ,PREVIOUS_PROCESSING_DATE        AS PREVIOUS_PROCESSING_DATE
+    ,NEXT_PROCESSING_DATE            AS NEXT_PROCESSING_DATE
+    ,ROUND(AGG_INVESTED_AMOUNT, 2)   AS AGG_INVESTED_AMOUNT
+    ,ROUND(AGG_CURRENT_VALUE, 2)     AS AGG_CURRENT_VALUE
+    ,ROUND(AGG_PREVIOUS_VALUE, 2)    AS AGG_PREVIOUS_VALUE
+    ,ROUND("AGG_TOTAL_P/L", 2)       AS "AGG_TOTAL_P/L"
+    ,ROUND("%_AGG_TOTAL_P/L", 2)     AS "%_AGG_TOTAL_P/L"
+    ,ROUND("AGG_DAY_P/L", 2)         AS "AGG_DAY_P/L"
+    ,ROUND("%_AGG_DAY_P/L", 2)       AS "%_AGG_DAY_P/L"
+FROM
+    AGG_CONSOLIDATED_RETURNS
+WHERE
+    RECORD_DELETED_FLAG = 0
+    AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM AGG_CONSOLIDATED_RETURNS)
+ ORDER BY PROCESSING_DATE;
+''')
+    consolidated_returns_data = fetch_queries_as_dictionaries('''
+SELECT
+    PROCESSING_DATE                  AS PROCESSING_DATE
+    ,PREVIOUS_PROCESSING_DATE        AS PREVIOUS_PROCESSING_DATE
+    ,NEXT_PROCESSING_DATE            AS NEXT_PROCESSING_DATE
+    ,ROUND(INVESTED_AMOUNT, 2)       AS INVESTED_AMOUNT
+    ,ROUND(CURRENT_VALUE, 2)         AS CURRENT_VALUE
+    ,ROUND(PREVIOUS_VALUE, 2)        AS PREVIOUS_VALUE
+    ,ROUND("TOTAL_P/L", 2)           AS "TOTAL_P/L"
+    ,ROUND("%_TOTAL_P/L", 2)         AS "%_TOTAL_P/L"
+    ,ROUND("DAY_P/L", 2)             AS "DAY_P/L"
+    ,ROUND("%_DAY_P/L", 2)           AS "%_DAY_P/L"
+FROM
+    CONSOLIDATED_RETURNS
+WHERE
+    RECORD_DELETED_FLAG = 0
+ORDER BY PROCESSING_DATE;
+''')
+    latest_consolidated_returns_data = fetch_queries_as_dictionaries('''
+SELECT
+    PROCESSING_DATE                  AS PROCESSING_DATE
+    ,PREVIOUS_PROCESSING_DATE        AS PREVIOUS_PROCESSING_DATE
+    ,NEXT_PROCESSING_DATE            AS NEXT_PROCESSING_DATE
+    ,ROUND(INVESTED_AMOUNT, 2)       AS INVESTED_AMOUNT
+    ,ROUND(CURRENT_VALUE, 2)         AS CURRENT_VALUE
+    ,ROUND(PREVIOUS_VALUE, 2)        AS PREVIOUS_VALUE
+    ,ROUND("TOTAL_P/L", 2)           AS "TOTAL_P/L"
+    ,ROUND("%_TOTAL_P/L", 2)         AS "%_TOTAL_P/L"
+    ,ROUND("DAY_P/L", 2)             AS "DAY_P/L"
+    ,ROUND("%_DAY_P/L", 2)           AS "%_DAY_P/L"
+FROM
+    CONSOLIDATED_RETURNS
+WHERE
+    RECORD_DELETED_FLAG = 0
+    AND PROCESSING_DATE = (SELECT MAX(PROCESSING_DATE) FROM CONSOLIDATED_RETURNS)
+ORDER BY PROCESSING_DATE;
+''')
+    data = {'agg_consolidated_returns_data'        : agg_consolidated_returns_data
+            ,'consolidated_returns_data'           : consolidated_returns_data
+            ,'latest_agg_consolidated_returns_data': latest_agg_consolidated_returns_data
+            ,'latest_consolidated_returns_data'    : latest_consolidated_returns_data}
+    return data
 
 def get_max_next_proc_date_from_consolidated_hist_allocation_table():
     conn = sqlite3.connect(db_path)

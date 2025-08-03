@@ -38,19 +38,19 @@ open_trades_data = await open_trades_response.json();
 create_notification(open_trades_data.message, open_trades_data.status)
 
 open_trades_data.data.forEach((element,index) => {
-  opening_trade_id.innerHTML        += `<option id = "options">${element.trade_id}</option>`
-  closing_trade_id.innerHTML        += `<option id = "options">${element.trade_id}</option>`
+  opening_trade_id.innerHTML        += `<option id = "options">${element['TRADE_ID']}</option>`
+  closing_trade_id.innerHTML        += `<option id = "options">${element['TRADE_ID']}</option>`
   
   if(index == 0){
-  opening_alt_symbol.value           = element.stock_name
-  opening_trade_date.value           = element.trade_date
-  opening_trade_stock_quantity.value = element.stock_quantity
-  opening_trade_buy_or_sell.value    = element.buy_or_sell
+  opening_alt_symbol.value           = element['STOCK_NAME']
+  opening_trade_date.value           = element['TRADE_DATE']
+  opening_trade_stock_quantity.value = element['STOCK_QUANTITY']
+  opening_trade_buy_or_sell.value    = element['BUY_OR_SELL']
 
-  closing_alt_symbol.value           = element.stock_name
-  closing_trade_date.value           = element.trade_date
-  closing_trade_stock_quantity.value = element.stock_quantity
-  closing_trade_buy_or_sell.value    = element.buy_or_sell
+  closing_alt_symbol.value           = element['STOCK_NAME']
+  closing_trade_date.value           = element['TRADE_DATE']
+  closing_trade_stock_quantity.value = element['STOCK_QUANTITY']
+  closing_trade_buy_or_sell.value    = element['BUY_OR_SELL']
   }
 });
 }
@@ -67,11 +67,11 @@ const opening_trade_stock_quantity = document.getElementById('opening_trade_stoc
 const opening_trade_buy_or_sell    = document.getElementById('opening_trade_buy_or_sell')
 
 open_trades_data.data.forEach(element => {
-if (opening_trade_id == element.trade_id){
-  opening_alt_symbol.value           = element.stock_name
-  opening_trade_date.value           = element.trade_date
-  opening_trade_stock_quantity.value = element.stock_quantity
-  opening_trade_buy_or_sell.value    = element.buy_or_sell
+if (opening_trade_id == element['TRADE_ID']){
+  opening_alt_symbol.value           = element['STOCK_NAME']
+  opening_trade_date.value           = element['TRADE_DATE']
+  opening_trade_stock_quantity.value = element['STOCK_QUANTITY']
+  opening_trade_buy_or_sell.value    = element['BUY_OR_SELL']
 }
 })
 })
@@ -88,11 +88,11 @@ const closing_trade_stock_quantity = document.getElementById('closing_trade_stoc
 const closing_trade_buy_or_sell    = document.getElementById('closing_trade_buy_or_sell')
 
 open_trades_data.data.forEach(element => {
-if (closing_trade_id == element.trade_id){
-  closing_alt_symbol.value           = element.stock_name
-  closing_trade_date.value           = element.trade_date
-  closing_trade_stock_quantity.value = element.stock_quantity
-  closing_trade_buy_or_sell.value    = element.buy_or_sell
+if (closing_trade_id == element['TRADE_ID']){
+  closing_alt_symbol.value           = element['STOCK_NAME']
+  closing_trade_date.value           = element['TRADE_DATE']
+  closing_trade_stock_quantity.value = element['STOCK_QUANTITY']
+  closing_trade_buy_or_sell.value    = element['BUY_OR_SELL']
 }
 })
 })
@@ -141,7 +141,7 @@ closed_trade_entry_table.innerHTML += `
 document.getElementById('close_trades_submit').addEventListener('click', async function (e) {
 e.preventDefault();
 let errors_in_close_trade_entries = 0
-const close_trades_data_array = []
+const close_trades_payloads = []
 
 const closed_trade_entry_table       = document.getElementById('closed_trade_entry_table')
 const closed_trade_entry_table_child = closed_trade_entry_table.children
@@ -189,36 +189,36 @@ closed_trade_entry_tr.classList = "error"
 create_notification('Opening Trade Date cannot be greater than Closing Trade Date', 'warning')
 }
 
-if(opening_trade_buy_or_sell ==  closing_trade_buy_or_sell){
-errors_in_close_trade_entries += 1
-closed_trade_entry_tr.classList = "error"
-create_notification('Opening Trade and Closing Trade cannot be of the same Buy Or Sell Type', 'warning')
-}
+// if(opening_trade_buy_or_sell ==  closing_trade_buy_or_sell){
+// errors_in_close_trade_entries += 1
+// closed_trade_entry_tr.classList = "error"
+// create_notification('Opening Trade and Closing Trade cannot be of the same Buy Or Sell Type', 'warning')
+// }
 
 if(errors_in_close_trade_entries == 0){
 
-close_trades_data.opening_trade_id = opening_trade_id
-close_trades_data.opening_alt_symbol = opening_alt_symbol
-close_trades_data.opening_trade_date = opening_trade_date
-close_trades_data.opening_trade_stock_quantity = opening_trade_stock_quantity
-close_trades_data.opening_trade_buy_or_sell = opening_trade_buy_or_sell
+close_trades_data['STOCK_SYMBOL']                 = opening_alt_symbol
 
-close_trades_data.closing_trade_id = closing_trade_id
-close_trades_data.closing_alt_symbol = closing_alt_symbol
-close_trades_data.closing_trade_date = closing_trade_date
-close_trades_data.closing_trade_stock_quantity = closing_trade_stock_quantity
-close_trades_data.closing_trade_buy_or_sell = closing_trade_buy_or_sell
+close_trades_data['OPENING_TRADE_ID']             = opening_trade_id
+close_trades_data['OPENING_TRADE_DATE']           = opening_trade_date
+close_trades_data['OPENING_TRADE_STOCK_QUANTITY'] = opening_trade_stock_quantity
+close_trades_data['OPENING_TRADE_BUY_OR_SELL']    = opening_trade_buy_or_sell
 
-close_trades_data_array.push(close_trades_data)
+close_trades_data['CLOSING_TRADE_ID']             = closing_trade_id
+close_trades_data['CLOSING_TRADE_DATE']           = closing_trade_date
+close_trades_data['CLOSING_TRADE_STOCK_QUANTITY'] = closing_trade_stock_quantity
+close_trades_data['CLOSING_TRADE_BUY_OR_SELL']    = closing_trade_buy_or_sell
+
+close_trades_payloads.push(close_trades_data)
 }
 }
 
 if(errors_in_close_trade_entries == 0){
 
 const formData = new FormData();
-formData.append('close_trades_data_array', JSON.stringify(close_trades_data_array));
+formData.append('close_trades_payloads', JSON.stringify(close_trades_payloads));
 
-const post_close_trade_response = await fetch(`/api/close_trade/`, {
+const post_close_trade_response = await fetch(`/api/close_trades/`, {
 method: 'POST',
 body: formData
 })

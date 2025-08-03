@@ -66,13 +66,17 @@ const price_during_purchase = price_lookup_data.price_data[0].price
 
 const units = amc_amount/price_during_purchase
 
+const mf_order_payload = {
+'NAME'                 : exchange_symbol
+,'PURCHASED_ON'        : purchase_date
+,'INVESTED_AMOUNT'     : invested_amount
+,'AMC_AMOUNT'          : amc_amount
+,'NAV_DURING_PURCHASE' : price_during_purchase
+,'UNITS'               : units
+}
+
 const formData = new FormData();
-formData.append('exchange_symbol', exchange_symbol);
-formData.append('purchase_date', purchase_date);
-formData.append('invested_amount', invested_amount);
-formData.append('amc_amount', amc_amount);
-formData.append('price_during_purchase', price_during_purchase);
-formData.append('units', units);
+formData.append('mf_order_payload', JSON.stringify(mf_order_payload));
 
 const mf_order_response = await fetch(`/api/mf_order/`, {
 method: 'POST',

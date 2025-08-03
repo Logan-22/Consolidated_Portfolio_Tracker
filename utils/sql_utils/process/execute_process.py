@@ -108,9 +108,9 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
         # Prepare Loop
         while(counter_date <= end_date):
                 holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-                processing_date      = holiday_calendar_data[0]['PROCESSING_DATE']
-                next_processing_date = holiday_calendar_data[0]['NEXT_PROCESSING_DATE']
-                prev_processing_date = holiday_calendar_data[0]['PREVIOUS_PROCESSING_DATE']
+                processing_date      = holiday_calendar_data['PROCESSING_DATE']
+                next_processing_date = holiday_calendar_data['NEXT_PROCESSING_DATE']
+                prev_processing_date = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
 
                 # Update Processing Dates Table
                 for proc_typ_cd in proc_typ_cds_list:

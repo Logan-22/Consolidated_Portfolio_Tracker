@@ -89,7 +89,7 @@ def upsert_scd2(process_name, table_name, payloads, process_id):
             else:
                 logs['no_change_count'] += 1
                 continue # if Payload and existing record matches move on
-        print(payload)
+
         # Insert Latest Record
         insert_columns = [f'"{key}"' for key in payload.keys()] + ['"PROCESS_NAME"', '"PROCESS_ID"', '"START_DATE"', '"END_DATE"', '"RECORD_DELETED_FLAG"']
         insert_values = list(payload.values()) + [process_name, process_id, payload['PROCESSING_DATE'], high_end_date, 0]

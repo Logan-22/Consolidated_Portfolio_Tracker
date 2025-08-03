@@ -82,7 +82,7 @@ insert_into_agg_consolidated_hist_returns,\
 get_consolidated_hist_returns_from_consolidated_hist_returns_table,\
 get_max_next_proc_date_from_consolidated_hist_returns_table,\
 get_max_proc_date_from_all_hist_tables,\
-get_all_from_consolidated_hist_returns_table,\
+get_all_from_consolidated_returns_table,\
 get_max_next_proc_date_from_consolidated_hist_allocation_table,\
 truncate_consolidated_hist_allocation_table,\
 create_consolidated_hist_allocation_table,\
@@ -172,9 +172,9 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
                 value_date = value_date.strftime('%Y-%m-%d')
 
                 holiday_calendar_data = get_date_setup_from_holiday_calendar(value_date)
-                processing_date       = holiday_calendar_data[0]['PROCESSING_DATE']
-                next_processing_date  = holiday_calendar_data[0]['NEXT_PROCESSING_DATE']
-                prev_processing_date  = holiday_calendar_data[0]['PREVIOUS_PROCESSING_DATE']
+                processing_date       = holiday_calendar_data['PROCESSING_DATE']
+                next_processing_date  = holiday_calendar_data['NEXT_PROCESSING_DATE']
+                prev_processing_date  = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
 
                 price_payload_from_yahoo_finance = {
                     'ALT_SYMBOL'               : alt_symbol
@@ -208,10 +208,10 @@ def metadata_entry():
     try:
         metadata_payload = loads(request.form.get('metadata_payload'))
         create_metadata_store_table()
-        holiday_calendar_data                        = get_date_setup_from_holiday_calendar(date.today().strftime('"%Y-%m-%d"'))
-        metadata_payload['PROCESSING_DATE']          = holiday_calendar_data[0]['PROCESSING_DATE']
-        metadata_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data[0]['NEXT_PROCESSING_DATE']
-        metadata_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data[0]['PREVIOUS_PROCESSING_DATE']
+        holiday_calendar_data                        = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
+        metadata_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
+        metadata_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+        metadata_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
 
         metadata_entry_logs = execute_process_group_using_metadata('METADATA_STORE_ENTRY_PROCESS_GROUP', None, None, metadata_payload, "true")
         return jsonify(metadata_entry_logs)
@@ -242,18 +242,16 @@ def price_table_lookup():
 @api.route('/api/mf_order/', methods = ['POST'])
 def mf_order():
     try:
-        exchange_symbol = request.form.get('exchange_symbol')
-        purchase_date = request.form.get('purchase_date')
-        invested_amount = request.form.get('invested_amount')
-        stamp_fees_amount = request.form.get('stamp_fees_amount')
-        amc_amount = request.form.get('amc_amount')
-        price_during_purchase = request.form.get('price_during_purchase')
-        units = request.form.get('units')
-        units = round(float(units), 3)
-        stamp_fees_amount = round(float(invested_amount) - float(amc_amount),2)
+        mf_order_payload = loads(request.form.get('mf_order_payload'))
+        mf_order_payload['STAMP_FEES_AMOUNT'] = round(float(mf_order_payload['INVESTED_AMOUNT']) - float(mf_order_payload['AMC_AMOUNT']),2)
         create_mf_order_table()
-        insert_mf_order_entry(exchange_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, price_during_purchase, units)
-        return jsonify({'message': "Successfully inserted data into MF_ORDER table", 'status': "Success"})
+        holiday_calendar_data                        = get_date_setup_from_holiday_calendar(mf_order_payload['PURCHASED_ON'])
+        mf_order_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
+        mf_order_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+        mf_order_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+
+        mf_order_entry_logs = execute_process_group_using_metadata('MF_ORDER_ENTRY_PROCESS_GROUP', mf_order_payload['PURCHASED_ON'], None, mf_order_payload, "true")
+        return jsonify(mf_order_entry_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
@@ -779,22 +777,88 @@ def upsert_trade_entry():
         unique_fee_id = ""
         trade_date = ""
 
+        trades_payloads = []
+        fee_payloads    = []
+
         create_trade_table()
         create_fee_table()
+        holiday_calendar_data = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
+
         for trade in trades_array:
-            unique_trade_id = uuid5(app_namespace, str(trade['trade_number']) + str(trade['trade_entry_date']))
-            unique_fee_id = uuid5(app_namespace, str(trade['trade_entry_date']) + str(trade['trade_type']))
+            unique_trade_id     = uuid5(app_namespace, str(trade['trade_number'])     + str(trade['trade_entry_date']))
+            unique_fee_id       = uuid5(app_namespace, str(trade['trade_entry_date']) + str(trade['trade_type']))
             unique_trade_set_id = uuid5(app_namespace, str(trade['trade_entry_date']) + str(trade['stock_symbol']) + str(trade['trade_set']))
-            trade_date = trade['trade_entry_date']
-            upsert_trade_entry_in_db(unique_trade_id, unique_fee_id, unique_trade_set_id, trade['stock_symbol'], trade['stock_isin'], trade['trade_entry_date'], trade['order_number'], trade['order_time'], trade['trade_number'], trade['trade_time'], trade['buy_or_sell'], trade['stock_quantity'], trade['brokerage_per_trade'], trade['net_trade_price_per_unit'], trade['net_total_before_levies'], trade['trade_set'], trade['trade_position'], trade['trade_entry_date'], trade['trade_entry_time'], trade['trade_exit_date'], trade['trade_exit_time'], trade['trade_type'], trade['leverage'])
+            trade_payload = {
+                'TRADE_ID'                  : str(unique_trade_id)
+                ,'FEE_ID'                   : str(unique_fee_id)
+                ,'TRADE_SET_ID'             : str(unique_trade_set_id)
+                ,'STOCK_NAME'               : trade['stock_symbol']
+                ,'STOCK_ISIN'               : trade['stock_isin']
+                ,'TRADE_DATE'               : trade['trade_entry_date']
+                ,'ORDER_NUMBER'             : trade['order_number']
+                ,'ORDER_TIME'               : trade['order_time']
+                ,'TRADE_NUMBER'             : trade['trade_number']
+                ,'TRADE_TIME'               : trade['trade_time']
+                ,'BUY_OR_SELL'              : trade['buy_or_sell']
+                ,'STOCK_QUANTITY'           : trade['stock_quantity']
+                ,'BROKERAGE_PER_TRADE'      : trade['brokerage_per_trade']
+                ,'NET_TRADE_PRICE_PER_UNIT' : trade['net_trade_price_per_unit']
+                ,'NET_TOTAL_BEFORE_LEVIES'  : trade['net_total_before_levies']
+                ,'TRADE_SET'                : trade['trade_set']
+                ,'TRADE_POSITION'           : trade['trade_position']
+                ,'TRADE_ENTRY_DATE'         : trade['trade_entry_date']
+                ,'TRADE_ENTRY_TIME'         : trade['trade_entry_time']
+                ,'TRADE_EXIT_DATE'          : trade['trade_exit_date']
+                ,'TRADE_EXIT_TIME'          : trade['trade_exit_time']
+                ,'TRADE_TYPE'               : trade['trade_type']
+                ,'LEVERAGE'                 : trade['leverage']
+                ,'PROCESSING_DATE'          : holiday_calendar_data['PROCESSING_DATE']
+                ,'NEXT_PROCESSING_DATE'     : holiday_calendar_data['NEXT_PROCESSING_DATE']
+                ,'PREVIOUS_PROCESSING_DATE' : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+            }
+            trades_payloads.append(trade_payload)
+        trade_entry_logs = execute_process_group_using_metadata('TRADE_ENTRY_PROCESS_GROUP', None, None, trades_payloads, "true")
+
         for trade_type in fee_data['trade_types']:
             if trade_type == "Intraday Trading":
                 unique_fee_id = uuid5(app_namespace, str(trade['trade_entry_date']) + "Intraday Trading")
-                upsert_fee_entry_in_db(unique_fee_id, trade_date, fee_data['intraday_net_obligation'], fee_data['intraday_brokerage'], fee_data['intraday_exc_trans_charges'], fee_data['intraday_igst'], fee_data['intraday_sec_trans_tax'], fee_data['intraday_sebi_turn_fees'], fee_data['intraday_auto_square_off_charges'], fee_data['intraday_depository_charges'] )
+                fee_payload = {
+                    'FEE_ID'                        : str(unique_fee_id)
+                    ,'TRADE_DATE'                   : trade['trade_entry_date']
+                    ,'NET_OBLIGATION'               : fee_data['intraday_net_obligation']
+                    ,'BROKERAGE'                    : fee_data['intraday_brokerage']
+                    ,'EXCHANGE_TRANSACTION_CHARGES' : fee_data['intraday_exc_trans_charges']
+                    ,'IGST'                         : fee_data['intraday_igst']
+                    ,'SECURITIES_TRANSACTION_TAX'   : fee_data['intraday_sec_trans_tax']
+                    ,'SEBI_TURN_OVER_FEES'          : fee_data['intraday_sebi_turn_fees']
+                    ,'AUTO_SQUARE_OFF_CHARGES'      : fee_data['intraday_auto_square_off_charges']
+                    ,'DEPOSITORY_CHARGES'           : fee_data['intraday_depository_charges']
+                    ,'PROCESSING_DATE'              : holiday_calendar_data['PROCESSING_DATE']
+                    ,'NEXT_PROCESSING_DATE'         : holiday_calendar_data['NEXT_PROCESSING_DATE']
+                    ,'PREVIOUS_PROCESSING_DATE'     : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+                }
+                fee_payloads.append(fee_payload)
             elif trade_type == "Swing Trading":
                 unique_fee_id = uuid5(app_namespace, str(trade['trade_entry_date']) + "Swing Trading")
-                upsert_fee_entry_in_db(unique_fee_id, trade_date, fee_data['swing_net_obligation'], fee_data['swing_brokerage'], fee_data['swing_exc_trans_charges'], fee_data['swing_igst'], fee_data['swing_sec_trans_tax'], fee_data['swing_sebi_turn_fees'], fee_data['swing_auto_square_off_charges'], fee_data['swing_depository_charges'] )
-        return jsonify({'message': 'Successfully Inserted Trade and Fee Entries into TRADES and FEE_COMPONENT Table','status': 'Success'})
+                fee_payload = {
+                    'FEE_ID'                        : str(unique_fee_id)
+                    ,'TRADE_DATE'                   : trade['trade_entry_date']
+                    ,'NET_OBLIGATION'               : fee_data['swing_net_obligation']
+                    ,'BROKERAGE'                    : fee_data['swing_brokerage']
+                    ,'EXCHANGE_TRANSACTION_CHARGES' : fee_data['swing_exc_trans_charges']
+                    ,'IGST'                         : fee_data['swing_igst']
+                    ,'SECURITIES_TRANSACTION_TAX'   : fee_data['swing_sec_trans_tax']
+                    ,'SEBI_TURN_OVER_FEES'          : fee_data['swing_sebi_turn_fees']
+                    ,'AUTO_SQUARE_OFF_CHARGES'      : fee_data['swing_auto_square_off_charges']
+                    ,'DEPOSITORY_CHARGES'           : fee_data['swing_depository_charges']
+                    ,'PROCESSING_DATE'              : holiday_calendar_data['PROCESSING_DATE']
+                    ,'NEXT_PROCESSING_DATE'         : holiday_calendar_data['NEXT_PROCESSING_DATE']
+                    ,'PREVIOUS_PROCESSING_DATE'     : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+                }
+                fee_payloads.append(fee_payload)
+        fee_entry_logs = execute_process_group_using_metadata('FEE_ENTRY_PROCESS_GROUP', None, None, fee_payloads, "true")
+        combined_status = 'Success' if trade_entry_logs['status'] == 'Success' and fee_entry_logs['status'] == 'Success' else 'Failed'
+        return jsonify({'message': f"{trade_entry_logs['message']} and {fee_entry_logs['message']}",'status': combined_status})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -830,33 +894,31 @@ def process_realised_intraday_stock_returns():
 def get_open_trades_list():
     try:
         open_trades_list = get_open_trades_from_trades_table()
-        open_trades_list = open_trades_list.get_json()
         return jsonify({'data': open_trades_list,'message': 'Successfully retrieved Open Trades from TRADES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/close_trade/', methods = ['POST'])
+@api.route('/api/close_trades/', methods = ['POST'])
 def close_trade_entry():
     try:
+        close_trades_payloads = loads(request.form.get('close_trades_payloads'))
         create_close_trades_table()
 
-        close_trades_data_array = loads(request.form.get('close_trades_data_array')) # json.loads()
-        for close_trade_data in close_trades_data_array:
-            opening_trade_id = close_trade_data['opening_trade_id']
-            opening_alt_symbol = close_trade_data['opening_alt_symbol']
-            opening_trade_date = close_trade_data['opening_trade_date']
-            opening_trade_stock_quantity = close_trade_data['opening_trade_stock_quantity']
-            opening_trade_buy_or_sell = close_trade_data['opening_trade_buy_or_sell']
-            closing_trade_id = close_trade_data['closing_trade_id']
-            closing_alt_symbol = close_trade_data['closing_alt_symbol']
-            closing_trade_date = close_trade_data['closing_trade_date']
-            closing_trade_stock_quantity = close_trade_data['closing_trade_stock_quantity']
-            closing_trade_buy_or_sell = close_trade_data['closing_trade_buy_or_sell']
+        min_close_trade_date = datetime.today()
 
-            insert_into_close_trades_table(opening_trade_id, opening_alt_symbol, opening_trade_date, opening_trade_stock_quantity, opening_trade_buy_or_sell, closing_trade_id, closing_alt_symbol, closing_trade_date, closing_trade_stock_quantity, closing_trade_buy_or_sell)
-        return jsonify({'message': 'Successfully inserted into CLOSE_TRADES Table','status': 'Success'})
+        for close_trade_payload in close_trades_payloads:
+            holiday_calendar_data                           = get_date_setup_from_holiday_calendar(close_trade_payload['CLOSING_TRADE_DATE'])
+            close_trade_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
+            close_trade_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+            close_trade_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+
+            if datetime.strptime(close_trade_payload['CLOSING_TRADE_DATE'], '%Y-%m-%d') < min_close_trade_date:
+                min_close_trade_date = datetime.strptime(close_trade_payload['CLOSING_TRADE_DATE'], '%Y-%m-%d')
+
+        close_trades_logs = execute_process_group_using_metadata('CLOSE_TRADES_ENTRY_PROCESS_GROUP', min_close_trade_date.strftime('%Y-%m-%d'), None, close_trades_payloads, "true")
+        return jsonify(close_trades_logs)
     except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
+        return jsonify({'message': repr(e), 'status': "Failed"})
 
 @api.route('/api/process_realised_swing_stock_returns/', methods = ['GET'])
 def process_realised_swing_stock_returns():
@@ -954,8 +1016,7 @@ def get_max_processing_date_from_all_hist_returns_table():
 @api.route('/api/consolidated_hist_returns/all/', methods = ['GET'])
 def consolidated_hist_returns_fetch_all():
     try:
-        data = get_all_from_consolidated_hist_returns_table()
-        data = data.get_json()
+        data = get_all_from_consolidated_returns_table()
         return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS and AGG_CONSOLIDATED_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -1077,9 +1138,9 @@ def insert_missing_prices():
                 value_date = value_date.strftime('%Y-%m-%d')
 
                 holiday_calendar_data                             = get_date_setup_from_holiday_calendar(value_date)
-                missing_price_payload['PROCESSING_DATE']          = holiday_calendar_data[0]['PROCESSING_DATE']
-                missing_price_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data[0]['NEXT_PROCESSING_DATE']
-                missing_price_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data[0]['PREVIOUS_PROCESSING_DATE']
+                missing_price_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
+                missing_price_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+                missing_price_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
                 filtered_payloads.append(missing_price_payload)
 
         process_price_logs = execute_process_group_using_metadata('PRICE_DAILY_PROCESS_GROUP', None, None, filtered_payloads, "true")

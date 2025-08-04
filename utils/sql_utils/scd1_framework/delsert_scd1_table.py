@@ -20,7 +20,7 @@ def delsert_scd1(process_name, table_name, payloads, process_id):
 
     # Fetch SCD1 Key columns for the table
 
-    cursor.execute(f"SELECT PROCESS_NAME, KEYCOLUMN_NAME FROM METADATA_KEY_COLUMNS WHERE PROCESS_NAME = '{process_name}' AND CONSIDER_FOR_PROCESSING = 1")
+    cursor.execute(f"SELECT OUT_PROCESS_NAME, KEYCOLUMN_NAME FROM METADATA_KEY_COLUMNS WHERE OUT_PROCESS_NAME = '{process_name}' AND CONSIDER_FOR_PROCESSING = 1")
     key_column_rows = cursor.fetchall()
     key_columns_list = [f'"{row[1]}"' for row in key_column_rows]
     if len(key_columns_list) == 0:

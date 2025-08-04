@@ -83,4 +83,6 @@ body: form_data
 const missing_price_post_data = await missing_price_post_response.json();
 
 create_notification(missing_price_post_data.message, missing_price_post_data.status)
+
+init_missing_prices_form()
 })

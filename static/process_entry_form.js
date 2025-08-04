@@ -55,11 +55,13 @@ async function add_process_entry_block(e){
     ${create_input_element("Process Description", "text", "process_description")}
     ${create_input_element("Process Frequency", "select", "process_frequency", frequency_list)}
     ${create_input_element("Default Start Date Type Code", "select", "process_default_start_date_type_code", ["NONE","ALL", "MUTUAL_FUND", "STOCK"])}
+    ${create_input_element("Execution Order", "number", "execution_order")}
   </div>
   
   <div class="checkbox-row">
     ${create_input_element("Auto Trigger On Launch?", "checkbox", "process_auto_trigger_on_launch")}
     ${create_input_element("Process Decommissioned?", "checkbox", "process_decommissioned")}
+    ${create_input_element("Consider for Processing?", "checkbox", "consider_for_processing")}
   </div>
   <div class="key-columns">
   <label for ="key-column-list-${process_count}">Key Columns</label>
@@ -113,7 +115,7 @@ function create_input_element(input_label, input_type, input_name, input_options
     return `
     <div class="field">
       <label for = "${input_name}-${process_count}">${input_label}</label>
-      <input type = "text" name = "${input_name}" id = "${input_name}-${process_count}" placeholder="Enter the ${input_label}" autocomplete="off" ${input_name != "process_type_codes" ? "required" : ""}>
+      <input type = "${input_type}" name = "${input_name}" id = "${input_name}-${process_count}" placeholder="Enter the ${input_label}" autocomplete="off" ${input_name != "process_type_codes" ? "required" : ""}>
     </div>
     `
   }
@@ -134,29 +136,30 @@ key_column_select_list.innerHTML = column_option_list
 }
 
 document.getElementById("process_entry_form").addEventListener("submit", async (e) => {
-
 e.preventDefault()
 const process_entries = document.querySelectorAll('.process-entry')
-const process_entry_values = Array.from(process_entries).map(entry => {
+const process_entry_payloads = Array.from(process_entries).map(entry => {
 const key_columns = Array.from(entry.querySelector('[name="key-column-list"]').selectedOptions).map(opt => opt.value)
 return {
-  process_group : entry.querySelector('[name="process_group"]').value.trim(),
-  process_name : entry.querySelector('[name="process_name"]').value.trim(),
-  process_type : entry.querySelector('[name="process_type"]').value.trim(),
-  process_type_codes : entry.querySelector('[name="process_type_codes"]').value.trim(),
-  process_input_view : entry.querySelector('[name="process_input_view"]').value.trim() != "None" ? entry.querySelector('[name="process_input_view"]').value.trim() : "",
-  process_target_table : entry.querySelector('[name="process_target_table"]').value.trim(),
-  process_description : entry.querySelector('[name="process_description"]').value.trim(),
-  process_frequency : entry.querySelector('[name="process_frequency"]').value.trim(),
-  process_default_start_date_type_code : entry.querySelector('[name="process_default_start_date_type_code"]').value.trim(),
-  process_auto_trigger_on_launch : entry.querySelector('[name="process_auto_trigger_on_launch"]').checked,
-  process_decommissioned : entry.querySelector('[name="process_decommissioned"]').checked,
-  process_keycolumns: key_columns
+  PROCESS_GROUP              : entry.querySelector('[name="process_group"]').value.trim(),
+  OUT_PROCESS_NAME           : entry.querySelector('[name="process_name"]').value.trim(),
+  PROCESS_TYPE               : entry.querySelector('[name="process_type"]').value.trim(),
+  PROC_TYP_CD_LIST           : entry.querySelector('[name="process_type_codes"]').value.trim(),
+  INPUT_VIEW                 : entry.querySelector('[name="process_input_view"]').value.trim() != "None" ? entry.querySelector('[name="process_input_view"]').value.trim() : "",
+  TARGET_TABLE               : entry.querySelector('[name="process_target_table"]').value.trim(),
+  PROCESS_DESCRIPTION        : entry.querySelector('[name="process_description"]').value.trim(),
+  AUTO_TRIGGER_ON_LAUNCH     : entry.querySelector('[name="process_auto_trigger_on_launch"]').checked ? 1 : 0,
+  PROCESS_DECOMMISSIONED     : entry.querySelector('[name="process_decommissioned"]').checked ? 1 : 0,
+  CONSIDER_FOR_PROCESSING    : entry.querySelector('[name="consider_for_processing"]').checked ? 1 : 0,
+  FREQUENCY                  : entry.querySelector('[name="process_frequency"]').value.trim(),
+  DEFAULT_START_DATE_TYPE_CD : entry.querySelector('[name="process_default_start_date_type_code"]').value.trim(),
+  EXECUTION_ORDER            : entry.querySelector('[name="execution_order"]').value,
+  PROCESS_KEYCOLUMNS         : key_columns
 }
 })
 
 const formData = new FormData();
-formData.append('process_entry_values', JSON.stringify(process_entry_values));
+formData.append('process_entry_values', JSON.stringify(process_entry_payloads));
 
 const process_entry_response = await fetch(`/api/process_entry/`, {
 method: 'POST',

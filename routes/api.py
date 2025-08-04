@@ -10,24 +10,20 @@ from utils.sql_utils.process.execute_process_group import execute_process_group_
 
 from utils.sql_utils.sql_utils import \
 create_price_table,\
-delete_alt_symbol_from_price_table,\
-upsert_into_price_table,\
 create_metadata_store_table,\
 create_metadata_key_columns_table,\
-insert_metadata_store_entry,\
-get_price_from_price_table,\
 create_mf_order_table,\
-insert_mf_order_entry,\
-get_proc_date_from_processing_date_table,\
-update_proc_date_in_processing_date_table,\
 create_processing_date_table,\
 create_processing_type_table,\
 create_metadata_process_table,\
 create_execution_logs_table,\
+create_holiday_date_table,\
+create_mf_portfolio_views_in_db,\
+get_price_from_price_table,\
+get_proc_date_from_processing_date_table,\
+update_proc_date_in_processing_date_table,\
 get_max_value_date_for_alt_symbol,\
 duplicate_check_on_price_table,\
-create_mf_portfolio_views_in_db,\
-create_holiday_date_table,\
 insert_into_holiday_dates_table,\
 get_holiday_date_from_holiday_dates_table,\
 truncate_holiday_calendar_table,\
@@ -144,9 +140,9 @@ def get_max_value_date_from_price_table():
         process_flag              = request.args.get('process_flag') or None
         consider_for_returns      = request.args.get('consider_for_returns') or None
         portfolio_type            = request.args.get('portfolio_type') or None
+
         max_value_date_data = get_max_value_date_for_alt_symbol(process_flag, consider_for_returns, portfolio_type)
-        max_value_date_data = max_value_date_data.get_json()
-        return jsonify({'max_value_date_data':max_value_date_data, 'message': "Successfully retrieved Maximum Value Date data from PRICE_TABLE table", 'status': "Success"})
+        return jsonify({'max_value_date_data': max_value_date_data, 'message': "Successfully retrieved Maximum Value Date data from PRICE_TABLE table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
@@ -172,9 +168,6 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
                 value_date = value_date.strftime('%Y-%m-%d')
 
                 holiday_calendar_data = get_date_setup_from_holiday_calendar(value_date)
-                processing_date       = holiday_calendar_data['PROCESSING_DATE']
-                next_processing_date  = holiday_calendar_data['NEXT_PROCESSING_DATE']
-                prev_processing_date  = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
 
                 price_payload_from_yahoo_finance = {
                     'ALT_SYMBOL'               : alt_symbol
@@ -183,9 +176,9 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
                     ,'VALUE_TIME'              : '15:30:00'
                     ,'PRICE'                   : round(value,4)
                     ,'PRICE_TYP_CD'            : 'CLOSE_PRICE'
-                    ,'PROCESSING_DATE'         : processing_date
-                    ,'PREVIOUS_PROCESSING_DATE': prev_processing_date
-                    ,'NEXT_PROCESSING_DATE'    : next_processing_date
+                    ,'PROCESSING_DATE'         : holiday_calendar_data['PROCESSING_DATE']
+                    ,'PREVIOUS_PROCESSING_DATE': holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+                    ,'NEXT_PROCESSING_DATE'    : holiday_calendar_data['NEXT_PROCESSING_DATE']
                 }
                 price_payloads.append(price_payload_from_yahoo_finance)
             else:
@@ -223,7 +216,6 @@ def get_all_symbols_list():
     try:
         portfolio_type = request.args.get('portfolio_type') or None
         all_symbols_data = get_all_symbols_list_from_metadata_store(portfolio_type)
-        all_symbols_data = all_symbols_data.get_json()
         return jsonify({'all_symbols_list': all_symbols_data, 'message': "Successfully retrieved All Symbols List from METADATA_STORE Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
@@ -234,7 +226,6 @@ def price_table_lookup():
         alt_symbol    = request.args.get('alt_symbol') or None
         purchase_date = request.args.get('purchase_date') or None
         price_data = get_price_from_price_table(alt_symbol, purchase_date)
-        price_data = price_data.get_json()
         return jsonify({'price_data': price_data, 'message': "Successfully retrieved Price data from PRICE_TABLE", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
@@ -258,28 +249,8 @@ def mf_order():
 @api.route('/api/processing_date/', methods = ['GET'])
 def proc_date_lookup():
     try:
-        data = get_proc_date_from_processing_date_table()
-        data = data.get_json()
-        MF_PROC = data['MF_PROC']
-        PPF_MF_PROC = data['PPF_MF_PROC']
-        STOCK_PROC = data['STOCK_PROC']
-
-        mf_proc_date = MF_PROC[1]
-        mf_next_proc_date = MF_PROC[2]
-        mf_prev_proc_date = MF_PROC[3]
-
-        ppf_mf_proc_date = PPF_MF_PROC[1]
-        ppf_mf_next_proc_date = PPF_MF_PROC[2]
-        ppf_mf_prev_proc_date = PPF_MF_PROC[3]
-
-        stock_proc_date = STOCK_PROC[1]
-        stock_next_proc_date = STOCK_PROC[2]
-        stock_prev_proc_date = STOCK_PROC[3]
-
-        return jsonify({'mf_proc_date': mf_proc_date,'mf_next_proc_date' : mf_next_proc_date, 'mf_prev_proc_date': mf_prev_proc_date,
-                        'ppf_mf_proc_date': ppf_mf_proc_date,'ppf_mf_next_proc_date' : ppf_mf_next_proc_date, 'ppf_mf_prev_proc_date': ppf_mf_prev_proc_date,
-                        'stock_proc_date': stock_proc_date,'stock_next_proc_date' : stock_next_proc_date, 'stock_prev_proc_date': stock_prev_proc_date,
-                          'message': "Successfully retrieved data from PROCESSING_DATE Table", 'status': "Success"})
+        proc_date_data = get_proc_date_from_processing_date_table()
+        return jsonify({'proc_date_data': proc_date_data,'message': "Successfully retrieved data from PROCESSING_DATE Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -288,22 +259,13 @@ def proc_date_update():
     try:
         create_processing_date_table()
 
-        mf_proc_date          = request.form.get('mf_proc_date')
-        mf_next_proc_date     = request.form.get('mf_next_proc_date')
-        mf_prev_proc_date     = request.form.get('mf_prev_proc_date')
-
-        ppf_mf_proc_date      = request.form.get('ppf_mf_proc_date')
-        ppf_mf_next_proc_date = request.form.get('ppf_mf_next_proc_date')
-        ppf_mf_prev_proc_date = request.form.get('ppf_mf_prev_proc_date')
-
-        stock_proc_date       = request.form.get('stock_proc_date')
-        stock_next_proc_date  = request.form.get('stock_next_proc_date')
-        stock_prev_proc_date  = request.form.get('stock_prev_proc_date')
-
-        update_proc_date_in_processing_date_table('MF_PROC', mf_proc_date, mf_next_proc_date, mf_prev_proc_date)
-        update_proc_date_in_processing_date_table('PPF_MF_PROC', ppf_mf_proc_date, ppf_mf_next_proc_date, ppf_mf_prev_proc_date)
-        update_proc_date_in_processing_date_table('STOCK_PROC', stock_proc_date, stock_next_proc_date, stock_prev_proc_date)
-        return jsonify({'message': "Successfully updated PROCESSING_DATE Table", 'status': "Success"})
+        processing_date_payload = loads(request.form.get('processing_date_payload'))
+        update_proc_date_in_processing_date_table('MF_PROC',         processing_date_payload['mf_proc_date'],        processing_date_payload['mf_next_proc_date'],        processing_date_payload['mf_prev_proc_date'])
+        update_proc_date_in_processing_date_table('PPF_MF_PROC',     processing_date_payload['ppf_mf_proc_date'],    processing_date_payload['ppf_mf_next_proc_date'],    processing_date_payload['ppf_mf_prev_proc_date'])
+        update_proc_date_in_processing_date_table('STOCK_PROC',      processing_date_payload['stock_proc_date'],     processing_date_payload['stock_next_proc_date'],     processing_date_payload['stock_prev_proc_date'])
+        update_proc_date_in_processing_date_table('SIM_MF_PROC',     processing_date_payload['sim_mf_proc_date'],    processing_date_payload['sim_mf_next_proc_date'],    processing_date_payload['sim_mf_prev_proc_date'])
+        update_proc_date_in_processing_date_table('SIM_STOCK_PROC',  processing_date_payload['sim_stock_proc_date'], processing_date_payload['sim_stock_next_proc_date'], processing_date_payload['sim_stock_prev_proc_date'])
+        return jsonify({'message': "Successfully updated Processing Dates Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -396,12 +358,13 @@ def create_managed_tables():
 def holiday_date_entry():
     try:
         create_holiday_date_table()
-
-        holiday_date = request.form.get('holiday_date')
-        holiday_name = request.form.get('holiday_name')
-        holiday_day = request.form.get('holiday_day')
-        insert_into_holiday_dates_table(holiday_date, holiday_name, holiday_day)
-        return jsonify({'message': 'Successfully inserted holiday into HOLIDAY_DATES Table','status': 'Success'})
+        holiday_date_payload = loads(request.form.get('holiday_date_payload'))
+        holiday_calendar_data                            = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
+        holiday_date_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
+        holiday_date_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+        holiday_date_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+        holiday_entry_logs = execute_process_group_using_metadata('HOLIDAY_DATES_ENTRY_PROCESS_GROUP', None, None, holiday_date_payload, "true")
+        return jsonify(holiday_entry_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -410,7 +373,6 @@ def holiday_date_lookup():
     try:
         current_year = request.args.get('current_year') or None
         data = get_holiday_date_from_holiday_dates_table(current_year)
-        data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from HOLIDAY_DATES Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -419,12 +381,13 @@ def holiday_date_lookup():
 def working_date_entry():
     try:
         create_working_date_table()
-
-        working_date = request.form.get('working_date')
-        working_day_name = request.form.get('working_day_name')
-        working_day = request.form.get('working_day')
-        insert_into_working_date_table(working_date, working_day_name, working_day)
-        return jsonify({'message': 'Successfully inserted working date into WORKING_DATES Table','status': 'Success'})
+        working_date_payload = loads(request.form.get('working_date_payload'))
+        holiday_calendar_data                            = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
+        working_date_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
+        working_date_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+        working_date_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+        working_day_entry_logs = execute_process_group_using_metadata('WORKING_DATES_ENTRY_PROCESS_GROUP', None, None, working_date_payload, "true")
+        return jsonify(working_day_entry_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -1107,15 +1070,57 @@ def get_table_and_view_info_from_db():
 @api.route('/api/process_entry/', methods = ['POST'])
 def add_process_entry():
     try:
-        process_entry_values = loads(request.form.get('process_entry_values')) # json.loads
-        for process_entry_value in process_entry_values:
-            auto_trigger_on_launch = 1 if process_entry_value['process_auto_trigger_on_launch'] else 0
-            process_decommed       = 1 if process_entry_value['process_decommissioned']         else 0
-            insert_into_metadata_process_group_table(process_entry_value['process_group'],process_entry_value['process_name'])
-            insert_into_metadata_process_table(process_entry_value['process_name'], process_entry_value['process_type'], process_entry_value['process_type_codes'], process_entry_value['process_input_view'], process_entry_value['process_target_table'], process_entry_value['process_description'], auto_trigger_on_launch, process_decommed, process_entry_value['process_frequency'], process_entry_value['process_default_start_date_type_code'])
-            for key_column in process_entry_value['process_keycolumns']:
-                insert_into_metadata_key_columns_table(process_entry_value['process_name'], key_column)
-        return jsonify({'message': "Successfully inserted Process data into Metadata tables", 'status': "Success"})
+        process_entry_payloads       = loads(request.form.get('process_entry_values')) # json.loads
+        process_group_payloads       = []
+        process_payloads             = []
+        process_keycolumns_payloads  = []
+        for payload in process_entry_payloads:
+            holiday_calendar_data = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
+
+            process_group_payload = {
+                'PROCESS_GROUP'             : payload['PROCESS_GROUP']
+                ,'OUT_PROCESS_NAME'         : payload['OUT_PROCESS_NAME']
+                ,'CONSIDER_FOR_PROCESSING'  : payload['CONSIDER_FOR_PROCESSING']
+                ,'EXECUTION_ORDER'          : payload['EXECUTION_ORDER']
+                ,'PROCESSING_DATE'          : holiday_calendar_data['PROCESSING_DATE']
+                ,'NEXT_PROCESSING_DATE'     : holiday_calendar_data['NEXT_PROCESSING_DATE']
+                ,'PREVIOUS_PROCESSING_DATE' : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+            }
+            process_group_payloads.append(process_group_payload)
+
+            process_payload = {
+                'OUT_PROCESS_NAME'            : payload['OUT_PROCESS_NAME']
+                ,'PROCESS_TYPE'               : payload['PROCESS_TYPE']
+                ,'PROC_TYP_CD_LIST'           : payload['PROC_TYP_CD_LIST']
+                ,'INPUT_VIEW'                 : payload['INPUT_VIEW']
+                ,'TARGET_TABLE'               : payload['TARGET_TABLE']
+                ,'PROCESS_DESCRIPTION'        : payload['PROCESS_DESCRIPTION']
+                ,'AUTO_TRIGGER_ON_LAUNCH'     : payload['AUTO_TRIGGER_ON_LAUNCH']
+                ,'PROCESS_DECOMMISSIONED'     : payload['PROCESS_DECOMMISSIONED']
+                ,'FREQUENCY'                  : payload['FREQUENCY']
+                ,'DEFAULT_START_DATE_TYPE_CD' : payload['DEFAULT_START_DATE_TYPE_CD']
+                ,'PROCESSING_DATE'            : holiday_calendar_data['PROCESSING_DATE']
+                ,'NEXT_PROCESSING_DATE'       : holiday_calendar_data['NEXT_PROCESSING_DATE']
+                ,'PREVIOUS_PROCESSING_DATE'   : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+            }
+            process_payloads.append(process_payload)
+
+            for keycolumn_name in payload['PROCESS_KEYCOLUMNS']:
+                process_keycolumn_payload = {
+                    'OUT_PROCESS_NAME'          : payload['OUT_PROCESS_NAME']
+                    ,'KEYCOLUMN_NAME'           : keycolumn_name
+                    ,'CONSIDER_FOR_PROCESSING'  : payload['CONSIDER_FOR_PROCESSING']
+                    ,'PROCESSING_DATE'          : holiday_calendar_data['PROCESSING_DATE']
+                    ,'NEXT_PROCESSING_DATE'     : holiday_calendar_data['NEXT_PROCESSING_DATE']
+                    ,'PREVIOUS_PROCESSING_DATE' : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+                }
+                process_keycolumns_payloads.append(process_keycolumn_payload)
+            
+        process_group_logs     = execute_process_group_using_metadata('PROCESS_GROUP_ENTRY_PROCESS_GROUP', None, None, process_group_payloads, "true")
+        process_logs           = execute_process_group_using_metadata('PROCESS_ENTRY_PROCESS_GROUP', None, None, process_payloads, "true")
+        process_keycolumn_logs = execute_process_group_using_metadata('PROCESS_KEYCOLUMN_ENTRY_PROCESS_GROUP', None, None, process_keycolumns_payloads, "true")
+        status = "Success" if process_group_logs['status'] == "Success" and process_logs['status'] == "Success" and process_keycolumn_logs['status'] == "Success" else "Failed"
+        return jsonify({'message': f"{process_group_logs['message']} and {process_logs['message']} and {process_keycolumn_logs['message']}", 'status': status})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 

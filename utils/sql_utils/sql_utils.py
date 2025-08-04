@@ -29,7 +29,7 @@ from utils.sql_utils.views.FIN_SIMULATED_PORTFOLIO_VIEW import FIN_SIMULATED_POR
 def create_price_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute("""
 CREATE TABLE IF NOT EXISTS PRICE_TABLE 
 (
     ID                       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,44 +50,16 @@ CREATE TABLE IF NOT EXISTS PRICE_TABLE
     END_DATE                 DATE,
     RECORD_DELETED_FLAG      INTEGER DEFAULT 0
 );
-    ''')
+    """)
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_alt_symbol ON PRICE_TABLE (ALT_SYMBOL);')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_symbol_date_type ON PRICE_TABLE (ALT_SYMBOL, VALUE_DATE, PRICE_TYP_CD);')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_portfolio_date ON PRICE_TABLE (PORTFOLIO_TYPE, VALUE_DATE);')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_not_deleted ON PRICE_TABLE (RECORD_DELETED_FLAG);')
 
-def upsert_into_price_table(alt_symbol, portfolio_type, value_date, value_time, price, price_typ_cd, start_date, end_date, record_deleted_flag):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT ALT_SYMBOL, PORTFOLIO_TYPE, VALUE_DATE, VALUE_TIME, PRICE, PRICE_TYP_CD FROM PRICE_TABLE WHERE ALT_SYMBOL = '{alt_symbol}' AND VALUE_DATE = '{value_date}' AND VALUE_TIME = '{value_time}' AND RECORD_DELETED_FLAG = 0;")
-    rows = cursor.fetchall()
-    if rows:
-        for row in rows:
-            alt_symbol_from_query     = row[0]
-            portfolio_type_from_query = row[1]
-            value_date_from_query     = row[2]
-            value_time_from_query     = row[3]
-            price_from_query          = row[4]
-            price_typ_cd_from_query   = row[5]
-            if alt_symbol_from_query == alt_symbol and portfolio_type_from_query == portfolio_type and value_date_from_query == value_date and value_time_from_query == value_time and price_typ_cd_from_query == price_typ_cd and price_from_query != price:
-                cursor.execute(f"UPDATE PRICE_TABLE SET END_DATE = '{start_date}', RECORD_DELETED_FLAG = 1 WHERE ALT_SYMBOL = '{alt_symbol}' AND PORTFOLIO_TYPE = '{portfolio_type}' AND VALUE_DATE = '{value_date}' AND VALUE_TIME = '{value_time}' AND PRICE_TYP_CD = '{price_typ_cd}';")
-                cursor.execute("INSERT INTO PRICE_TABLE (ALT_SYMBOL, PORTFOLIO_TYPE, VALUE_DATE, VALUE_TIME, PRICE, PRICE_TYP_CD, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                (alt_symbol, portfolio_type, value_date, value_time, price, price_typ_cd, start_date, end_date, record_deleted_flag))
-    else:
-        cursor.execute("INSERT INTO PRICE_TABLE (ALT_SYMBOL, PORTFOLIO_TYPE, VALUE_DATE, VALUE_TIME, PRICE, PRICE_TYP_CD, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                      (alt_symbol, portfolio_type, value_date, value_time, price, price_typ_cd, start_date, end_date, record_deleted_flag))
-    conn.commit()
-    conn.close()
-
-def delete_alt_symbol_from_price_table(alt_symbol):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute(f"DELETE FROM PRICE_TABLE WHERE ALT_SYMBOL = '{alt_symbol}';")
-
 def create_metadata_store_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute("""
 CREATE TABLE IF NOT EXISTS METADATA_STORE
 (
     ID                       INTEGER        PRIMARY KEY AUTOINCREMENT,
@@ -118,28 +90,30 @@ CREATE TABLE IF NOT EXISTS METADATA_STORE
     END_DATE                 DATE,
     RECORD_DELETED_FLAG      INTEGER        DEFAULT 0
 );
-    ''')
+    """)
 
 def create_metadata_key_columns_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS METADATA_KEY_COLUMNS (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            PROCESS_NAME TEXT(100),
-            KEYCOLUMN_NAME TEXT(100),
-            CONSIDER_FOR_PROCESSING INTEGER
-        );''')
-
-def insert_metadata_store_entry(exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    today = datetime.date.today()
-    today = today.strftime("%Y-%m-%d")
-    cursor.execute("INSERT INTO METADATA_STORE (EXCHANGE_SYMBOL, YAHOO_SYMBOL, ALT_SYMBOL, ALLOCATION_CATEGORY, PORTFOLIO_TYPE, AMC, MF_TYPE, FUND_CATEGORY, LAUNCHED_ON, EXIT_LOAD, EXPENSE_RATIO, FUND_MANAGER, FUND_MANAGER_STARTED_ON, ISIN, PROCESS_FLAG, CONSIDER_FOR_RETURNS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                   (exchange_symbol, yahoo_symbol, alt_symbol, allocation_category, portfolio_type, amc, mf_type, fund_category, launched_on, exit_load, expense_ratio, fund_manager, fund_manager_started_on, isin, 1, 1, today, '9998-12-31', 0  ))
-    conn.commit()
-    conn.close()
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS METADATA_KEY_COLUMNS
+(
+    ID                       INTEGER    PRIMARY KEY AUTOINCREMENT,
+    OUT_PROCESS_NAME         TEXT (100),
+    KEYCOLUMN_NAME           TEXT (100),
+    CONSIDER_FOR_PROCESSING  INTEGER,
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER    DEFAULT 0
+);
+    """)
 
 def get_name_from_metadata(portfolio_type):
     conn = sqlite3.connect(db_path)
@@ -152,20 +126,21 @@ def get_name_from_metadata(portfolio_type):
         return jsonify(name_list)
 
 def get_all_symbols_list_from_metadata_store(portfolio_type = None):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    if portfolio_type:
-        portfolio_type = portfolio_type.replace("+", " ")
-        cursor.execute(f"SELECT DISTINCT EXCHANGE_SYMBOL, YAHOO_SYMBOL, ALT_SYMBOL, PORTFOLIO_TYPE FROM METADATA_STORE WHERE PORTFOLIO_TYPE = '{portfolio_type}' ORDER BY EXCHANGE_SYMBOL;")
-    else:
-        cursor.execute("SELECT DISTINCT EXCHANGE_SYMBOL, YAHOO_SYMBOL, ALT_SYMBOL, PORTFOLIO_TYPE FROM METADATA_STORE ORDER BY EXCHANGE_SYMBOL;")
-    rows = cursor.fetchall()
-    conn.close()
-    if rows:
-        all_symbols_list = [{'exchange_symbol': row[0], 'yahoo_symbol': row[1], 'alt_symbol': row[2], 'portfolio_type': row[3]} for row in rows]
-        return jsonify(all_symbols_list)
-    all_symbols_list = [{'exchange_symbol': None, 'yahoo_symbol': None, 'alt_symbol': None, 'portfolio_type': None}]
-    return jsonify(all_symbols_list)
+    portfolio_type_filter = f"AND PORTFOLIO_TYPE = '{portfolio_type}'" if portfolio_type else ""
+    symbol_data = fetch_queries_as_dictionaries(f"""
+SELECT DISTINCT
+    EXCHANGE_SYMBOL
+    ,YAHOO_SYMBOL
+    ,ALT_SYMBOL
+    ,PORTFOLIO_TYPE
+FROM
+    METADATA_STORE
+WHERE 
+    1 =  1
+    {portfolio_type_filter}
+    AND RECORD_DELETED_FLAG = 0;
+    """)
+    return symbol_data
 
 def get_yahoo_symbol_from_metadata_store(alt_symbol):
     conn = sqlite3.connect(db_path)
@@ -179,21 +154,24 @@ def get_yahoo_symbol_from_metadata_store(alt_symbol):
     return yahoo_symbol
 
 def get_price_from_price_table(alt_symbol = None, purchase_date = None):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    if alt_symbol and purchase_date:
-        cursor.execute(f"SELECT DISTINCT PRICE, ALT_SYMBOL, VALUE_DATE FROM PRICE_TABLE WHERE ALT_SYMBOL = '{alt_symbol}' AND VALUE_DATE = '{purchase_date}' AND PRICE_TYP_CD = 'CLOSE_PRICE' AND RECORD_DELETED_FLAG = 0 ORDER BY ALT_SYMBOL, VALUE_DATE")
-    elif alt_symbol and not purchase_date:
-        cursor.execute(f"SELECT DISTINCT PRICE, ALT_SYMBOL, VALUE_DATE FROM PRICE_TABLE WHERE ALT_SYMBOL = '{alt_symbol}' ANDPRICE_TYP_CD = 'CLOSE_PRICE' AND RECORD_DELETED_FLAG = 0 ORDER BY ALT_SYMBOL, VALUE_DATE")
-    elif not alt_symbol and not purchase_date:
-        cursor.execute(f"SELECT DISTINCT PRICE, ALT_SYMBOL, VALUE_DATE FROM PRICE_TABLE WHERE PRICE_TYP_CD = 'CLOSE_PRICE' AND RECORD_DELETED_FLAG = 0 ORDER BY ALT_SYMBOL, VALUE_DATE")
-    rows = cursor.fetchall()
-    conn.close()
-    if rows:
-        price_data = [{'price' : row[0], 'alt_symbol': row[1], 'value_date': row[2]} for row in rows]
-        return jsonify(price_data)
-    price_data = [{'price' : None, 'alt_symbol': None, 'value_date': None}]
-    return jsonify(price_data)
+    alt_symbol_filter    = f"AND ALT_SYMBOL = '{alt_symbol}'"    if alt_symbol    else ""
+    purchase_date_filter = f"AND VALUE_DATE = '{purchase_date}'" if purchase_date else ""
+    price_data = fetch_queries_as_dictionaries(f"""
+SELECT DISTINCT
+    PRICE
+    ,ALT_SYMBOL
+    ,VALUE_DATE
+FROM
+    PRICE_TABLE
+WHERE
+    1 = 1 
+    {alt_symbol_filter}
+    {purchase_date_filter}
+    AND PRICE_TYP_CD = 'CLOSE_PRICE'
+    AND RECORD_DELETED_FLAG = 0
+    ORDER BY ALT_SYMBOL, VALUE_DATE;
+    """)
+    return price_data[0]
 
 def create_mf_order_table():
     conn = sqlite3.connect(db_path)
@@ -222,25 +200,17 @@ CREATE TABLE IF NOT EXISTS MF_ORDER
 );
     ''')
 
-def insert_mf_order_entry(alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO MF_ORDER (NAME, PURCHASED_ON, INVESTED_AMOUNT, STAMP_FEES_AMOUNT, AMC_AMOUNT, NAV_DURING_PURCHASE, UNITS, START_DATE, END_DATE, RECORD_DELETED_FLAG) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                   (alt_symbol, purchase_date, invested_amount, stamp_fees_amount, amc_amount, nav_during_purchase, units, purchase_date, '9998-12-31', 0  ))
-    conn.commit()
-    conn.close()
-
 def get_proc_date_from_processing_date_table():
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    proc_dates = {}
-    cursor.execute(f"SELECT DISTINCT PROC_TYP_CD, PROC_DATE, NEXT_PROC_DATE, PREV_PROC_DATE FROM PROCESSING_DATE;")
-    rows = cursor.fetchall()
-    conn.close()
-    if rows:
-        for row in rows:
-            proc_dates[row[0]] = row
-    return jsonify(proc_dates)
+    processing_date_data = fetch_queries_as_dictionaries(f"""
+SELECT DISTINCT
+    PROC_TYP_CD
+    ,PROC_DATE
+    ,NEXT_PROC_DATE
+    ,PREV_PROC_DATE
+FROM
+PROCESSING_DATE;
+    """)
+    return processing_date_data
 
 def create_processing_date_table():
     conn = sqlite3.connect(db_path)
@@ -294,57 +264,83 @@ def create_processing_type_table():
 def create_metadata_process_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS METADATA_PROCESS (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            PROCESS_NAME TEXT,
-            PROCESS_TYPE TEXT,
-            PROC_TYP_CD_LIST TEXT,
-            INPUT_VIEW TEXT,
-            TARGET_TABLE TEXT,
-            PROCESS_DESCRIPTION TEXT,
-            AUTO_TRIGGER_ON_LAUNCH INTEGER,
-            PROCESS_DECOMMISSIONED INTEGER,
-            FREQUENCY TEXT,
-            DEFAULT_START_DATE_TYPE_CD TEXT
-        );''')
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS METADATA_PROCESS
+(
+    ID                         INTEGER PRIMARY KEY AUTOINCREMENT,
+    OUT_PROCESS_NAME           TEXT,
+    PROCESS_TYPE               TEXT,
+    PROC_TYP_CD_LIST           TEXT,
+    INPUT_VIEW                 TEXT,
+    TARGET_TABLE               TEXT,
+    PROCESS_DESCRIPTION        TEXT,
+    AUTO_TRIGGER_ON_LAUNCH     INTEGER,
+    PROCESS_DECOMMISSIONED     INTEGER,
+    FREQUENCY                  TEXT,
+    DEFAULT_START_DATE_TYPE_CD TEXT,
+    PROCESSING_DATE            DATE,
+    PREVIOUS_PROCESSING_DATE   DATE,
+    NEXT_PROCESSING_DATE       DATE,
+    UPDATE_PROCESS_NAME        TEXT,
+    UPDATE_PROCESS_ID          INTEGER,
+    PROCESS_NAME               TEXT,
+    PROCESS_ID                 INTEGER,
+    START_DATE                 DATE,
+    END_DATE                   DATE,
+    RECORD_DELETED_FLAG        INTEGER DEFAULT 0
+);
+    """)
     conn.close()
 
 def create_metadata_process_group_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS METADATA_PROCESS_GROUP (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            PROCESS_GROUP TEXT,
-            PROCESS_NAME TEXT,
-            CONSIDER_FOR_PROCESS INTEGER
-        );''')
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS METADATA_PROCESS_GROUP
+(
+    ID                       INTEGER PRIMARY KEY AUTOINCREMENT,
+    PROCESS_GROUP            TEXT,
+    OUT_PROCESS_NAME         TEXT,
+    CONSIDER_FOR_PROCESSING  INTEGER,
+    EXECUTION_ORDER          INTEGER,
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER DEFAULT 0
+);
+    """)
     conn.close()
 
 def create_execution_logs_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS EXECUTION_LOGS (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            PROCESS_NAME TEXT,
-            PROCESS_ID INTEGER,
-            STATUS TEXT,
-            LOG TEXT,
-            PROCESSING_START_DATE DATE,
-            PROCESSING_END_DATE DATE,
-            PAYLOAD_COUNT INTEGER,
-            INSERTED_COUNT INTEGER,
-            UPDATED_COUNT INTEGER,
-            DELETED_COUNT INTEGER,
-            NO_CHANGE_COUNT INTEGER,
-            SKIPPED_COUNT INTEGER,
-            NULL_COUNT INTEGER,
-            SKIPPED_DUE_TO_SCHEMA TEXT,
-            START_TS TEXT,
-            END_TS TEXT
-        );''')
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS EXECUTION_LOGS (
+    ID                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    PROCESS_NAME          TEXT,
+    PROCESS_ID            INTEGER,
+    STATUS                TEXT,
+    LOG                   TEXT,
+    PROCESSING_START_DATE DATE,
+    PROCESSING_END_DATE   DATE,
+    PAYLOAD_COUNT         INTEGER,
+    INSERTED_COUNT        INTEGER,
+    UPDATED_COUNT         INTEGER,
+    DELETED_COUNT         INTEGER,
+    NO_CHANGE_COUNT       INTEGER,
+    SKIPPED_COUNT         INTEGER,
+    NULL_COUNT            INTEGER,
+    SKIPPED_DUE_TO_SCHEMA TEXT,
+    START_TS              TEXT,
+    END_TS                TEXT
+);
+    """)
     conn.close()
 
 def update_proc_date_in_processing_date_table(proc_typ_cd, proc_date, next_proc_date, prev_proc_date):
@@ -368,24 +364,30 @@ def get_all_tables_list():
     return
 
 def get_max_value_date_for_alt_symbol(process_flag = None, consider_for_returns = None, portfolio_type = None):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    if consider_for_returns and portfolio_type:
-        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.CONSIDER_FOR_RETURNS = {consider_for_returns} AND MS.PORTFOLIO_TYPE = '{portfolio_type}' GROUP BY 1,2,3,4;")
-    elif process_flag:
-        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.PROCESS_FLAG = {process_flag} GROUP BY 1,2,3,4;")
-    elif consider_for_returns:
-        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.CONSIDER_FOR_RETURNS = {consider_for_returns} GROUP BY 1,2,3,4;")
-    elif portfolio_type:
-        cursor.execute(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.PORTFOLIO_TYPE = '{portfolio_type}' GROUP BY 1,2,3,4;")
-    else:
-        cursor.execute("SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL GROUP BY 1,2,3,4;")
-    rows = cursor.fetchall()
-    conn.close()
-    if rows:
-        max_value_date_data = [{'alt_symbol' : row[0],'exchange_symbol': row[1], 'yahoo_symbol': row[2], 'portfolio_type': row[3], 'max_value_date': row[4] or None } for row in rows]
-        return jsonify(max_value_date_data)
-    return [{'alt_symbol' : None,'exchange_symbol': None, 'yahoo_symbol': None, 'portfolio_type': None, 'max_value_date': None }]
+    process_flag_filter         = f"AND MS.PROCESS_FLAG         = '{process_flag}'"         if process_flag         else ""
+    consider_for_returns_filter = f"AND MS.CONSIDER_FOR_RETURNS = '{consider_for_returns}'" if consider_for_returns else ""
+    portfolio_type_filter       = f"AND MS.PORTFOLIO_TYPE       = '{portfolio_type}'"       if portfolio_type       else ""
+    max_value_date_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    MS.ALT_SYMBOL
+    ,MS.EXCHANGE_SYMBOL
+    ,MS.YAHOO_SYMBOL
+    ,MS.PORTFOLIO_TYPE
+    ,MAX(PT.VALUE_DATE) AS MAX_VALUE_DATE
+FROM
+    METADATA_STORE MS
+LEFT OUTER JOIN
+    PRICE_TABLE PT
+ON
+    MS.ALT_SYMBOL = PT.ALT_SYMBOL
+WHERE
+    1 = 1
+    {process_flag_filter}
+    {consider_for_returns_filter}
+    {portfolio_type_filter}
+GROUP BY 1,2,3,4;
+    """)
+    return max_value_date_data
 
 def get_max_value_date_by_portfolio_type(portfolio_type = None):
     if portfolio_type:
@@ -488,16 +490,25 @@ def create_consolidated_portfolio_views_in_db():
 def create_holiday_date_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS HOLIDAY_DATES (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            HOLIDAY_DATE DATE,
-            HOLIDAY_NAME VARCHAR(200),
-            HOLIDAY_DAY VARCHAR(20),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS HOLIDAY_DATES
+(
+    ID                       INTEGER       PRIMARY KEY AUTOINCREMENT,
+    HOLIDAY_DATE             DATE,
+    HOLIDAY_NAME             VARCHAR (200),
+    HOLIDAY_DAY              VARCHAR (20),
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER       DEFAULT 0
+);
+    """)
     
 def insert_into_holiday_dates_table(holiday_date, holiday_name, holiday_day):
     conn = sqlite3.connect(db_path)
@@ -508,19 +519,21 @@ def insert_into_holiday_dates_table(holiday_date, holiday_name, holiday_day):
     conn.close()
 
 def get_holiday_date_from_holiday_dates_table(current_year = '1900'):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    if current_year:
-        cursor.execute(f"SELECT HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY FROM HOLIDAY_DATES WHERE RECORD_DELETED_FLAG = 0 AND START_DATE >= '{current_year}-01-01' ORDER BY HOLIDAY_DATE;")
-    else:
-        cursor.execute(f"SELECT HOLIDAY_DATE, HOLIDAY_NAME, HOLIDAY_DAY FROM HOLIDAY_DATES WHERE RECORD_DELETED_FLAG = 0 ORDER BY HOLIDAY_DATE;")
-    rows = cursor.fetchall()
-    conn.close()
-    if rows:
-        data = [{'holiday_date': row[0], 'holiday_name': row[1], 'holiday_day': row[2]} for row in rows]
-        return jsonify(data)
-    data = [{'holiday_date': None, 'holiday_name': None, 'holiday_day': None}]
-    return jsonify(data)
+    current_year_filter = f"AND HOLIDAY_DATE >= '{current_year}-01-01'" if current_year else ""
+    holiday_date_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    HOLIDAY_DATE
+    ,HOLIDAY_NAME
+    ,HOLIDAY_DAY
+FROM
+    HOLIDAY_DATES
+WHERE
+    1 = 1
+    AND RECORD_DELETED_FLAG = 0
+    {current_year_filter}
+    ORDER BY HOLIDAY_DATE;
+    """)
+    return holiday_date_data
 
 def truncate_holiday_calendar_table():
     conn = sqlite3.connect(db_path)
@@ -560,16 +573,25 @@ def insert_into_holiday_calendar_table(counter_date, counter_day, next_counter_d
 def create_working_date_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS WORKING_DATES (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            WORKING_DATE DATE,
-            WORKING_DAY_NAME VARCHAR(200),
-            WORKING_DAY VARCHAR(20),
-            START_DATE DATE,
-            END_DATE DATE,
-            RECORD_DELETED_FLAG INTEGER
-        )''')
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS WORKING_DATES
+(
+    ID                       INTEGER       PRIMARY KEY AUTOINCREMENT,
+    WORKING_DATE             DATE,
+    WORKING_DAY_NAME         VARCHAR (200),
+    WORKING_DAY              VARCHAR (20),
+    PROCESSING_DATE          DATE,
+    PREVIOUS_PROCESSING_DATE DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    UPDATE_PROCESS_NAME      TEXT,
+    UPDATE_PROCESS_ID        INTEGER,
+    PROCESS_NAME             TEXT,
+    PROCESS_ID               INTEGER,
+    START_DATE               DATE,
+    END_DATE                 DATE,
+    RECORD_DELETED_FLAG      INTEGER       DEFAULT 0
+);
+    """)
     
 def insert_into_working_date_table(working_date, working_day_name, working_day):
     conn = sqlite3.connect(db_path)
@@ -3345,7 +3367,7 @@ def get_component_info_from_db(component = None):
 def insert_into_metadata_process_group_table(process_group, process_name):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO METADATA_PROCESS_GROUP (PROCESS_GROUP, PROCESS_NAME, CONSIDER_FOR_PROCESS) VALUES (?, ?, ?)",
+    cursor.execute("INSERT INTO METADATA_PROCESS_GROUP (PROCESS_GROUP, PROCESS_NAME, CONSIDER_FOR_PROCESSING) VALUES (?, ?, ?)",
                    (process_group, process_name, 1))
     conn.commit()
     conn.close()
@@ -3378,7 +3400,7 @@ FROM
 LEFT OUTER JOIN
     HOLIDAY_CALENDAR HC
 ON
-    HC.PROCESSING_DATE        <= (SELECT DISTINCT HC.PREVIOUS_PROCESSING_DATE FROM HOLIDAY_CALENDAR HC WHERE HC.PROCESSING_DATE = CURRENT_DATE)
+    HC.PROCESSING_DATE        <= CURRENT_DATE
     AND HC.PROCESSING_DATE    >= META.LAUNCHED_ON
     AND HC.PROCESSING_DATE    >= STRFTIME('%Y-01-01')
     AND HC.RECORD_DELETED_FLAG = 0

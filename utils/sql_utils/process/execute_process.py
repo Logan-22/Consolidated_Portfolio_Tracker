@@ -25,8 +25,8 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
         log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
 
     # Get process metadata and validate
-    process_metadata_row = fetch_queries_as_dictionaries(f"SELECT * FROM METADATA_PROCESS WHERE PROCESS_NAME = '{process_name}';")
-    if not process_metadata_row[0]['PROCESS_NAME']:
+    process_metadata_row = fetch_queries_as_dictionaries(f"SELECT * FROM METADATA_PROCESS WHERE OUT_PROCESS_NAME = '{process_name}';")
+    if not process_metadata_row[0]['OUT_PROCESS_NAME']:
         message = f'Process {process_name} is Not Present in METADATA_PROCESS table'
         update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
         return({'message': message, 'status': 'Failed'})

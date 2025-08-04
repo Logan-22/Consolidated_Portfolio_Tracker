@@ -160,10 +160,10 @@ const max_value_date_response = await fetch ('/api/price_table/max_value_date?pr
 const max_value_date_data_from_response = await max_value_date_response.json();
 
 max_value_date_data_from_response.max_value_date_data.forEach(async element=> {
-const alt_symbol      = element.alt_symbol
+const alt_symbol      = element['ALT_SYMBOL']
 let start_date        = ""
-if(element.max_value_date){
-start_date = element.max_value_date
+if(element['MAX_VALUE_DATE']){
+start_date = element['MAX_VALUE_DATE']
 }
 else{
 const week_before = new Date();
@@ -175,9 +175,9 @@ const week_before_day   = String(week_before.getDate()).padStart(2, '0');
 const week_before_date = `${week_before_year}-${week_before_month}-${week_before_day}`
 start_date             = week_before_date
 }
-const yahoo_symbol    = element.yahoo_symbol
-const exchange_symbol = element.exchange_symbol
-const portfolio_type  = element.portfolio_type
+const yahoo_symbol    = element['YAHOO_SYMBOL']
+const exchange_symbol = element['EXCHANGE_SYMBOL']
+const portfolio_type  = element['PORTFOLIO_TYPE']
 
 const formData = new FormData();
 formData.append('alt_symbol', alt_symbol);

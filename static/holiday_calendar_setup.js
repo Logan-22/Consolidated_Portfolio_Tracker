@@ -7,27 +7,27 @@ import { create_notification } from './create_notification.js'
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('holiday_date_setup_form')) {
-    init_holiday_table();
+    init_holiday_table()
   }
 });
 
 async function init_holiday_table(){
 
-const today = new Date();
-const current_year = today.getFullYear();
+const today = new Date()
+const current_year = today.getFullYear()
 
 const get_current_year_holiday_response = await fetch (`/api/holiday_date?current_year=${current_year}`, {
   method: 'GET'
 })
 
-const get_current_year_holiday_data = await get_current_year_holiday_response.json();
+const get_current_year_holiday_data = await get_current_year_holiday_response.json()
 
 if(get_current_year_holiday_data.status === "Success"){
     const holiday_table = document.getElementById('holiday_table')
     holiday_table.innerHTML = "<tr><th class='color-accent'>Holiday Date</th><th class='color-accent'>Holiday Name</th><th class='color-accent'>Holiday Day</th></tr>"
 
     get_current_year_holiday_data.data.forEach(element => {
-    holiday_table.innerHTML += `<tr><td>${element.holiday_date}</td><td>${element.holiday_name}</td><td>${element.holiday_day}</td></tr>`
+    holiday_table.innerHTML += `<tr><td>${element['HOLIDAY_DATE']}</td><td>${element['HOLIDAY_NAME']}</td><td>${element['HOLIDAY_DAY']}</td></tr>`
 })
 holiday_table.innerHTML += "</table>"
 }
@@ -41,8 +41,8 @@ document.getElementById('holiday_date_setup_form').addEventListener('submit', as
 e.preventDefault();
 
 
-const holiday_date = document.getElementById('holiday_date').value;
-const holiday_name = document.getElementById('holiday_name').value;
+const holiday_date = document.getElementById('holiday_date').value
+const holiday_name = document.getElementById('holiday_name').value
 
 const holiday = new Date(holiday_date)
 const day = holiday.getDay()
@@ -58,20 +58,24 @@ switch (day) {
   case 6: holiday_day = "Saturday";  break;
 }
 
-const formData = new FormData();
-formData.append('holiday_date', holiday_date);
-formData.append('holiday_name', holiday_name);
-formData.append('holiday_day', holiday_day);
+const holiday_date_payload = {
+'HOLIDAY_DATE'  : holiday_date
+,'HOLIDAY_NAME' : holiday_name
+,'HOLIDAY_DAY'  : holiday_day
+}
+
+const formData = new FormData()
+formData.append('holiday_date_payload', JSON.stringify(holiday_date_payload))
 
 const post_holiday_response = await fetch(`/api/holiday_date/`, {
 method: 'POST',
 body: formData
 })
 
-const post_holiday_data = await post_holiday_response.json();
+const post_holiday_data = await post_holiday_response.json()
 
 if(post_holiday_data.status === "Success"){
-    document.getElementById("holiday_date_setup_form").reset();
+    document.getElementById("holiday_date_setup_form").reset()
     init_holiday_table()
 }
 
@@ -83,8 +87,8 @@ create_notification(post_holiday_data.message, post_holiday_data.status)
 document.getElementById('working_date_setup_form').addEventListener('submit', async function (e) {
 e.preventDefault();
 
-const working_date     = document.getElementById('working_date').value;
-const working_day_name = document.getElementById('working_day_name').value;
+const working_date     = document.getElementById('working_date').value
+const working_day_name = document.getElementById('working_day_name').value
 
 const working = new Date(working_date)
 const day = working.getDay()
@@ -101,10 +105,14 @@ switch (day) {
   case 6: working_day = "Saturday";  break;
 }
 
+const working_date_payload = {
+'WORKING_DATE'  : working_date
+,'WORKING_DAY_NAME' : working_day_name
+,'WORKING_DAY'  : working_day
+}
+
 const formData = new FormData();
-formData.append('working_date', working_date);
-formData.append('working_day_name', working_day_name);
-formData.append('working_day', working_day);
+formData.append('working_date_payload', JSON.stringify(working_date_payload))
 
 const post_working_day_response = await fetch(`/api/working_date/`, {
 method: 'POST',

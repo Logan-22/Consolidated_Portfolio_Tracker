@@ -6,51 +6,28 @@
     <div>
     <form id = "processing_date_form">
 
-    <label for = "mf_proc_typ_cd">
-    <b name = "mf_proc_typ_cd">Processing Type Code for Mutual Funds</b></label></br>
+    {% for type, label in [
+    ("mf", "Mutual Funds"),
+    ("ppf_mf", "Parag Parikh Mutual Fund"),
+    ("stock", "Stocks"),
+    ("sim_mf", "Simulated Mutual Funds"),
+    ("sim_stock", "Simulated Stocks")
+    ] %}
+    <b name = "{{ type }}_proc_typ_cd" class = "card-title">Processing Type Code for {{ label }}</b></label></br></br>
 
-    <label for = "mf_proc_date">
-    <b>Mutual Fund Processing Date</b></label></br>
-    <input type = "date" id = "mf_proc_date" name = "mf_proc_date" autocomplete="off"></br>
+    <label for = "{{ type }}_proc_date">
+    <b>{{ label }} Processing Date</b></label></br>
+    <input type = "date" id = "{{ type }}_proc_date" name = "{{ type }}_proc_date" autocomplete="off"></br>
     
-    <label for = "mf_next_proc_date">
-    <b>Mutual Fund Next Processing Date</b></label></br>
-    <input type = "date" id = "mf_next_proc_date" name = "mf_next_proc_date" autocomplete="off"></br>
+    <label for = "{{ type }}_next_proc_date">
+    <b>{{ label }} Next Processing Date</b></label></br>
+    <input type = "date" id = "{{ type }}_next_proc_date" name = "{{ type }}_next_proc_date" autocomplete="off"></br>
     
-    <label for = "mf_prev_proc_date">
-    <b>Mutual Fund Previous Processing Date</b></label></br>
-    <input type = "date" id = "mf_prev_proc_date" name = "mf_prev_proc_date" autocomplete="off"></br>
-    
-    <label for = "ppf_mf_proc_typ_cd">
-    <b name = "ppf_mf_proc_typ_cd">Processing Type Code for Parag Parikh Mutual Fund</b></label></br>
+    <label for = "{{ type }}_prev_proc_date">
+    <b>{{ label }} Previous Processing Date</b></label></br>
+    <input type = "date" id = "{{ type }}_prev_proc_date" name = "{{ type }}_prev_proc_date" autocomplete="off"></br>
 
-    <label for = "ppf_mf_proc_date">
-    <b>Parag Parikh Mutual Fund Processing Date</b></label></br>
-    <input type = "date" id = "ppf_mf_proc_date" name = "ppf_mf_proc_date" autocomplete="off"></br>
-    
-    <label for = "ppf_mf_next_proc_date">
-    <b>Parag Parikh Mutual Fund Next Processing Date</b></label></br>
-    <input type = "date" id = "ppf_mf_next_proc_date" name = "ppf_mf_next_proc_date" autocomplete="off"></br>
-    
-    <label for = "ppf_mf_prev_proc_date">
-    <b>Parag Parikh Mutual Fund Previous Processing Date</b></label></br>
-    <input type = "date" id = "ppf_mf_prev_proc_date" name = "ppf_mf_prev_proc_date" autocomplete="off"></br>
-   
-    <label for = "stock_proc_typ_cd">
-    <b name = "stock_proc_typ_cd">Processing Type Code for Stocks</b></label></br>
-
-    <label for = "stock_proc_date">
-    <b>Stock Processing Date</b></label></br>
-    <input type = "date" id = "stock_proc_date" name = "stock_proc_date" autocomplete="off"></br>
-    
-    <label for = "stock_next_proc_date">
-    <b>Stocks Next Processing Date</b></label></br>
-    <input type = "date" id = "stock_next_proc_date" name = "stock_next_proc_date" autocomplete="off"></br>
-    
-    <label for = "stock_prev_proc_date">
-    <b>Stocks Previous Processing Date</b></label></br>
-    <input type = "date" id = "stock_prev_proc_date" name = "stock_prev_proc_date" autocomplete="off"></br>
-      
+    {% endfor %}
     <button type = "submit" class = "submit">Update Processing Dates</button>
     </form>
     </div>

@@ -23,9 +23,9 @@ mutual_fund_symbol_data = await mutual_fund_symbol_response.json();
 const exchange_symbol = document.getElementById('exchange_symbol')
 const alt_symbol      = document.getElementById('alt_symbol')
 mutual_fund_symbol_data.all_symbols_list.forEach((element, index) => {
-exchange_symbol.innerHTML += `<option id = "options">${element.exchange_symbol}</option>`
+exchange_symbol.innerHTML += `<option id = "options">${element['EXCHANGE_SYMBOL']}</option>`
 if(index == 0){
-alt_symbol.value = element.alt_symbol
+alt_symbol.value = element['ALT_SYMBOL']
   }
 });
 }
@@ -34,9 +34,9 @@ document.getElementById('exchange_symbol').addEventListener('change', e => {
 const exchange_symbol = document.getElementById('exchange_symbol').value
 const alt_symbol      = document.getElementById('alt_symbol')
 mutual_fund_symbol_data.all_symbols_list.forEach(element => {
-if(exchange_symbol == element.exchange_symbol){
-alt_symbol.value = element.alt_symbol
-  }
+if(exchange_symbol == element['EXCHANGE_SYMBOL']){
+alt_symbol.value = element['ALT_SYMBOL']
+}
 });
 })
 
@@ -58,11 +58,11 @@ method: 'GET'
 const price_lookup_data = await price_lookup_response.json();
 if (price_lookup_data.price_data.length > 1){
 create_notification(`Duplicate Price Entries present for ${alt_symbol} on ${purchase_date} in PRICE_TABLE`, 'duplicate_issue')
-}else if (! price_lookup_data.price_data[0].price){
+}else if (! price_lookup_data.price_data['PRICE']){
 create_notification(`No Price Entries present for ${alt_symbol} on ${purchase_date} in PRICE_TABLE`, 'error')
 }
 else{
-const price_during_purchase = price_lookup_data.price_data[0].price
+const price_during_purchase = price_lookup_data.price_data['PRICE']
 
 const units = amc_amount/price_during_purchase
 
@@ -89,20 +89,20 @@ create_notification(mf_order_data.message, mf_order_data.status)
 
 // Reprocess the MF Returns, Consolidated Returns and Simulated Returns from Fund Purchase Date
 
-const mf_returns_response = await fetch (`/api/process_mf_returns/?start_date=${purchase_date}`, {
-  method: 'GET'
-})
+// const mf_returns_response = await fetch (`/api/process_mf_returns/?start_date=${purchase_date}`, {
+//   method: 'GET'
+// })
 
-const mf_returns_data = await mf_returns_response.json();
+// const mf_returns_data = await mf_returns_response.json();
 
-create_notification(mf_returns_data.message, mf_returns_data.status)
+// create_notification(mf_returns_data.message, mf_returns_data.status)
 
-const process_simulate_returns_response = await fetch(`/api/process_simulate_returns/?start_date=${purchase_date}`, {
-method: 'GET'
-})
+// const process_simulate_returns_response = await fetch(`/api/process_simulate_returns/?start_date=${purchase_date}`, {
+// method: 'GET'
+// })
 
-const process_simulate_returns_data = await process_simulate_returns_response.json();
+// const process_simulate_returns_data = await process_simulate_returns_response.json();
 
-create_notification(process_simulate_returns_data.message, process_simulate_returns_data.status)
+// create_notification(process_simulate_returns_data.message, process_simulate_returns_data.status)
 }
 })

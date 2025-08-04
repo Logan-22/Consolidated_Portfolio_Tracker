@@ -28,11 +28,11 @@ const alt_symbol      = document.getElementById('alt_symbol')
 const portfolio_type  = document.getElementById('portfolio_type')
 
 all_symbols_data.all_symbols_list.forEach((element,index) => {
-exchange_symbol.innerHTML += `<option id = "options">${element.exchange_symbol}</option>`
+exchange_symbol.innerHTML += `<option id = "options">${element['EXCHANGE_SYMBOL']}</option>`
 if(index == 0){
-yahoo_symbol.value   = element.yahoo_symbol
-alt_symbol.value     = element.alt_symbol
-portfolio_type.value = element.portfolio_type
+yahoo_symbol.value   = element['YAHOO_SYMBOL']
+alt_symbol.value     = element['ALT_SYMBOL']
+portfolio_type.value = element['PORTFOLIO_TYPE']
 }
 });
 }
@@ -44,10 +44,10 @@ e.preventDefault();
 let exchange_symbol   = document.getElementById('exchange_symbol').value;
 
 all_symbols_data.all_symbols_list.forEach(element => {
-if(exchange_symbol == element.exchange_symbol){
-yahoo_symbol.value   = element.yahoo_symbol
-alt_symbol.value     = element.alt_symbol
-portfolio_type.value = element.portfolio_type
+if(exchange_symbol == element['EXCHANGE_SYMBOL']){
+yahoo_symbol.value   = element['YAHOO_SYMBOL']
+alt_symbol.value     = element['ALT_SYMBOL']
+portfolio_type.value = element['PORTFOLIO_TYPE']
 }
 });
 })

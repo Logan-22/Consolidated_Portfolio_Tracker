@@ -18,84 +18,14 @@ create_processing_type_table,\
 create_metadata_process_table,\
 create_execution_logs_table,\
 create_holiday_date_table,\
-create_mf_portfolio_views_in_db,\
-get_price_from_price_table,\
-get_proc_date_from_processing_date_table,\
-update_proc_date_in_processing_date_table,\
-get_max_value_date_for_alt_symbol,\
-duplicate_check_on_price_table,\
-insert_into_holiday_dates_table,\
-get_holiday_date_from_holiday_dates_table,\
-truncate_holiday_calendar_table,\
-create_holiday_calendar_table,\
-insert_into_holiday_calendar_table,\
 create_working_date_table,\
-insert_into_working_date_table,\
-get_working_date_from_working_dates_table,\
-get_first_purchase_date_from_mf_order_date_table,\
-truncate_mf_hist_returns_table,\
-create_mf_hist_returns_table,\
-get_date_setup_from_holiday_calendar,\
-get_metrics_from_fin_mutual_fund_portfolio_view,\
-insert_into_mf_hist_returns,\
-get_mf_returns,\
-get_max_next_proc_date_from_mf_hist_returns_table,\
-get_all_symbols_list_from_metadata_store,\
-upsert_trade_entry_in_db,\
+create_holiday_calendar_table,\
 create_trade_table,\
 create_fee_table,\
-upsert_fee_entry_in_db,\
-create_stock_portfolio_views_in_db,\
-get_realised_intraday_and_swing_stock_returns,\
-truncate_realised_intraday_stock_hist_returns_table,\
-create_realised_intraday_stock_hist_returns_table,\
-insert_into_realised_intraday_stock_hist_returns,\
-get_max_trade_date_from_realised_intraday_stock_hist_returns_table,\
-get_open_trades_from_trades_table,\
 create_close_trades_table,\
-insert_into_close_trades_table,\
-truncate_realised_swing_stock_hist_returns_table,\
-create_realised_swing_stock_hist_returns_table,\
-insert_into_realised_swing_stock_hist_returns,\
-get_max_trade_close_date_from_realised_swing_stock_hist_returns_table,\
-truncate_unrealised_swing_stock_hist_returns_table,\
-create_unrealised_swing_stock_hist_returns_table,\
-get_first_swing_trade_date_from_trades_table,\
-get_metrics_from_fin_stock_swing_unrealised_portfolio_view,\
-insert_into_unrealised_swing_stock_hist_returns,\
-get_unrealised_swing_stock_returns,\
-get_max_next_proc_date_from_unrealised_swing_stock_hist_returns_table,\
-create_consolidated_portfolio_views_in_db,\
-truncate_consolidated_hist_returns_table,\
-create_consolidated_hist_returns_table,\
-get_first_purchase_date_from_all_portfolios,\
-get_metrics_from_fin_consolidated_portfolio_view,\
-insert_into_consolidated_hist_returns,\
-get_metrics_from_agg_consolidated_portfolio_view,\
-truncate_agg_consolidated_hist_returns_table,\
-create_agg_consolidated_hist_returns_table,\
-insert_into_agg_consolidated_hist_returns,\
-get_consolidated_hist_returns_from_consolidated_hist_returns_table,\
-get_max_next_proc_date_from_consolidated_hist_returns_table,\
-get_max_proc_date_from_all_hist_tables,\
-get_all_from_consolidated_returns_table,\
-get_max_next_proc_date_from_consolidated_hist_allocation_table,\
-truncate_consolidated_hist_allocation_table,\
-create_consolidated_hist_allocation_table,\
-truncate_agg_consolidated_hist_allocation_table,\
-create_agg_consolidated_hist_allocation_table,\
-truncate_consolidated_hist_allocation_portfolio_table,\
-create_consolidated_hist_allocation_portfolio_table,\
-get_metrics_from_agg_consolidated_allocation_view_and_insert_into_agg_consolidated_allocation_table,\
-get_metrics_from_fin_consolidated_allocation_view_and_insert_into_fin_consolidated_allocation_table,\
-get_metrics_from_fin_consolidated_allocation_portfolio_view_and_insert_into_fin_consolidated_allocation_portfolio_table,\
-get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table,\
-get_all_from_consolidated_hist_allocation_table,\
-create_simulated_portfolio_views_in_db,\
 create_simulated_portfolio_table,\
 create_agg_simulated_portfolio_table,\
 create_fin_simulated_portfolio_table,\
-get_simulated_returns_from_fin_simulated_returns_table,\
 create_metadata_process_group_table,\
 create_mutual_fund_returns_table,\
 create_agg_mutual_fund_returns_table,\
@@ -115,10 +45,29 @@ create_fin_consolidated_returns_table,\
 create_consolidated_allocation_table,\
 create_agg_consolidated_allocation_table,\
 create_fin_consolidated_allocation_table,\
+create_mf_portfolio_views_in_db,\
+create_stock_portfolio_views_in_db,\
+create_consolidated_portfolio_views_in_db,\
+create_simulated_portfolio_views_in_db,\
+get_price_from_price_table,\
+get_proc_date_from_processing_date_table,\
+update_proc_date_in_processing_date_table,\
+get_max_value_date_for_alt_symbol,\
+duplicate_check_on_price_table,\
+get_holiday_date_from_holiday_dates_table,\
+get_working_date_from_working_dates_table,\
+get_date_setup_from_holiday_calendar,\
+get_mf_returns,\
+get_all_symbols_list_from_metadata_store,\
+get_realised_intraday_and_swing_stock_returns,\
+get_open_trades_from_trades_table,\
+get_unrealised_swing_stock_returns,\
+get_consolidated_hist_returns_from_consolidated_hist_returns_table,\
+get_all_from_consolidated_returns_table,\
+get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table,\
+get_all_from_consolidated_hist_allocation_table,\
+get_simulated_returns_from_fin_simulated_returns_table,\
 get_component_info_from_db,\
-insert_into_metadata_process_group_table,\
-insert_into_metadata_process_table,\
-insert_into_metadata_key_columns_table,\
 get_missing_prices_from_price_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
@@ -313,18 +262,9 @@ def create_managed_tables():
         create_holiday_date_table()
         create_working_date_table()
         create_holiday_calendar_table()
-        create_mf_hist_returns_table()
         create_trade_table()
         create_fee_table()
-        create_realised_intraday_stock_hist_returns_table()
         create_close_trades_table()
-        create_realised_swing_stock_hist_returns_table()
-        create_unrealised_swing_stock_hist_returns_table()
-        create_consolidated_hist_returns_table()
-        create_agg_consolidated_hist_returns_table()
-        create_consolidated_hist_allocation_table()
-        create_agg_consolidated_hist_allocation_table()
-        create_consolidated_hist_allocation_portfolio_table()
         create_metadata_key_columns_table()
         create_simulated_portfolio_table()
         create_agg_simulated_portfolio_table()
@@ -352,7 +292,7 @@ def create_managed_tables():
         create_fin_consolidated_allocation_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'}) 
+        return jsonify({'message': repr(e), 'status': 'Failed'})
 
 @api.route('/api/holiday_date/', methods = ['POST'])
 def holiday_date_entry():
@@ -395,8 +335,7 @@ def working_date_entry():
 def working_date_lookup():
     try:
         data = get_working_date_from_working_dates_table()
-        data = data.get_json()
-        if data[0]['working_date']:
+        if data[0]['WORKING_DATE']:
             return jsonify({'data': data,'message': 'Successfully retrieved from WORKING_DATES Table','status': 'Success'})
         else:
             return jsonify({'data': [],'message': 'No records present in WORKING_DATES Table','status': 'Success'})
@@ -437,12 +376,12 @@ def holiday_calendar_setup():
                 prev_counter_day = convert_weekday_from_int_to_char(prev_counter_date.weekday())
                 
                 holiday_computed_payload = {
-                    'PROCESSING_DATE'          :  counter_date.strftime('%Y-%m-%d')
-                    ,'PROCESSING_DAY'          : counter_day
-                    ,'NEXT_PROCESSING_DATE'    : next_counter_date.strftime('%Y-%m-%d')
+                    'PROCESSING_DATE'           : counter_date.strftime('%Y-%m-%d')
+                    ,'PROCESSING_DAY'           : counter_day
+                    ,'NEXT_PROCESSING_DATE'     : next_counter_date.strftime('%Y-%m-%d')
                     ,'NEXT_PROCESSING_DAY'      : next_counter_day
                     ,'PREVIOUS_PROCESSING_DATE' : prev_counter_date.strftime('%Y-%m-%d')
-                    ,'PREVIOUS_PROCESSING_DAY' : prev_counter_day
+                    ,'PREVIOUS_PROCESSING_DAY'  : prev_counter_day
                 }
                 holiday_payloads.append(holiday_computed_payload)
             counter_date = counter_date + timedelta(days = 1)
@@ -478,8 +417,7 @@ def process_mf_returns():
 def mf_returns_lookup():
     try:
         data = get_mf_returns()
-        data = data.get_json()
-        return jsonify({'data': data,'message': 'Successfully retrieved Mutual Fund Returns','status': 'Success'})
+        return jsonify({'data': data, 'message': 'Successfully retrieved Mutual Fund Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -829,7 +767,6 @@ def upsert_trade_entry():
 def realised_stock_returns_lookup():
     try:
         data = get_realised_intraday_and_swing_stock_returns()
-        data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from REALISED_INTRADAY_STOCK_HIST_RETURNS and REALISED_SWING_STOCK_HIST_RETURNS Tables','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -925,7 +862,6 @@ def process_unrealised_swing_stock_returns():
 def unrealised_stock_returns_lookup():
     try:
         data = get_unrealised_swing_stock_returns()
-        data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved Unrealised Swing Stock Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -953,43 +889,15 @@ def process_consolidated_returns():
 def consolidated_hist_returns_lookup():
     try:
         data = get_consolidated_hist_returns_from_consolidated_hist_returns_table()
-        data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
-
-@api.route('/api/consolidated_hist_returns/max_next_proc_date/', methods = ['GET'])
-def consolidated_hist_returns_max_proc_date():
-    try:
-        max_proc_date = get_max_next_proc_date_from_consolidated_hist_returns_table()
-        max_proc_date = max_proc_date.get_json()
-        return jsonify({'data': max_proc_date,'message': 'Successfully retrieved Max Processing Date from CONSOLIDATED_HIST_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-
-@api.route('/api/hist_returns_tables/max_processing_date/', methods = ['GET'])
-def get_max_processing_date_from_all_hist_returns_table():
-    try:
-        min_of_max_proc_date = get_max_proc_date_from_all_hist_tables()
-        min_of_max_proc_date = min_of_max_proc_date.get_json()
-        return jsonify({'max_proc_date_data':min_of_max_proc_date, 'message': "Successfully retrieved Maximum Processing Date data from all Historic Returns table", 'status': "Success"})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
 
 @api.route('/api/consolidated_hist_returns/all/', methods = ['GET'])
 def consolidated_hist_returns_fetch_all():
     try:
         data = get_all_from_consolidated_returns_table()
         return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS and AGG_CONSOLIDATED_RETURNS Table','status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
-
-@api.route('/api/consolidated_hist_allocation/max_next_proc_date/', methods = ['GET'])
-def consolidated_hist_allocation_max_next_proc_date():
-    try:
-        max_proc_date = get_max_next_proc_date_from_consolidated_hist_allocation_table()
-        max_proc_date = max_proc_date.get_json()
-        return jsonify({'data': max_proc_date,'message': 'Successfully retrieved Max Processing Date from CONSOLIDATED_ALLOCATION_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -1016,7 +924,6 @@ def process_consolidated_hist_allocation():
 def consolidated_hist_allocation_portfolio_lookup():
     try:
         data = get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table()
-        data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved Historic Allocation from CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -1025,7 +932,6 @@ def consolidated_hist_allocation_portfolio_lookup():
 def consolidated_hist_allocation_fetch_all():
     try:
         data = get_all_from_consolidated_hist_allocation_table()
-        data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_ALLOCATION, CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO and AGG_CONSOLIDATED_ALLOCATION Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -1053,7 +959,6 @@ def process_simulated_returns():
 def fetch_simulated_returns():
     try:
         data = get_simulated_returns_from_fin_simulated_returns_table()
-        data = data.get_json()
         return jsonify({'data': data,'message': 'Successfully retrieved from FIN_SIMULATED_RETURNS Table','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})

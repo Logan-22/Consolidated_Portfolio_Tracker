@@ -28,9 +28,9 @@ async function init_mf_returns_chart() {
   const perc_day_p_l_array = []
 
   get_mf_returns_data.data.forEach(mf_return => {
-    processing_date_array.push(mf_return.processing_date)
-    perc_total_p_l_array.push(mf_return.perc_total_p_l)
-    perc_day_p_l_array.push(mf_return.perc_day_p_l)
+    processing_date_array.push(mf_return['PROCESSING_DATE'])
+    perc_total_p_l_array.push(mf_return['FIN_%_P/L'])
+    perc_day_p_l_array.push(mf_return['FIN_%_DAY_P/L'])
   });
 
   const ctx = document.getElementById('mf_returns_chart').getContext('2d');

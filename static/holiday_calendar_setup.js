@@ -152,19 +152,16 @@ create_notification(working_date_data.message, working_date_data.status)
 
 const working_day_list  = working_date_data.data
 
-const formData = new FormData();
-formData.append('holiday_calendar_start_date', holiday_calendar_start_date);
-formData.append('holiday_calendar_end_date', holiday_calendar_end_date);
-
 const holiday_data = []
 const working_day_data = []
 
 if(holiday_date_data.status == "Success" && working_date_data.status == "Success"){
-holiday_list.forEach(holiday => holiday_data.push(holiday.holiday_date))
+holiday_list.forEach(holiday => holiday_data.push(holiday['HOLIDAY_DATE']))
 if(working_day_list){
-  working_day_list.forEach(working_day => working_day_data.push(working_day.working_date))
+  working_day_list.forEach(working_day => working_day_data.push(working_day['WORKING_DATE']))
 }
 
+const formData = new FormData();
 formData.append('holiday_data', JSON.stringify(holiday_data));
 formData.append('working_day_data', JSON.stringify(working_day_data));
 

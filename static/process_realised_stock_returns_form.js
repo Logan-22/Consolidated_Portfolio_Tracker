@@ -27,8 +27,8 @@ const trade_date_array = []
 const perc_p_l_with_leverage_array = []
 
 get_realised_intraday_and_swing_returns_data.data.forEach(realised_stock_return => {
-  trade_date_array.push(realised_stock_return.trade_date)
-  perc_p_l_with_leverage_array.push(realised_stock_return.perc_p_l_with_leverage)
+  trade_date_array.push(realised_stock_return['TRADE_DATE'])
+  perc_p_l_with_leverage_array.push(realised_stock_return['NET_%_P/L'])
 });
 
 const ctx = document.getElementById('realised_stock_returns_chart').getContext('2d');

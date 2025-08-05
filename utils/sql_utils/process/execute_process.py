@@ -63,16 +63,13 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
             if not start_date:
                 if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'ALL':
                     first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios()
-                    first_purchase_data_across_portfolio_type = first_purchase_data_across_portfolio_type.get_json()
-                    start_date = first_purchase_data_across_portfolio_type['first_purchase_date']
+                    start_date = first_purchase_data_across_portfolio_type['FIRST_PURCHASE_DATE']
                 if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'MUTUAL_FUND':
                     first_mf_purchase_data = get_first_purchase_date_from_mf_order_date_table()
-                    first_mf_purchase_data = first_mf_purchase_data.get_json()
-                    start_date = first_mf_purchase_data['first_purchase_date']
+                    start_date = first_mf_purchase_data['MF_FIRST_PURHCASE_DATE']
                 if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'STOCK':
                     first_swing_trade_data = get_first_swing_trade_date_from_trades_table()
-                    first_swing_trade_data = first_swing_trade_data.get_json()
-                    start_date = first_swing_trade_data['first_trade_date']
+                    start_date = first_swing_trade_data['FIRST_SWING_TRADE_DATE']
         elif process_metadata['FREQUENCY'] == 'On Start':
             if not start_date:
                 max_next_proc_date_from_target_table = get_max_next_processing_date_from_table(process_metadata['TARGET_TABLE'])

@@ -2,41 +2,41 @@ import { create_notification } from './create_notification.js'
 //create_notification(message, type, duration)
 
 // Global Variables
-let latest_consolidated_returns_data;
-let latest_agg_returns_data;
-let cons_returns_data;
-let agg_returns_data;
-let cons_alloc_data;
-let cons_alloc_portfolio_data;
-let agg_alloc_data;
-let latest_cons_alloc_data;
-let latest_cons_alloc_portfolio_data;
-let latest_agg_alloc_data;
-let processing_date_value;
-let create_folder_status;
-let create_table_status;
-let create_view_status;
-let upsert_price_status = "Success";
-let dup_check_status;
-let mf_returns_status;
-let realised_intraday_stock_returns_status;
-let realised_swing_stock_returns_status;
-let unrealised_stock_returns_status;
-let consolidated_returns_status;
-let get_consolidated_hist_return_status;
-let consolidated_allocation_status;
-let get_consolidated_hist_allocation_status;
-let simulated_returns_status;
+let latest_consolidated_returns_data
+let latest_agg_returns_data
+let cons_returns_data
+let agg_returns_data
+let fin_allocation_data
+let agg_allocation_data
+let allocation_data
+let latest_fin_allocation_data
+let latest_agg_allocation_data
+let latest_allocation_data
+let processing_date_value
+let create_folder_status
+let create_table_status
+let create_view_status
+let upsert_price_status = "Success"
+let dup_check_status
+let mf_returns_status
+let realised_intraday_stock_returns_status
+let realised_swing_stock_returns_status
+let unrealised_stock_returns_status
+let consolidated_returns_status
+let get_consolidated_hist_return_status
+let consolidated_allocation_status
+let get_consolidated_hist_allocation_status
+let simulated_returns_status
 
 // Global Variables for Chart
 
-let consolidated_returns_chart;
-let consolidated_allocation_chart_invested_amount_by_portfolio_type;
-let consolidated_allocation_chart_profit_or_loss_by_portfolio_type;
-let consolidated_allocation_chart_invested_amount_by_portfolio_category;
-let consolidated_allocation_chart_profit_or_loss_by_portfolio_category;
-let consolidated_allocation_chart_invested_amount_by_portfolio_name;
-let consolidated_allocation_chart_profit_or_loss_by_portfolio_name;
+let consolidated_returns_chart
+let consolidated_allocation_chart_invested_amount_by_portfolio_type
+let consolidated_allocation_chart_profit_or_loss_by_portfolio_type
+let consolidated_allocation_chart_invested_amount_by_portfolio_category
+let consolidated_allocation_chart_profit_or_loss_by_portfolio_category
+let consolidated_allocation_chart_invested_amount_by_portfolio_name
+let consolidated_allocation_chart_profit_or_loss_by_portfolio_name
 
 const cons_processing_date_array = []
 const cons_perc_total_p_l_array  = []
@@ -94,23 +94,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     await upsert_consolidated_returns()
     await upsert_consolidated_allocation()
     await upsert_simulated_returns()
-    await get_consolidated_hist_returns()
-    await get_consolidated_hist_allocation()
+    await get_consolidated_returns()
+    await get_consolidated_allocation()
     await create_consolidated_notification()
     }
   }
-);
+)
 
 async function create_managed_folders_in_directory(){
 const create_folder_response=  await fetch ('/api/create_managed_folders/', {
   method: 'GET'
 })
 
-const create_folder_data = await create_folder_response.json();
+const create_folder_data = await create_folder_response.json()
 
 create_folder_status = create_folder_data.status
 if(create_folder_status != "Success"){
-create_notification(create_folder_data.message, create_folder_data.status)
+create_notification("Error while creating managed folders:" + create_folder_data.message, create_folder_data.status)
 }
 }
 
@@ -120,11 +120,11 @@ const create_table_response=  await fetch ('/api/create_managed_tables/', {
   method: 'GET'
 })
 
-const create_table_data = await create_table_response.json();
+const create_table_data = await create_table_response.json()
 
 create_table_status = create_table_data.status
 if(create_table_status != "Success"){
-create_notification(create_table_data.message, create_table_data.status)
+create_notification("Error while creating managed tables:" + create_table_data.message, create_table_data.status)
 }
 
 }
@@ -135,21 +135,21 @@ const create_view_response=  await fetch ('/api/create_managed_views/', {
   method: 'GET'
 })
 
-const create_view_data = await create_view_response.json();
+const create_view_data = await create_view_response.json()
 
 create_view_status = create_view_data.status
 if(create_view_status != "Success"){
-create_notification(create_view_data.message, create_view_data.status)
+create_notification("Error while creating managed views:" + create_view_data.message, create_view_data.status)
 }
 
 }
 
 async function upsert_price_table(){
 
-const today = new Date();
-const year  = today.getFullYear();
-const month = String(today.getMonth() + 1).padStart(2, '0');
-const day   = String(today.getDate()).padStart(2, '0');
+const today = new Date()
+const year  = today.getFullYear()
+const month = String(today.getMonth() + 1).padStart(2, '0')
+const day   = String(today.getDate()).padStart(2, '0')
 
 const end_date = `${year}-${month}-${day}` // Today in YYYY-MM-DD Format
 
@@ -157,7 +157,7 @@ const max_value_date_response = await fetch ('/api/price_table/max_value_date?pr
   method: 'GET'
 })
 
-const max_value_date_data_from_response = await max_value_date_response.json();
+const max_value_date_data_from_response = await max_value_date_response.json()
 
 max_value_date_data_from_response.max_value_date_data.forEach(async element=> {
 const alt_symbol      = element['ALT_SYMBOL']
@@ -166,11 +166,11 @@ if(element['MAX_VALUE_DATE']){
 start_date = element['MAX_VALUE_DATE']
 }
 else{
-const week_before = new Date();
-week_before.setDate(week_before.getDate() - 7);
-const week_before_year  = week_before.getFullYear();
-const week_before_month = String(week_before.getMonth() + 1).padStart(2, '0');
-const week_before_day   = String(week_before.getDate()).padStart(2, '0');
+const week_before = new Date()
+week_before.setDate(week_before.getDate() - 7)
+const week_before_year  = week_before.getFullYear()
+const week_before_month = String(week_before.getMonth() + 1).padStart(2, '0')
+const week_before_day   = String(week_before.getDate()).padStart(2, '0')
 
 const week_before_date = `${week_before_year}-${week_before_month}-${week_before_day}`
 start_date             = week_before_date
@@ -179,11 +179,11 @@ const yahoo_symbol    = element['YAHOO_SYMBOL']
 const exchange_symbol = element['EXCHANGE_SYMBOL']
 const portfolio_type  = element['PORTFOLIO_TYPE']
 
-const formData = new FormData();
-formData.append('alt_symbol', alt_symbol);
-formData.append('yahoo_symbol', yahoo_symbol);
-formData.append('exchange_symbol', exchange_symbol);
-formData.append('portfolio_type', portfolio_type);
+const formData = new FormData()
+formData.append('alt_symbol', alt_symbol)
+formData.append('yahoo_symbol', yahoo_symbol)
+formData.append('exchange_symbol', exchange_symbol)
+formData.append('portfolio_type', portfolio_type)
 
 const upsert_price_response = await fetch(`/api/price_table/close_price/${alt_symbol}?start_date=${start_date}&end_date=${end_date}&on_start=true`, {
 method: 'POST',
@@ -194,7 +194,7 @@ const upsert_price_data = await upsert_price_response.json()
 
 if(upsert_price_data.status != "Success"){
 upsert_price_status = "Failed"
-create_notification(upsert_price_data.message, upsert_price_data.status)
+create_notification("Error while upserting price table:" + upsert_price_data.message, upsert_price_data.status)
 }
 })
 
@@ -202,7 +202,7 @@ const dup_check_response = await fetch(`/api/price_table/duplicate_check/`, {
 method: 'GET'
 })
 
-const dup_check_data_from_response = await dup_check_response.json();
+const dup_check_data_from_response = await dup_check_response.json()
 
 dup_check_status = dup_check_data_from_response.status
 if(dup_check_status != "Success"){
@@ -217,11 +217,11 @@ const mf_returns_response = await fetch (`/api/process_mf_returns/?on_start=true
   method: 'GET'
 })
 
-const mf_returns_data = await mf_returns_response.json();
+const mf_returns_data = await mf_returns_response.json()
 
 mf_returns_status = mf_returns_data.status
 if(mf_returns_status != "Success"){
-create_notification(mf_returns_data.message, mf_returns_data.status)
+create_notification("Error while upserting Mutual Fund Returns table:" + mf_returns_data.message, mf_returns_data.status)
 }
 }
 
@@ -230,11 +230,11 @@ const realised_intraday_stock_returns_response = await fetch (`/api/process_real
   method: 'GET'
 })
 
-const realised_intraday_stock_returns_data = await realised_intraday_stock_returns_response.json();
+const realised_intraday_stock_returns_data = await realised_intraday_stock_returns_response.json()
 
 realised_intraday_stock_returns_status = realised_intraday_stock_returns_data.status
 if(realised_intraday_stock_returns_status != "Success"){
-create_notification(realised_intraday_stock_returns_data.message, realised_intraday_stock_returns_data.status)
+create_notification("Error while upserting Realised Intraday Stock Returns table:" + realised_intraday_stock_returns_data.message, realised_intraday_stock_returns_data.status)
 }
 }
 
@@ -243,11 +243,11 @@ const realised_swing_stock_returns_response = await fetch (`/api/process_realise
   method: 'GET'
 })
 
-const realised_swing_stock_returns_data = await realised_swing_stock_returns_response.json();
+const realised_swing_stock_returns_data = await realised_swing_stock_returns_response.json()
 
 realised_swing_stock_returns_status = realised_swing_stock_returns_data.status
 if(realised_swing_stock_returns_status != "Success"){
-create_notification(realised_swing_stock_returns_data.message, realised_swing_stock_returns_data.status)
+create_notification("Error while upserting Realised Swing Stock Returns table:" + realised_swing_stock_returns_data.message, realised_swing_stock_returns_data.status)
 }
 }
 
@@ -256,11 +256,11 @@ const unrealised_stock_returns_response = await fetch (`/api/process_unrealised_
   method: 'GET'
 })
 
-const unrealised_stock_returns_data = await unrealised_stock_returns_response.json();
+const unrealised_stock_returns_data = await unrealised_stock_returns_response.json()
 
 unrealised_stock_returns_status = unrealised_stock_returns_data.status
 if(unrealised_stock_returns_status != "Success"){
-create_notification(unrealised_stock_returns_data.message, unrealised_stock_returns_data.status)
+create_notification("Error while upserting Unrealised Swing Stock Returns table:" + unrealised_stock_returns_data.message, unrealised_stock_returns_data.status)
 }
 }
 
@@ -269,11 +269,11 @@ const consolidated_returns_response = await fetch (`/api/process_consolidated_re
   method: 'GET'
 })
 
-const consolidated_returns_data = await consolidated_returns_response.json();
+const consolidated_returns_data = await consolidated_returns_response.json()
 
 consolidated_returns_status = consolidated_returns_data.status
 if(consolidated_returns_status != "Success"){
-create_notification(consolidated_returns_data.message, consolidated_returns_data.status)
+create_notification("Error while upserting Consolidated Returns table:" + consolidated_returns_data.message, consolidated_returns_data.status)
 }
 }
 
@@ -282,11 +282,11 @@ const consolidated_allocation_response = await fetch (`/api/process_consolidated
   method: 'GET'
 })
 
-const consolidated_allocation_data = await consolidated_allocation_response.json();
+const consolidated_allocation_data = await consolidated_allocation_response.json()
 
 consolidated_allocation_status = consolidated_allocation_data.status
 if(consolidated_allocation_status != "Success"){
-create_notification(consolidated_allocation_data.message, consolidated_allocation_data.status)
+create_notification("Error while upserting Consolidated Allocation table:" + consolidated_allocation_data.message, consolidated_allocation_data.status)
 }
 }
 
@@ -295,24 +295,24 @@ const process_simulate_returns_response = await fetch(`/api/process_simulate_ret
 method: 'GET'
 })
 
-const process_simulate_returns_data = await process_simulate_returns_response.json();
+const process_simulate_returns_data = await process_simulate_returns_response.json()
 
 simulated_returns_status = process_simulate_returns_data.status
 if(simulated_returns_status != "Success"){
-create_notification(process_simulate_returns_data.message, process_simulate_returns_data.status)
+create_notification("Error while upserting Simulated Returns table:" + process_simulate_returns_data.message, process_simulate_returns_data.status)
 }
 }
 
-async function get_consolidated_hist_returns(){
+async function get_consolidated_returns(){
 const consolidated_returns_response = await fetch ('/api/consolidated_hist_returns/all/', {
   method: 'GET'
 })
 
-const consolidated_returns_data = await consolidated_returns_response.json();
+const consolidated_returns_data = await consolidated_returns_response.json()
 
 get_consolidated_hist_return_status = consolidated_returns_data.status
 if(get_consolidated_hist_return_status != "Success"){
-create_notification(consolidated_returns_data.message, consolidated_returns_data.status)
+create_notification("Error while getting Consolidated Returns:" + consolidated_returns_data.message, consolidated_returns_data.status)
 }
 
 if(consolidated_returns_data.data.latest_consolidated_returns_data){
@@ -377,64 +377,64 @@ processing_date.forEach(element => element.classList = "")
 const processing_date_input = document.getElementById("processing_date")
 processing_date_input.value = latest_consolidated_returns_data['PROCESSING_DATE']
 
-await add_class_list_based_on_value();
+await add_class_list_based_on_value()
 
 // Prepare arrays for Chart
 
 cons_returns_data.forEach(cons_hist_return => {
-  cons_processing_date_array.push(cons_hist_return.processing_date)
-  cons_perc_total_p_l_array.push(cons_hist_return.perc_fin_total_p_l)
-  cons_perc_day_p_l_array.push(cons_hist_return.perc_fin_day_p_l)
-  cons_current_value_array.push(cons_hist_return.fin_current_value)
-  cons_day_p_l_array.push(cons_hist_return.fin_day_p_l)
-  cons_invested_amount_array.push(cons_hist_return.fin_invested_amount)
-  cons_previous_value_array.push(cons_hist_return.fin_previous_value)
-  cons_total_p_l_array.push(cons_hist_return.fin_total_p_l)
-});
+  cons_processing_date_array.push(cons_hist_return['PROCESSING_DATE'])
+  cons_perc_total_p_l_array.push(cons_hist_return['%_TOTAL_P/L'])
+  cons_perc_day_p_l_array.push(cons_hist_return['%_DAY_P/L'])
+  cons_current_value_array.push(cons_hist_return['CURRENT_VALUE'])
+  cons_day_p_l_array.push(cons_hist_return['DAY_P/L'])
+  cons_invested_amount_array.push(cons_hist_return['INVESTED_AMOUNT'])
+  cons_previous_value_array.push(cons_hist_return['PREVIOUS_VALUE'])
+  cons_total_p_l_array.push(cons_hist_return['TOTAL_P/L'])
+})
 
-await initialize_consolidated_returns_chart();
+await initialize_consolidated_returns_chart()
 
 processing_date_input.addEventListener("change", e => change_processing_date(e))
 
 }
 
-async function get_consolidated_hist_allocation(){
+async function get_consolidated_allocation(){
 const consolidated_allocation_response = await fetch ('/api/consolidated_hist_allocation/all/', {
   method: 'GET'
 })
 
-const consolidated_allocation_data = await consolidated_allocation_response.json();
+const consolidated_allocation_data = await consolidated_allocation_response.json()
 
 get_consolidated_hist_allocation_status = consolidated_allocation_data.status
 if(get_consolidated_hist_allocation_status != "Success"){
-create_notification(consolidated_allocation_data.message, consolidated_allocation_data.status)
+create_notification("Error while getting Consolidated Allocation:" + consolidated_allocation_data.message, consolidated_allocation_data.status)
 }
 
-if(consolidated_allocation_data.data.consolidated_allocation_portfolio_data){
-  cons_alloc_portfolio_data = consolidated_allocation_data.data.consolidated_allocation_portfolio_data
+if(consolidated_allocation_data.data.fin_allocation_data){
+  fin_allocation_data = consolidated_allocation_data.data.fin_allocation_data
 }
 
-if(consolidated_allocation_data.data.consolidated_allocation_data){
-  cons_alloc_data = consolidated_allocation_data.data.consolidated_allocation_data
+if(consolidated_allocation_data.data.agg_allocation_data){
+  agg_allocation_data = consolidated_allocation_data.data.agg_allocation_data
 }
 
-if(consolidated_allocation_data.data.agg_consolidated_allocation_data){
-  agg_alloc_data = consolidated_allocation_data.data.agg_consolidated_allocation_data
+if(consolidated_allocation_data.data.allocation_data){
+  allocation_data = consolidated_allocation_data.data.allocation_data
 }
 
-if(consolidated_allocation_data.data.latest_consolidated_allocation_portfolio_data){
-  latest_cons_alloc_portfolio_data = consolidated_allocation_data.data.latest_consolidated_allocation_portfolio_data
+if(consolidated_allocation_data.data.latest_fin_allocation_data){
+  latest_fin_allocation_data = consolidated_allocation_data.data.latest_fin_allocation_data
 }
 
-if(consolidated_allocation_data.data.latest_consolidated_allocation_data){
-  latest_cons_alloc_data = consolidated_allocation_data.data.latest_consolidated_allocation_data
+if(consolidated_allocation_data.data.latest_agg_allocation_data){
+  latest_agg_allocation_data = consolidated_allocation_data.data.latest_agg_allocation_data
 }
 
-if(consolidated_allocation_data.data.latest_agg_consolidated_allocation_data){
-  latest_agg_alloc_data = consolidated_allocation_data.data.latest_agg_consolidated_allocation_data
+if(consolidated_allocation_data.data.latest_allocation_data){
+  latest_allocation_data = consolidated_allocation_data.data.latest_allocation_data
 }
 
-await initialize_consolidated_allocation_chart();
+await initialize_consolidated_allocation_chart()
 }
 
 async function add_class_list_based_on_value(){
@@ -596,10 +596,10 @@ realised_intraday_card.classList += " border-left-neutral"
 
 async function initialize_consolidated_returns_chart(){
 if(consolidated_returns_chart){
-  consolidated_returns_chart.destroy();
+  consolidated_returns_chart.destroy()
 }
 
-const ctx = document.getElementById('consolidated_returns_chart').getContext('2d');
+const ctx = document.getElementById('consolidated_returns_chart').getContext('2d')
 
 consolidated_returns_chart = new Chart(ctx, {type: 'line',
         data: 
@@ -712,23 +712,23 @@ consolidated_returns_chart = new Chart(ctx, {type: 'line',
             }
           }
         }
-      });
+      })
 }
 
 async function initialize_consolidated_allocation_chart(){
 
 // Invested Amount by Portfolio Type  
 if(consolidated_allocation_chart_invested_amount_by_portfolio_type){
-  consolidated_allocation_chart_invested_amount_by_portfolio_type.destroy();
+  consolidated_allocation_chart_invested_amount_by_portfolio_type.destroy()
 }
 
-const ctx_invested_amount_by_portfolio_type = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_type').getContext('2d');
+const ctx_invested_amount_by_portfolio_type = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_type').getContext('2d')
 
 const allocation_chart_invested_amount_by_portfolio_type_data = {
-labels: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.portfolio_type),
+labels: latest_fin_allocation_data.map(portfolio => portfolio['PORTFOLIO_TYPE']),
 datasets: [{
 label: 'Invested Amount',
-data: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.fin_invested_amount),
+data: latest_fin_allocation_data.map(portfolio => portfolio['FIN_INVESTED_AMOUNT']),
 backgroundColor: [
   'rgba(75, 192, 192, 0.7)',
   'rgba(255, 205, 86, 0.7)',
@@ -743,7 +743,7 @@ borderColor: [
 ],
 borderWidth: 1
 }]
-};
+}
 
 const allocation_chart_invested_amount_by_portfolio_type_options = {
   responsive: true,
@@ -767,30 +767,30 @@ const allocation_chart_invested_amount_by_portfolio_type_options = {
       }
     }
   }
-};
+}
 
 const allocation_chart_invested_amount_by_portfolio_type_config = {
   type: 'doughnut',
   data: allocation_chart_invested_amount_by_portfolio_type_data,
   options: allocation_chart_invested_amount_by_portfolio_type_options
-};
+}
 
-consolidated_allocation_chart_invested_amount_by_portfolio_type = new Chart(ctx_invested_amount_by_portfolio_type, allocation_chart_invested_amount_by_portfolio_type_config);
+consolidated_allocation_chart_invested_amount_by_portfolio_type = new Chart(ctx_invested_amount_by_portfolio_type, allocation_chart_invested_amount_by_portfolio_type_config)
 
 ///////////////////////////////////////////////////////////////////////////////
 
 // Profit or Loss Amount by Portfolio Type  
 if(consolidated_allocation_chart_profit_or_loss_by_portfolio_type){
-  consolidated_allocation_chart_profit_or_loss_by_portfolio_type.destroy();
+  consolidated_allocation_chart_profit_or_loss_by_portfolio_type.destroy()
 }
 
-const ctx_profit_or_loss_by_portfolio_type = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_type').getContext('2d');
+const ctx_profit_or_loss_by_portfolio_type = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_type').getContext('2d')
 
 const allocation_chart_profit_or_loss_by_portfolio_type_data = {
-labels: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.portfolio_type),
+labels: latest_fin_allocation_data.map(portfolio => portfolio['PORTFOLIO_TYPE']),
 datasets: [{
 label: 'Profit/Loss',
-data: latest_cons_alloc_portfolio_data.map(portfolio => portfolio.p_l),
+data: latest_fin_allocation_data.map(portfolio => portfolio['P/L']),
 backgroundColor: [
   'rgba(75, 192, 192, 0.7)',
   'rgba(255, 205, 86, 0.7)',
@@ -805,7 +805,7 @@ borderColor: [
 ],
 borderWidth: 1
 }]
-};
+}
 
 const allocation_chart_profit_or_loss_by_portfolio_type_options = {
   responsive: true,
@@ -829,20 +829,20 @@ const allocation_chart_profit_or_loss_by_portfolio_type_options = {
       }
     }
   }
-};
+}
 
 const allocation_chart_profit_or_loss_by_portfolio_type_config = {
   type: 'doughnut',
   data: allocation_chart_profit_or_loss_by_portfolio_type_data,
   options: allocation_chart_profit_or_loss_by_portfolio_type_options
-};
+}
 
-consolidated_allocation_chart_profit_or_loss_by_portfolio_type = new Chart(ctx_profit_or_loss_by_portfolio_type, allocation_chart_profit_or_loss_by_portfolio_type_config);
+consolidated_allocation_chart_profit_or_loss_by_portfolio_type = new Chart(ctx_profit_or_loss_by_portfolio_type, allocation_chart_profit_or_loss_by_portfolio_type_config)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Invested Amount by Portfolio Category  
 if(consolidated_allocation_chart_invested_amount_by_portfolio_category){
-  consolidated_allocation_chart_invested_amount_by_portfolio_category.destroy();
+  consolidated_allocation_chart_invested_amount_by_portfolio_category.destroy()
 }
 
 // To Aggregate Percentages of same category
@@ -850,17 +850,17 @@ let category_list = []
 const category_allocation_object = {}
 const allocation_invested_amt_by_portfolio_category = []
 
-latest_cons_alloc_data.forEach(allocation => {
-  category_list.push(allocation.portfolio_category)
+latest_agg_allocation_data.forEach(allocation => {
+  category_list.push(allocation['PORTFOLIO_CATEGORY'])
 })
 category_list = [... new Set(category_list)] // Deduplicate
 category_list.sort()
 
 category_list.forEach(category => {
 category_allocation_object[category] = 0
-latest_cons_alloc_data.forEach(allocation => {
-  if(category == allocation.portfolio_category){
-    category_allocation_object[category] += allocation.amount_invested
+latest_agg_allocation_data.forEach(allocation => {
+  if(category == allocation['PORTFOLIO_CATEGORY']){
+    category_allocation_object[category] += allocation['INVESTED_AMOUNT']
   }
 })
 })
@@ -869,7 +869,7 @@ category_list.forEach(category => {
   allocation_invested_amt_by_portfolio_category.push(category_allocation_object[category])
 })
 
-const ctx_invested_amount_by_portfolio_category = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_category').getContext('2d');
+const ctx_invested_amount_by_portfolio_category = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_category').getContext('2d')
 
 const allocation_chart_invested_amount_by_portfolio_category_data = {
 labels: category_list,
@@ -901,7 +901,7 @@ borderColor: [
 ],
 borderWidth: 1
 }]
-};
+}
 
 const allocation_chart_invested_amount_by_portfolio_category_options = {
   responsive: true,
@@ -925,20 +925,20 @@ const allocation_chart_invested_amount_by_portfolio_category_options = {
       }
     }
   }
-};
+}
 
 const allocation_chart_invested_amount_by_portfolio_category_config = {
   type: 'doughnut',
   data: allocation_chart_invested_amount_by_portfolio_category_data,
   options: allocation_chart_invested_amount_by_portfolio_category_options
-};
+}
 
-consolidated_allocation_chart_invested_amount_by_portfolio_category = new Chart(ctx_invested_amount_by_portfolio_category, allocation_chart_invested_amount_by_portfolio_category_config);
+consolidated_allocation_chart_invested_amount_by_portfolio_category = new Chart(ctx_invested_amount_by_portfolio_category, allocation_chart_invested_amount_by_portfolio_category_config)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Profit/Loss Amount by Portfolio Category  
 if(consolidated_allocation_chart_profit_or_loss_by_portfolio_category){
-  consolidated_allocation_chart_profit_or_loss_by_portfolio_category.destroy();
+  consolidated_allocation_chart_profit_or_loss_by_portfolio_category.destroy()
 }
 
 // To Aggregate Percentages of same category
@@ -947,9 +947,9 @@ const p_l_allocation_amt_by_portfolio_category = []
 
 category_list.forEach(category => {
 p_l_category_allocation_object[category] = 0
-latest_cons_alloc_data.forEach(allocation => {
-  if(category == allocation.portfolio_category){
-    p_l_category_allocation_object[category] += allocation.p_l
+latest_agg_allocation_data.forEach(allocation => {
+  if(category == allocation['PORTFOLIO_CATEGORY']){
+    p_l_category_allocation_object[category] += allocation['P/L']
   }
 })
 })
@@ -958,7 +958,7 @@ category_list.forEach(category => {
   p_l_allocation_amt_by_portfolio_category.push(p_l_category_allocation_object[category])
 })
 
-const ctx_profit_or_loss_by_portfolio_category = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_category').getContext('2d');
+const ctx_profit_or_loss_by_portfolio_category = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_category').getContext('2d')
 
 const allocation_chart_profit_or_loss_by_portfolio_category_data = {
 labels: category_list,
@@ -990,7 +990,7 @@ borderColor: [
 ],
 borderWidth: 1
 }]
-};
+}
 
 const allocation_chart_profit_or_loss_by_portfolio_category_options = {
   responsive: true,
@@ -1014,30 +1014,30 @@ const allocation_chart_profit_or_loss_by_portfolio_category_options = {
       }
     }
   }
-};
+}
 
 const allocation_chart_profit_or_loss_by_portfolio_category_config = {
   type: 'doughnut',
   data: allocation_chart_profit_or_loss_by_portfolio_category_data,
   options: allocation_chart_profit_or_loss_by_portfolio_category_options
-};
+}
 
-consolidated_allocation_chart_profit_or_loss_by_portfolio_category = new Chart(ctx_profit_or_loss_by_portfolio_category, allocation_chart_profit_or_loss_by_portfolio_category_config);
+consolidated_allocation_chart_profit_or_loss_by_portfolio_category = new Chart(ctx_profit_or_loss_by_portfolio_category, allocation_chart_profit_or_loss_by_portfolio_category_config)
 
 ///////////////////////////////////////////////////////////////////////////////
 
 // Invested Amount by Portfolio Name
 if(consolidated_allocation_chart_invested_amount_by_portfolio_name){
-  consolidated_allocation_chart_invested_amount_by_portfolio_name.destroy();
+  consolidated_allocation_chart_invested_amount_by_portfolio_name.destroy()
 }
 
-const ctx_invested_amount_by_portfolio_name = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_name').getContext('2d');
+const ctx_invested_amount_by_portfolio_name = document.getElementById('consolidated_allocation_chart_invested_amount_by_portfolio_name').getContext('2d')
 
 const allocation_chart_invested_amount_by_portfolio_name_data = {
-labels: latest_agg_alloc_data.map(portfolio => portfolio.portfolio_name),
+labels: latest_allocation_data.map(portfolio => portfolio['PORTFOLIO_NAME']),
 datasets: [{
 label: 'Invested Amount',
-data: latest_agg_alloc_data.map(portfolio => portfolio.amount_invested),
+data: latest_allocation_data.map(portfolio => portfolio['INVESTED_AMOUNT']),
 backgroundColor: [
   'rgba(75, 192, 192, 0.7)',    // Teal
   'rgba(255, 205, 86, 0.7)',    // Yellow
@@ -1074,7 +1074,7 @@ borderColor: [
 ],
 borderWidth: 1
 }]
-};
+}
 
 const allocation_chart_invested_amount_by_portfolio_name_options = {
   responsive: true,
@@ -1098,30 +1098,30 @@ const allocation_chart_invested_amount_by_portfolio_name_options = {
       }
     }
   }
-};
+}
 
 const allocation_chart_invested_amount_by_portfolio_name_config = {
   type: 'doughnut',
   data: allocation_chart_invested_amount_by_portfolio_name_data,
   options: allocation_chart_invested_amount_by_portfolio_name_options
-};
+}
 
-consolidated_allocation_chart_invested_amount_by_portfolio_name = new Chart(ctx_invested_amount_by_portfolio_name, allocation_chart_invested_amount_by_portfolio_name_config);
+consolidated_allocation_chart_invested_amount_by_portfolio_name = new Chart(ctx_invested_amount_by_portfolio_name, allocation_chart_invested_amount_by_portfolio_name_config)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// Invested Amount by Portfolio Name
+// Profit/Loss by Portfolio Name
 if(consolidated_allocation_chart_profit_or_loss_by_portfolio_name){
-  consolidated_allocation_chart_profit_or_loss_by_portfolio_name.destroy();
+  consolidated_allocation_chart_profit_or_loss_by_portfolio_name.destroy()
 }
 
-const ctx_profit_or_loss_by_portfolio_name = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_name').getContext('2d');
+const ctx_profit_or_loss_by_portfolio_name = document.getElementById('consolidated_allocation_chart_profit_or_loss_by_portfolio_name').getContext('2d')
 
 const allocation_chart_profit_or_loss_by_portfolio_name_data = {
-labels: latest_agg_alloc_data.map(portfolio => portfolio.portfolio_name),
+labels: latest_allocation_data.map(portfolio => portfolio['PORTFOLIO_NAME']),
 datasets: [{
 label: 'Profit/Loss',
-data: latest_agg_alloc_data.map(portfolio => portfolio.p_l),
+data: latest_allocation_data.map(portfolio => portfolio['P/L']),
 backgroundColor: [
   'rgba(75, 192, 192, 0.7)',    // Teal
   'rgba(255, 205, 86, 0.7)',    // Yellow
@@ -1158,7 +1158,7 @@ borderColor: [
 ],
 borderWidth: 1
 }]
-};
+}
 
 const allocation_chart_profit_or_loss_by_portfolio_name_options = {
   responsive: true,
@@ -1182,15 +1182,15 @@ const allocation_chart_profit_or_loss_by_portfolio_name_options = {
       }
     }
   }
-};
+}
 
 const allocation_chart_profit_or_loss_by_portfolio_name_config = {
   type: 'doughnut',
   data: allocation_chart_profit_or_loss_by_portfolio_name_data,
   options: allocation_chart_profit_or_loss_by_portfolio_name_options
-};
+}
 
-consolidated_allocation_chart_profit_or_loss_by_portfolio_name = new Chart(ctx_profit_or_loss_by_portfolio_name, allocation_chart_profit_or_loss_by_portfolio_name_config);
+consolidated_allocation_chart_profit_or_loss_by_portfolio_name = new Chart(ctx_profit_or_loss_by_portfolio_name, allocation_chart_profit_or_loss_by_portfolio_name_config)
 
 }
 
@@ -1213,7 +1213,7 @@ if (create_table_status                         == "Success" &&
 }
 
 async function change_processing_date(e){
-e.preventDefault();
+e.preventDefault()
 processing_date_value = document.getElementById("processing_date").value
 
 let found_cons_data = 0

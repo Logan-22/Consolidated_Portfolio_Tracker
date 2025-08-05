@@ -34,7 +34,7 @@ let gold_allocation_present_flag   = 0
 
 if(get_consolidated_allocation_data.data){
 get_consolidated_allocation_data.data.forEach(consolidated_allocation_portfolio => {
-processing_date_array.push(consolidated_allocation_portfolio.processing_date)
+processing_date_array.push(consolidated_allocation_portfolio['PROCESSING_DATE'])
 })
 }
 
@@ -44,16 +44,16 @@ mf_allocation_present_flag     = 0
 equity_allocation_present_flag = 0
 gold_allocation_present_flag   = 0
 get_consolidated_allocation_data.data.forEach(consolidated_allocation_portfolio => {
-if(proc_date == consolidated_allocation_portfolio.processing_date){
-  if(consolidated_allocation_portfolio.portfolio_type == 'Mutual Fund'){
+if(proc_date == consolidated_allocation_portfolio['PROCESSING_DATE']){
+  if(consolidated_allocation_portfolio['PORTFOLIO_TYPE'] == 'Mutual Fund'){
     mf_allocation_perc_array.push(consolidated_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
     mf_allocation_present_flag = 1
   }
-  if(consolidated_allocation_portfolio.portfolio_type == 'Equity'){
+  if(consolidated_allocation_portfolio['PORTFOLIO_TYPE'] == 'Equity'){
     equity_allocation_perc_array.push(consolidated_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
     equity_allocation_present_flag = 1
   }
-  if(consolidated_allocation_portfolio.portfolio_type == 'Gold'){
+  if(consolidated_allocation_portfolio['PORTFOLIO_TYPE'] == 'Gold'){
     gold_allocation_perc_array.push(consolidated_allocation_portfolio.fin_alloc_perc_portfolio_invested_amount)
     gold_allocation_present_flag = 1
   }

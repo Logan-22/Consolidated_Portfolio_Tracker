@@ -30,9 +30,9 @@ const perc_day_p_l_array = []
 if(get_consolidated_returns_data.data)
 {
 get_consolidated_returns_data.data.forEach(consolidated_return => {
-  processing_date_array.push(consolidated_return.processing_date)
-  perc_total_p_l_array.push(consolidated_return.perc_total_p_l)
-  perc_day_p_l_array.push(consolidated_return.perc_day_p_l)
+  processing_date_array.push(consolidated_return['PROCESSING_DATE'])
+  perc_total_p_l_array.push(consolidated_return['%_FIN_TOTAL_P/L'])
+  perc_day_p_l_array.push(consolidated_return['%_FIN_DAY_P/L'])
 });
 
 const ctx = document.getElementById('consolidated_returns_chart').getContext('2d');

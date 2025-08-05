@@ -28,9 +28,9 @@ const perc_net_p_l_array = []
 const perc_day_p_l_array = []
 
 unrealised_stock_returns_data.data.forEach(unrealised_stock_return => {
-  processing_date_array.push(unrealised_stock_return.processing_date)
-  perc_net_p_l_array.push(unrealised_stock_return.perc_net_p_l)
-  perc_day_p_l_array.push(unrealised_stock_return.perc_day_p_l)
+  processing_date_array.push(unrealised_stock_return['PROCESSING_DATE'])
+  perc_net_p_l_array.push(unrealised_stock_return['FIN_%_P/L'])
+  perc_day_p_l_array.push(unrealised_stock_return['FIN_%_DAY_P/L'])
 });
 
 const ctx = document.getElementById('unrealised_stock_returns_chart').getContext('2d');

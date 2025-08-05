@@ -7,6 +7,7 @@ from json import loads
 from uuid import NAMESPACE_URL,uuid5
 
 from utils.sql_utils.process.execute_process_group import execute_process_group_using_metadata
+from utils.sql_utils.process.duplicate_check import duplicate_check_on_managed_tables
 
 from utils.sql_utils.sql_utils import \
 create_price_table,\
@@ -45,6 +46,7 @@ create_fin_consolidated_returns_table,\
 create_consolidated_allocation_table,\
 create_agg_consolidated_allocation_table,\
 create_fin_consolidated_allocation_table,\
+create_duplicate_logs_table,\
 create_mf_portfolio_views_in_db,\
 create_stock_portfolio_views_in_db,\
 create_consolidated_portfolio_views_in_db,\
@@ -53,7 +55,6 @@ get_price_from_price_table,\
 get_proc_date_from_processing_date_table,\
 update_proc_date_in_processing_date_table,\
 get_max_value_date_for_alt_symbol,\
-duplicate_check_on_price_table,\
 get_holiday_date_from_holiday_dates_table,\
 get_working_date_from_working_dates_table,\
 get_date_setup_from_holiday_calendar,\
@@ -62,10 +63,10 @@ get_all_symbols_list_from_metadata_store,\
 get_realised_intraday_and_swing_stock_returns,\
 get_open_trades_from_trades_table,\
 get_unrealised_swing_stock_returns,\
-get_consolidated_hist_returns_from_consolidated_hist_returns_table,\
+get_consolidated_returns,\
 get_all_from_consolidated_returns_table,\
-get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table,\
-get_all_from_consolidated_hist_allocation_table,\
+get_consolidated_allocation,\
+get_all_consolidated_allocation,\
 get_simulated_returns_from_fin_simulated_returns_table,\
 get_component_info_from_db,\
 get_missing_prices_from_price_table
@@ -218,15 +219,12 @@ def proc_date_update():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/price_table/duplicate_check/', methods = ['GET'])
-def duplicate_check_price_table():
+@api.route('/api/duplicate_check/', methods = ['GET'])
+def duplicate_check_managed_table():
     try:
-        dup_check_response = duplicate_check_on_price_table()
-        if dup_check_response:
-            dup_check_data = dup_check_response.get_json()
-            return jsonify({'dup_check_data': dup_check_data,'message': 'Duplicates Present in PRICE_TABLE','status': 'Duplicate Issue'})
-        else:
-            return ({'message': 'Successfully completed Duplicate Check On PRICE_TABLE for All Alt Symbols','status': 'Success'})
+        create_duplicate_logs_table()
+        dup_check_response = duplicate_check_on_managed_tables()
+        return jsonify(dup_check_response)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -290,6 +288,7 @@ def create_managed_tables():
         create_consolidated_allocation_table()
         create_agg_consolidated_allocation_table()
         create_fin_consolidated_allocation_table()
+        create_duplicate_logs_table()
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -767,7 +766,7 @@ def upsert_trade_entry():
 def realised_stock_returns_lookup():
     try:
         data = get_realised_intraday_and_swing_stock_returns()
-        return jsonify({'data': data,'message': 'Successfully retrieved from REALISED_INTRADAY_STOCK_HIST_RETURNS and REALISED_SWING_STOCK_HIST_RETURNS Tables','status': 'Success'})
+        return jsonify({'data': data,'message': 'Successfully retrieved from Realised Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
@@ -886,23 +885,23 @@ def process_consolidated_returns():
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
 @api.route('/api/consolidated_returns/', methods = ['GET'])
-def consolidated_hist_returns_lookup():
+def consolidated_returns_lookup():
     try:
-        data = get_consolidated_hist_returns_from_consolidated_hist_returns_table()
-        return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS Table','status': 'Success'})
+        data = get_consolidated_returns()
+        return jsonify({'data': data,'message': 'Successfully retrieved from Consolidated Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/consolidated_hist_returns/all/', methods = ['GET'])
-def consolidated_hist_returns_fetch_all():
+@api.route('/api/consolidated_returns/all/', methods = ['GET'])
+def consolidated_returns_fetch_all():
     try:
         data = get_all_from_consolidated_returns_table()
-        return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_RETURNS and AGG_CONSOLIDATED_RETURNS Table','status': 'Success'})
+        return jsonify({'data': data,'message': 'Successfully retrieved Consolidated Returns','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
 @api.route('/api/process_consolidated_allocation/', methods = ['GET'])
-def process_consolidated_hist_allocation():
+def process_consolidated_allocation():
     try:
         start_date = request.args.get('start_date') or None
         end_date   = request.args.get('end_date') or None
@@ -921,18 +920,18 @@ def process_consolidated_hist_allocation():
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
 @api.route('/api/consolidated_allocation/', methods = ['GET'])
-def consolidated_hist_allocation_portfolio_lookup():
+def consolidated_allocation_portfolio_lookup():
     try:
-        data = get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table()
-        return jsonify({'data': data,'message': 'Successfully retrieved Historic Allocation from CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO Table','status': 'Success'})
+        data = get_consolidated_allocation()
+        return jsonify({'data': data,'message': 'Successfully retrieved Consolidated Allocation','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/consolidated_hist_allocation/all/', methods = ['GET'])
-def consolidated_hist_allocation_fetch_all():
+@api.route('/api/consolidated_allocation/all/', methods = ['GET'])
+def consolidated_allocation_fetch_all():
     try:
-        data = get_all_from_consolidated_hist_allocation_table()
-        return jsonify({'data': data,'message': 'Successfully retrieved from CONSOLIDATED_HIST_ALLOCATION, CONSOLIDATED_HIST_ALLOCATION_PORTFOLIO and AGG_CONSOLIDATED_ALLOCATION Table','status': 'Success'})
+        data = get_all_consolidated_allocation()
+        return jsonify({'data': data,'message': 'Successfully retrieved Consolidated Allocation','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 

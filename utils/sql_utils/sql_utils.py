@@ -811,7 +811,7 @@ FROM
     """)
     return first_purchase_data[0]
 
-def get_consolidated_hist_returns_from_consolidated_hist_returns_table():
+def get_consolidated_returns():
     consolidated_returns = fetch_queries_as_dictionaries("""
 SELECT
     PROCESSING_DATE
@@ -908,7 +908,7 @@ ORDER BY PROCESSING_DATE;
             ,'latest_consolidated_returns_data'    : latest_consolidated_returns_data}
     return data
 
-def get_consolidated_hist_allocation_portfolio_from_consolidated_hist_allocation_portfolio_table():
+def get_consolidated_allocation():
     consolidated_allocation = fetch_queries_as_dictionaries("""
 SELECT
     PROCESSING_DATE
@@ -922,7 +922,7 @@ ORDER BY PROCESSING_DATE;
     """)
     return consolidated_allocation
 
-def get_all_from_consolidated_hist_allocation_table():
+def get_all_consolidated_allocation():
     fin_allocation_data = fetch_queries_as_dictionaries("""
 SELECT 
     PORTFOLIO_TYPE
@@ -1817,8 +1817,7 @@ FROM
 LEFT OUTER JOIN
     HOLIDAY_CALENDAR HC
 ON
-    HC.PROCESSING_DATE        <= CURRENT_DATE
-    AND HC.PROCESSING_DATE    >= META.LAUNCHED_ON
+    HC.PROCESSING_DATE    >= META.LAUNCHED_ON
     AND HC.PROCESSING_DATE    >= STRFTIME('%Y-01-01')
     AND HC.RECORD_DELETED_FLAG = 0
 LEFT OUTER JOIN
@@ -1830,7 +1829,24 @@ ON
 WHERE
     PR.PRICE IS NULL
     AND HC.PROCESSING_DATE NOT IN (SELECT DISTINCT WORKING_DATE FROM WORKING_DATES)
+    AND ((META.PORTFOLIO_TYPE = 'Mutual Fund' AND HC.PROCESSING_DATE < CURRENT_DATE)
+    OR (META.PORTFOLIO_TYPE = 'Stock' AND HC.PROCESSING_DATE <= CURRENT_DATE))
 GROUP BY 1,2,3,4
 ORDER BY 2;
     """)
     return missing_prices_data
+
+def create_duplicate_logs_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+CREATE TABLE IF NOT EXISTS DUPLICATE_LOGS
+(
+    ID              INTEGER PRIMARY KEY AUTOINCREMENT,
+    TABLE_NAME      TEXT,
+    DUPLICATE_DATA  TEXT,
+    CNT             TEXT,
+    QUERY_EXECUTED  TEXT,
+    ENTRY_TIMESTAMP TEXT
+);
+    """)

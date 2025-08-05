@@ -23,9 +23,9 @@ let realised_intraday_stock_returns_status
 let realised_swing_stock_returns_status
 let unrealised_stock_returns_status
 let consolidated_returns_status
-let get_consolidated_hist_return_status
+let get_consolidated_return_status
 let consolidated_allocation_status
-let get_consolidated_hist_allocation_status
+let get_consolidated_allocation_status
 let simulated_returns_status
 
 // Global Variables for Chart
@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await upsert_consolidated_returns()
     await upsert_consolidated_allocation()
     await upsert_simulated_returns()
+    await duplicate_check()
     await get_consolidated_returns()
     await get_consolidated_allocation()
     await create_consolidated_notification()
@@ -197,19 +198,6 @@ upsert_price_status = "Failed"
 create_notification("Error while upserting price table:" + upsert_price_data.message, upsert_price_data.status)
 }
 })
-
-const dup_check_response = await fetch(`/api/price_table/duplicate_check/`, {
-method: 'GET'
-})
-
-const dup_check_data_from_response = await dup_check_response.json()
-
-dup_check_status = dup_check_data_from_response.status
-if(dup_check_status != "Success"){
-dup_check_data_from_response.dup_check_data.forEach( duplicate => {
-create_notification(`Symbol ${duplicate.alt_symbol} is having ${duplicate.count} entries for ${duplicate.value_date} Date`, dup_check_data_from_response.status)
-})}
-
 }
 
 async function upsert_mf_returns_table(){
@@ -304,14 +292,14 @@ create_notification("Error while upserting Simulated Returns table:" + process_s
 }
 
 async function get_consolidated_returns(){
-const consolidated_returns_response = await fetch ('/api/consolidated_hist_returns/all/', {
+const consolidated_returns_response = await fetch ('/api/consolidated_returns/all/', {
   method: 'GET'
 })
 
 const consolidated_returns_data = await consolidated_returns_response.json()
 
-get_consolidated_hist_return_status = consolidated_returns_data.status
-if(get_consolidated_hist_return_status != "Success"){
+get_consolidated_return_status = consolidated_returns_data.status
+if(get_consolidated_return_status != "Success"){
 create_notification("Error while getting Consolidated Returns:" + consolidated_returns_data.message, consolidated_returns_data.status)
 }
 
@@ -381,15 +369,15 @@ await add_class_list_based_on_value()
 
 // Prepare arrays for Chart
 
-cons_returns_data.forEach(cons_hist_return => {
-  cons_processing_date_array.push(cons_hist_return['PROCESSING_DATE'])
-  cons_perc_total_p_l_array.push(cons_hist_return['%_TOTAL_P/L'])
-  cons_perc_day_p_l_array.push(cons_hist_return['%_DAY_P/L'])
-  cons_current_value_array.push(cons_hist_return['CURRENT_VALUE'])
-  cons_day_p_l_array.push(cons_hist_return['DAY_P/L'])
-  cons_invested_amount_array.push(cons_hist_return['INVESTED_AMOUNT'])
-  cons_previous_value_array.push(cons_hist_return['PREVIOUS_VALUE'])
-  cons_total_p_l_array.push(cons_hist_return['TOTAL_P/L'])
+cons_returns_data.forEach(cons_return => {
+  cons_processing_date_array.push(cons_return['PROCESSING_DATE'])
+  cons_perc_total_p_l_array.push(cons_return['%_TOTAL_P/L'])
+  cons_perc_day_p_l_array.push(cons_return['%_DAY_P/L'])
+  cons_current_value_array.push(cons_return['CURRENT_VALUE'])
+  cons_day_p_l_array.push(cons_return['DAY_P/L'])
+  cons_invested_amount_array.push(cons_return['INVESTED_AMOUNT'])
+  cons_previous_value_array.push(cons_return['PREVIOUS_VALUE'])
+  cons_total_p_l_array.push(cons_return['TOTAL_P/L'])
 })
 
 await initialize_consolidated_returns_chart()
@@ -399,14 +387,14 @@ processing_date_input.addEventListener("change", e => change_processing_date(e))
 }
 
 async function get_consolidated_allocation(){
-const consolidated_allocation_response = await fetch ('/api/consolidated_hist_allocation/all/', {
+const consolidated_allocation_response = await fetch ('/api/consolidated_allocation/all/', {
   method: 'GET'
 })
 
 const consolidated_allocation_data = await consolidated_allocation_response.json()
 
-get_consolidated_hist_allocation_status = consolidated_allocation_data.status
-if(get_consolidated_hist_allocation_status != "Success"){
+get_consolidated_allocation_status = consolidated_allocation_data.status
+if(get_consolidated_allocation_status != "Success"){
 create_notification("Error while getting Consolidated Allocation:" + consolidated_allocation_data.message, consolidated_allocation_data.status)
 }
 
@@ -1204,9 +1192,9 @@ if (create_table_status                         == "Success" &&
     realised_swing_stock_returns_status         == "Success" &&
     unrealised_stock_returns_status             == "Success" &&
     consolidated_returns_status                 == "Success" &&
-    get_consolidated_hist_return_status         == "Success" &&
+    get_consolidated_return_status         == "Success" &&
     consolidated_allocation_status              == "Success" &&
-    get_consolidated_hist_allocation_status     == "Success" &&
+    get_consolidated_allocation_status     == "Success" &&
     simulated_returns_status                    == "Success" ){
     create_notification('All scheduled background processes executed successfully.', 'success')
     }
@@ -1415,4 +1403,17 @@ consolidated_allocation_chart_invested_amount_by_portfolio_category.update()
 consolidated_allocation_chart_profit_or_loss_by_portfolio_category.update()
 consolidated_allocation_chart_invested_amount_by_portfolio_name.update()
 consolidated_allocation_chart_profit_or_loss_by_portfolio_name.update()
+}
+
+async function duplicate_check(){
+const dup_check_response = await fetch(`/api/duplicate_check/`, {
+method: 'GET'
+})
+
+const dup_check_data = await dup_check_response.json()
+
+dup_check_status = dup_check_data.status
+if(dup_check_status != "Success"){
+  create_notification(dup_check_data.message, dup_check_data.status)
+}
 }

@@ -5,14 +5,15 @@ from utils.sql_utils.scd1_framework.delsert_scd1_table import delsert_scd1
 from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
 from utils.log_utils.insert_initial_log import insert_intitial_log_record
 from utils.log_utils.update_log import update_log_record
-from utils.sql_utils.sql_utils import \
+from utils.sql_utils.query_db.get_or_process_in_db import \
 get_first_purchase_date_from_all_portfolios,\
 get_first_purchase_date_from_mf_order_date_table,\
 get_first_swing_trade_date_from_trades_table,\
 get_date_setup_from_holiday_calendar,\
-update_proc_date_in_processing_date_table,\
 get_max_value_date_by_portfolio_type,\
 get_max_next_processing_date_from_table
+from utils.sql_utils.query_db.update_in_db import \
+update_proc_date_in_processing_date_table
 
 def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, payload_sent_from_source = None):
     payloads          = []

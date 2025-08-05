@@ -4,56 +4,63 @@ from dateutil import parser
 from datetime import datetime, timedelta, date
 import os
 from json import loads
-from uuid import NAMESPACE_URL,uuid5
+from uuid import NAMESPACE_URL, uuid5
 
 from utils.sql_utils.process.execute_process_group import execute_process_group_using_metadata
 from utils.sql_utils.process.duplicate_check import duplicate_check_on_managed_tables
 
-from utils.sql_utils.sql_utils import \
-create_price_table,\
+from utils.sql_utils.tables.create_metadata_tables import\
 create_metadata_store_table,\
-create_metadata_key_columns_table,\
-create_mf_order_table,\
 create_processing_date_table,\
 create_processing_type_table,\
+create_metadata_process_group_table,\
 create_metadata_process_table,\
+create_metadata_key_columns_table,\
 create_execution_logs_table,\
 create_holiday_date_table,\
 create_working_date_table,\
 create_holiday_calendar_table,\
-create_trade_table,\
-create_fee_table,\
-create_close_trades_table,\
-create_simulated_portfolio_table,\
-create_agg_simulated_portfolio_table,\
-create_fin_simulated_portfolio_table,\
-create_metadata_process_group_table,\
+create_duplicate_logs_table
+
+from utils.sql_utils.tables.create_metrics_tables import\
+create_price_table,\
 create_mutual_fund_returns_table,\
 create_agg_mutual_fund_returns_table,\
 create_fin_mutual_fund_returns_table,\
-create_unrealised_stock_returns_table,\
-create_agg_unrealised_stock_returns_table,\
-create_fin_unrealised_stock_returns_table,\
 create_realised_intraday_stock_returns_table,\
 create_agg_realised_intraday_stock_returns_table,\
 create_fin_realised_intraday_stock_returns_table,\
 create_realised_swing_stock_returns_table,\
 create_agg_realised_swing_stock_returns_table,\
 create_fin_realised_swing_stock_returns_table,\
+create_unrealised_stock_returns_table,\
+create_agg_unrealised_stock_returns_table,\
+create_fin_unrealised_stock_returns_table,\
 create_consolidated_returns_table,\
 create_agg_consolidated_returns_table,\
 create_fin_consolidated_returns_table,\
 create_consolidated_allocation_table,\
 create_agg_consolidated_allocation_table,\
 create_fin_consolidated_allocation_table,\
-create_duplicate_logs_table,\
+create_simulated_portfolio_table,\
+create_agg_simulated_portfolio_table,\
+create_fin_simulated_portfolio_table
+
+from utils.sql_utils.tables.create_user_data_tables import\
+create_mf_order_table,\
+create_trade_table,\
+create_fee_table,\
+create_close_trades_table
+
+from utils.sql_utils.views.create_views import\
 create_mf_portfolio_views_in_db,\
 create_stock_portfolio_views_in_db,\
 create_consolidated_portfolio_views_in_db,\
-create_simulated_portfolio_views_in_db,\
+create_simulated_portfolio_views_in_db
+
+from utils.sql_utils.query_db.get_or_process_in_db import\
 get_price_from_price_table,\
 get_proc_date_from_processing_date_table,\
-update_proc_date_in_processing_date_table,\
 get_max_value_date_for_alt_symbol,\
 get_holiday_date_from_holiday_dates_table,\
 get_working_date_from_working_dates_table,\
@@ -70,6 +77,9 @@ get_all_consolidated_allocation,\
 get_simulated_returns_from_fin_simulated_returns_table,\
 get_component_info_from_db,\
 get_missing_prices_from_price_table
+
+from utils.sql_utils.query_db.update_in_db import\
+update_proc_date_in_processing_date_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 

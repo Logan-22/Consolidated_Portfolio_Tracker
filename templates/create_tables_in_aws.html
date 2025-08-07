@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Create Tables in AWS{% endblock %}
+
+{% block content %}
+    <form id = "create_table_in_aws">
+    <div id = "create_table_container">
+        <label for "schema_id">
+            <strong>Schema ID</strong>
+        </label><br/>
+        <input type = "text" id = "schema_id" name ="schema_id" autocomplete="off">
+    </div>
+    <div class="actions">
+        <button type = "submit" class = "submit">Create Metadata Tables</button>
+    </div>
+    </form>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='create_table_in_aws.js') }}" defer></script>
+{% endblock %}

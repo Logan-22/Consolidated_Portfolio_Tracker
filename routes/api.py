@@ -90,6 +90,20 @@ from utils.folder_utils.paths import db_folder_path
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader
 
+from utils.sql_utils.tables.p1t_meta import\
+create_metadata_schema_in_aws,\
+create_metadata_store_table_in_aws,\
+create_processing_date_table_in_aws,\
+create_processing_type_table_in_aws,\
+create_metadata_process_group_table_in_aws,\
+create_metadata_process_table_in_aws,\
+create_metadata_key_columns_table_in_aws,\
+create_execution_logs_table_in_aws,\
+create_holiday_date_table_in_aws,\
+create_working_date_table_in_aws,\
+create_holiday_calendar_table_in_aws,\
+create_duplicate_logs_table_in_aws
+
 api = Blueprint('api', __name__)
 
 app_namespace = uuid5(NAMESPACE_URL,"Consolidated_Portfolio_Tracker") # Change Later
@@ -1064,5 +1078,24 @@ def insert_missing_prices():
 
         process_price_logs = execute_process_group_using_metadata('PRICE_DAILY_PROCESS_GROUP', None, None, filtered_payloads, "true")
         return jsonify(process_price_logs)
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_metadata_tables_in_aws/<schema_id>/', methods = ['GET'])
+def create_metadata_tables_in_aws(schema_id):
+    try:
+        create_metadata_schema_in_aws(schema_id)
+        create_metadata_store_table_in_aws(schema_id)
+        create_processing_date_table_in_aws(schema_id)
+        create_processing_type_table_in_aws(schema_id)
+        create_metadata_process_group_table_in_aws(schema_id)
+        create_metadata_process_table_in_aws(schema_id)
+        create_metadata_key_columns_table_in_aws(schema_id)
+        create_execution_logs_table_in_aws(schema_id)
+        create_holiday_date_table_in_aws(schema_id)
+        create_working_date_table_in_aws(schema_id)
+        create_holiday_calendar_table_in_aws(schema_id)
+        create_duplicate_logs_table_in_aws(schema_id)
+        return jsonify({'message': 'Successfully Created Schema and Metadata Tables in AWS', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})

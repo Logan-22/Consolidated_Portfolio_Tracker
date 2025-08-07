@@ -69,3 +69,7 @@ def process_entry():
 @frontend.route('/missing_prices_entry')
 def missing_prices_entry():
     return render_template('missing_prices_entry.html')
+
+@frontend.route('/create_table_in_aws')
+def create_table_in_aws():
+    return render_template('create_tables_in_aws.html')

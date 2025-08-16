@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Create Tables{% endblock %}
+
+{% block content %}
+    <form id = "create_metadata_tables">
+    <div id = "create_metadata_table_container">
+        <label for = "metadata_schema">
+            <strong>Metadata Environment</strong>
+        </label><br/>
+        <input type = "text" id = "metadata_schema" name ="metadata_schema" autocomplete="off">
+    </div>
+    <div class="actions">
+        <button type = "submit" class = "submit">Create Metadata Tables</button>
+    </div>
+    </form>
+
+    <form id = "create_utility_tables">
+    <div id = "create_utility_table_container">
+        <label for = "utility_schema">
+            <strong>Utility Environment</strong>
+        </label><br/>
+        <input type = "text" id = "utility_schema" name ="utility_schema" autocomplete="off">
+    </div>
+    <div class="actions">
+        <button type = "submit" class = "submit">Create Utility Tables</button>
+    </div>
+    </form>
+
+    <form id = "create_auth_tables">
+    <div id = "create_auth_table_container">
+        <label for = "auth_schema">
+            <strong>Auth Environment</strong>
+        </label><br/>
+        <input type = "text" id = "auth_schema" name ="auth_schema" autocomplete="off">
+    </div>
+    <div class="actions">
+        <button type = "submit" class = "submit">Create Auth Tables</button>
+    </div>
+    </form>
+
+    <form id = "migrate_data_to_aws">
+    <div id = "migrate_data_to_aws_container">
+        <label for = "schema">
+            <strong>Database Schema</strong>
+        </label><br/>
+        <input type = "text" id = "schema" name ="schema" autocomplete="off">
+        <label for = "sqlite_table_name">
+            <strong>SQLITE3 Table Name</strong>
+        </label><br/>
+        <select id = "sqlite_table_name" name ="sqlite_table_name" autocomplete="off"></select>
+        <label for = "aws_table_name">
+            <strong>AWS Table Name</strong>
+        </label><br/>
+        <input type = "text" id = "aws_table_name" name ="aws_table_name" autocomplete="off"></select>
+    </div>
+    <div class="actions">
+        <button type = "submit" class = "submit">Migrate Data to AWS from SQLITE3</button>
+    </div>
+    </form>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='create_tables.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+    <div>
+    <h1 id = "welcome_text">Hello!</h1>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='user_login.js') }}" defer></script>
+{% endblock %}

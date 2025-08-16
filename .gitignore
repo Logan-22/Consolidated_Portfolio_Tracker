@@ -9,7 +9,6 @@ db.md
 *.db
 databases/
 files/
-config_utils/
 .env
 # C extensions
 *.so

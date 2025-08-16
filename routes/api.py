@@ -9,48 +9,48 @@ from uuid import NAMESPACE_URL, uuid5
 from utils.sql_utils.process.execute_process_group import execute_process_group_using_metadata
 from utils.sql_utils.process.duplicate_check import duplicate_check_on_managed_tables
 
-from utils.sql_utils.tables.create_metadata_tables import\
-create_metadata_store_table,\
-create_processing_date_table,\
-create_processing_type_table,\
-create_metadata_process_group_table,\
-create_metadata_process_table,\
-create_metadata_key_columns_table,\
-create_execution_logs_table,\
-create_holiday_date_table,\
-create_working_date_table,\
-create_holiday_calendar_table,\
-create_duplicate_logs_table
+# from utils.sql_utils.tables.create_metadata_tables import\
+# create_metadata_store_table,\
+# create_processing_date_table,\
+# create_processing_type_table,\
+# create_metadata_process_group_table,\
+# create_metadata_process_table,\
+# create_metadata_key_columns_table,\
+# create_execution_logs_table,\
+# create_holiday_date_table,\
+# create_working_date_table,\
+# create_holiday_calendar_table,\
+# create_duplicate_logs_table
 
-from utils.sql_utils.tables.create_metrics_tables import\
-create_price_table,\
-create_mutual_fund_returns_table,\
-create_agg_mutual_fund_returns_table,\
-create_fin_mutual_fund_returns_table,\
-create_realised_intraday_stock_returns_table,\
-create_agg_realised_intraday_stock_returns_table,\
-create_fin_realised_intraday_stock_returns_table,\
-create_realised_swing_stock_returns_table,\
-create_agg_realised_swing_stock_returns_table,\
-create_fin_realised_swing_stock_returns_table,\
-create_unrealised_stock_returns_table,\
-create_agg_unrealised_stock_returns_table,\
-create_fin_unrealised_stock_returns_table,\
-create_consolidated_returns_table,\
-create_agg_consolidated_returns_table,\
-create_fin_consolidated_returns_table,\
-create_consolidated_allocation_table,\
-create_agg_consolidated_allocation_table,\
-create_fin_consolidated_allocation_table,\
-create_simulated_portfolio_table,\
-create_agg_simulated_portfolio_table,\
-create_fin_simulated_portfolio_table
+# from utils.sql_utils.tables.create_metrics_tables import\
+# create_price_table,\
+# create_mutual_fund_returns_table,\
+# create_agg_mutual_fund_returns_table,\
+# create_fin_mutual_fund_returns_table,\
+# create_realised_intraday_stock_returns_table,\
+# create_agg_realised_intraday_stock_returns_table,\
+# create_fin_realised_intraday_stock_returns_table,\
+# create_realised_swing_stock_returns_table,\
+# create_agg_realised_swing_stock_returns_table,\
+# create_fin_realised_swing_stock_returns_table,\
+# create_unrealised_stock_returns_table,\
+# create_agg_unrealised_stock_returns_table,\
+# create_fin_unrealised_stock_returns_table,\
+# create_consolidated_returns_table,\
+# create_agg_consolidated_returns_table,\
+# create_fin_consolidated_returns_table,\
+# create_consolidated_allocation_table,\
+# create_agg_consolidated_allocation_table,\
+# create_fin_consolidated_allocation_table,\
+# create_simulated_portfolio_table,\
+# create_agg_simulated_portfolio_table,\
+# create_fin_simulated_portfolio_table
 
-from utils.sql_utils.tables.create_user_data_tables import\
-create_mf_order_table,\
-create_trade_table,\
-create_fee_table,\
-create_close_trades_table
+# from utils.sql_utils.tables.create_user_data_tables import\
+# create_mf_order_table,\
+# create_trade_table,\
+# create_fee_table,\
+# create_close_trades_table
 
 from utils.sql_utils.views.create_views import\
 create_mf_portfolio_views_in_db,\
@@ -76,10 +76,17 @@ get_consolidated_allocation,\
 get_all_consolidated_allocation,\
 get_simulated_returns_from_fin_simulated_returns_table,\
 get_component_info_from_db,\
-get_missing_prices_from_price_table
+get_missing_prices_from_price_table,\
+get_from_sqlite_component
 
 from utils.sql_utils.query_db.update_in_db import\
 update_proc_date_in_processing_date_table
+
+from utils.sql_utils.query_db.delete_in_db import\
+truncate_table
+
+from utils.sql_utils.query_db.insert_in_db import\
+insert_into_table
 
 from utils.date_utils.date_utils import convert_weekday_from_int_to_char
 
@@ -91,20 +98,37 @@ from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader
 
 from utils.sql_utils.tables.p1t_meta import\
-create_metadata_schema_in_aws,\
-create_metadata_store_table_in_aws,\
-create_processing_date_table_in_aws,\
-create_processing_type_table_in_aws,\
-create_metadata_process_group_table_in_aws,\
-create_metadata_process_table_in_aws,\
-create_metadata_key_columns_table_in_aws,\
-create_execution_logs_table_in_aws,\
-create_holiday_date_table_in_aws,\
-create_working_date_table_in_aws,\
-create_holiday_calendar_table_in_aws,\
-create_duplicate_logs_table_in_aws
+create_metadata_schema,\
+create_metadata_store_table,\
+create_metadata_process_group_table,\
+create_metadata_process_table,\
+create_metadata_key_columns_table,\
+create_holiday_date_table,\
+create_working_date_table,\
+create_holiday_calendar_table
+
+from utils.sql_utils.tables.p1t_util import\
+create_utility_schema,\
+create_processing_date_table,\
+create_processing_type_table
+
+from utils.sql_utils.tables.p1t_auth import\
+create_authorization_schema,\
+create_users_table,\
+create_user_profile_table,\
+create_user_security_table,\
+create_user_sessions_table,\
+create_password_resets_table,\
+create_auth_audit_table
+
+from utils.sql_utils.tables.p1t_log import\
+create_log_schema,\
+create_execution_logs_table,\
+create_duplicate_logs_table
 
 api = Blueprint('api', __name__)
+
+env = os.getenv('ENVIRONMENT')
 
 app_namespace = uuid5(NAMESPACE_URL,"Consolidated_Portfolio_Tracker") # Change Later
 
@@ -128,8 +152,6 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
         start_date     = request.args.get('start_date') or None
         end_date       = request.args.get('end_date') or None
         on_start       = request.args.get('on_start') or None
-
-        create_price_table()
         price_payloads = []
 
         ticker = yf.Ticker(yahoo_symbol)
@@ -174,7 +196,6 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
 def metadata_entry():
     try:
         metadata_payload = loads(request.form.get('metadata_payload'))
-        create_metadata_store_table()
         holiday_calendar_data                        = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
         metadata_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
         metadata_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
@@ -209,7 +230,6 @@ def mf_order():
     try:
         mf_order_payload = loads(request.form.get('mf_order_payload'))
         mf_order_payload['STAMP_FEES_AMOUNT'] = round(float(mf_order_payload['INVESTED_AMOUNT']) - float(mf_order_payload['AMC_AMOUNT']),2)
-        create_mf_order_table()
         holiday_calendar_data                        = get_date_setup_from_holiday_calendar(mf_order_payload['PURCHASED_ON'])
         mf_order_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
         mf_order_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
@@ -276,43 +296,7 @@ def create_managed_folders():
 @api.route('/api/create_managed_tables/', methods = ['GET'])
 def create_managed_tables():
     try:
-        create_metadata_store_table()
-        create_price_table()
-        create_processing_date_table()
-        create_processing_type_table()
-        create_mf_order_table()
-        create_holiday_date_table()
-        create_working_date_table()
-        create_holiday_calendar_table()
-        create_trade_table()
-        create_fee_table()
-        create_close_trades_table()
-        create_metadata_key_columns_table()
-        create_simulated_portfolio_table()
-        create_agg_simulated_portfolio_table()
-        create_fin_simulated_portfolio_table()
-        create_metadata_process_table()
-        create_execution_logs_table()
-        create_metadata_process_group_table()
-        create_mutual_fund_returns_table()
-        create_agg_mutual_fund_returns_table()
-        create_fin_mutual_fund_returns_table()
-        create_unrealised_stock_returns_table()
-        create_agg_unrealised_stock_returns_table()
-        create_fin_unrealised_stock_returns_table()
-        create_realised_intraday_stock_returns_table()
-        create_agg_realised_intraday_stock_returns_table()
-        create_fin_realised_intraday_stock_returns_table()
-        create_realised_swing_stock_returns_table()
-        create_agg_realised_swing_stock_returns_table()
-        create_fin_realised_swing_stock_returns_table()
-        create_consolidated_returns_table()
-        create_agg_consolidated_returns_table()
-        create_fin_consolidated_returns_table()
-        create_consolidated_allocation_table()
-        create_agg_consolidated_allocation_table()
-        create_fin_consolidated_allocation_table()
-        create_duplicate_logs_table()
+        pass
         return jsonify({'message': 'Successfully created Managed Tables in DB','status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -423,10 +407,6 @@ def process_mf_returns():
         start_date = request.args.get('start_date') or None
         end_date   = request.args.get('end_date') or None
         on_start   = request.args.get('on_start') or None
-
-        create_mutual_fund_returns_table()
-        create_agg_mutual_fund_returns_table()
-        create_fin_mutual_fund_returns_table()
         
         if on_start == "true" or (start_date):
             mf_returns_process_group_logs = execute_process_group_using_metadata('MF_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
@@ -704,8 +684,6 @@ def upsert_trade_entry():
         trades_payloads = []
         fee_payloads    = []
 
-        create_trade_table()
-        create_fee_table()
         holiday_calendar_data = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
 
         for trade in trades_array:
@@ -801,10 +779,6 @@ def process_realised_intraday_stock_returns():
         end_date   = request.args.get('end_date') or None
         on_start   = request.args.get('on_start') or None
 
-        create_realised_intraday_stock_returns_table()
-        create_agg_realised_intraday_stock_returns_table()
-        create_fin_realised_intraday_stock_returns_table()
-        
         if on_start == "true" or (start_date):
             realised_intraday_stock_returns_process_group_logs = execute_process_group_using_metadata('REALISED_INTRADAY_STOCK_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
@@ -825,7 +799,6 @@ def get_open_trades_list():
 def close_trade_entry():
     try:
         close_trades_payloads = loads(request.form.get('close_trades_payloads'))
-        create_close_trades_table()
 
         min_close_trade_date = datetime.today()
 
@@ -850,10 +823,6 @@ def process_realised_swing_stock_returns():
         end_date   = request.args.get('end_date') or None
         on_start   = request.args.get('on_start') or None
 
-        create_realised_swing_stock_returns_table()
-        create_agg_realised_swing_stock_returns_table()
-        create_fin_realised_swing_stock_returns_table()
-        
         if on_start == "true" or (start_date):
             realised_swing_stock_returns_process_group_logs = execute_process_group_using_metadata('REALISED_SWING_STOCK_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
@@ -869,10 +838,6 @@ def process_unrealised_swing_stock_returns():
         end_date   = request.args.get('end_date') or None
         on_start   = request.args.get('on_start') or None
 
-        create_unrealised_stock_returns_table()
-        create_agg_unrealised_stock_returns_table()
-        create_fin_unrealised_stock_returns_table()
-        
         if on_start == "true" or (start_date):
             unrealised_stock_returns_process_group_logs = execute_process_group_using_metadata('UNREALISED_STOCK_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
@@ -896,10 +861,6 @@ def process_consolidated_returns():
         end_date   = request.args.get('end_date') or None
         on_start   = request.args.get('on_start') or None
 
-        create_consolidated_returns_table()
-        create_agg_consolidated_returns_table()
-        create_fin_consolidated_returns_table()
-        
         if on_start == "true" or (start_date):
             consolidated_returns_process_group_logs = execute_process_group_using_metadata('CONSOLIDATED_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
@@ -930,11 +891,7 @@ def process_consolidated_allocation():
         start_date = request.args.get('start_date') or None
         end_date   = request.args.get('end_date') or None
         on_start   = request.args.get('on_start') or None
-
-        create_consolidated_allocation_table()
-        create_agg_consolidated_allocation_table()
-        create_fin_consolidated_allocation_table()
-        
+ 
         if on_start == "true" or (start_date):
             consolidated_allocation_process_group_logs = execute_process_group_using_metadata('CONSOLIDATED_ALLOCATION_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
@@ -966,10 +923,6 @@ def process_simulated_returns():
         end_date = request.args.get('end_date') or None
         on_start = request.args.get('on_start') or None
 
-        create_simulated_portfolio_table()
-        create_agg_simulated_portfolio_table()
-        create_fin_simulated_portfolio_table()
-
         if on_start == "true" or (start_date):
             simulated_returns_process_group_logs = execute_process_group_using_metadata('SIMULATED_RETURNS_DAILY_PROCESS_GROUP', start_date, end_date)
         elif not start_date and not end_date:
@@ -986,12 +939,12 @@ def fetch_simulated_returns():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/table_and_view_info/', methods = ['GET'])
-def get_table_and_view_info_from_db():
+@api.route('/api/component_info/', methods = ['GET'])
+def get_component_info():
     try:
-        table_info = get_component_info_from_db('table')
-        view_info  = get_component_info_from_db('view')
-        return jsonify({'table_info': table_info, 'view_info': view_info, 'status': 'Success'})
+        component_type = request.args.get("component_type") or None
+        component_info = get_component_info_from_db(component_type = component_type)
+        return jsonify({'component_info': component_info, 'message': f'Successfully retrieved {component_type if component_type else "All Components"} Info', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
@@ -1003,16 +956,11 @@ def add_process_entry():
         process_payloads             = []
         process_keycolumns_payloads  = []
         for payload in process_entry_payloads:
-            holiday_calendar_data = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
-
             process_group_payload = {
                 'PROCESS_GROUP'             : payload['PROCESS_GROUP']
                 ,'OUT_PROCESS_NAME'         : payload['OUT_PROCESS_NAME']
                 ,'CONSIDER_FOR_PROCESSING'  : payload['CONSIDER_FOR_PROCESSING']
                 ,'EXECUTION_ORDER'          : payload['EXECUTION_ORDER']
-                ,'PROCESSING_DATE'          : holiday_calendar_data['PROCESSING_DATE']
-                ,'NEXT_PROCESSING_DATE'     : holiday_calendar_data['NEXT_PROCESSING_DATE']
-                ,'PREVIOUS_PROCESSING_DATE' : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
             }
             process_group_payloads.append(process_group_payload)
 
@@ -1020,16 +968,14 @@ def add_process_entry():
                 'OUT_PROCESS_NAME'            : payload['OUT_PROCESS_NAME']
                 ,'PROCESS_TYPE'               : payload['PROCESS_TYPE']
                 ,'PROC_TYP_CD_LIST'           : payload['PROC_TYP_CD_LIST']
+                ,'INPUT_DATABASE'             : payload['INPUT_DATABASE']
                 ,'INPUT_VIEW'                 : payload['INPUT_VIEW']
+                ,'TARGET_DATABASE'            : payload['TARGET_DATABASE']
                 ,'TARGET_TABLE'               : payload['TARGET_TABLE']
                 ,'PROCESS_DESCRIPTION'        : payload['PROCESS_DESCRIPTION']
                 ,'AUTO_TRIGGER_ON_LAUNCH'     : payload['AUTO_TRIGGER_ON_LAUNCH']
                 ,'PROCESS_DECOMMISSIONED'     : payload['PROCESS_DECOMMISSIONED']
-                ,'FREQUENCY'                  : payload['FREQUENCY']
                 ,'DEFAULT_START_DATE_TYPE_CD' : payload['DEFAULT_START_DATE_TYPE_CD']
-                ,'PROCESSING_DATE'            : holiday_calendar_data['PROCESSING_DATE']
-                ,'NEXT_PROCESSING_DATE'       : holiday_calendar_data['NEXT_PROCESSING_DATE']
-                ,'PREVIOUS_PROCESSING_DATE'   : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
             }
             process_payloads.append(process_payload)
 
@@ -1038,17 +984,17 @@ def add_process_entry():
                     'OUT_PROCESS_NAME'          : payload['OUT_PROCESS_NAME']
                     ,'KEYCOLUMN_NAME'           : keycolumn_name
                     ,'CONSIDER_FOR_PROCESSING'  : payload['CONSIDER_FOR_PROCESSING']
-                    ,'PROCESSING_DATE'          : holiday_calendar_data['PROCESSING_DATE']
-                    ,'NEXT_PROCESSING_DATE'     : holiday_calendar_data['NEXT_PROCESSING_DATE']
-                    ,'PREVIOUS_PROCESSING_DATE' : holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
                 }
                 process_keycolumns_payloads.append(process_keycolumn_payload)
+        
+        process_group_final_payloads = {
+            'PR_METADATA_PROCESS_GROUP_LOAD': process_group_payloads
+            ,'PR_METADATA_PROCESS_LOAD'     : process_payloads
+            ,'PR_METADATA_KEYCOLUMNS_LOAD'  : process_keycolumns_payloads
+        }
             
-        process_group_logs     = execute_process_group_using_metadata('PROCESS_GROUP_ENTRY_PROCESS_GROUP', None, None, process_group_payloads, "true")
-        process_logs           = execute_process_group_using_metadata('PROCESS_ENTRY_PROCESS_GROUP', None, None, process_payloads, "true")
-        process_keycolumn_logs = execute_process_group_using_metadata('PROCESS_KEYCOLUMN_ENTRY_PROCESS_GROUP', None, None, process_keycolumns_payloads, "true")
-        status = "Success" if process_group_logs['status'] == "Success" and process_logs['status'] == "Success" and process_keycolumn_logs['status'] == "Success" else "Failed"
-        return jsonify({'message': f"{process_group_logs['message']} and {process_logs['message']} and {process_keycolumn_logs['message']}", 'status': status})
+        process_group_logs = execute_process_group_using_metadata('PG_METADATA_PROCESS_LOAD', payloads = process_group_final_payloads)
+        return jsonify(process_group_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
@@ -1081,21 +1027,70 @@ def insert_missing_prices():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
-@api.route('/api/create_metadata_tables_in_aws/<schema_id>/', methods = ['GET'])
-def create_metadata_tables_in_aws(schema_id):
+@api.route('/api/create_metadata_tables/', methods = ['GET'])
+def create_metadata_tables():
     try:
-        create_metadata_schema_in_aws(schema_id)
-        create_metadata_store_table_in_aws(schema_id)
-        create_processing_date_table_in_aws(schema_id)
-        create_processing_type_table_in_aws(schema_id)
-        create_metadata_process_group_table_in_aws(schema_id)
-        create_metadata_process_table_in_aws(schema_id)
-        create_metadata_key_columns_table_in_aws(schema_id)
-        create_execution_logs_table_in_aws(schema_id)
-        create_holiday_date_table_in_aws(schema_id)
-        create_working_date_table_in_aws(schema_id)
-        create_holiday_calendar_table_in_aws(schema_id)
-        create_duplicate_logs_table_in_aws(schema_id)
-        return jsonify({'message': 'Successfully Created Schema and Metadata Tables in AWS', 'status': 'Success'})
+        metadata_schema = request.args.get("metadata_schema") or f"{env}T_META"
+        create_metadata_schema(metadata_schema)
+        create_metadata_store_table(metadata_schema)
+        create_metadata_process_group_table(metadata_schema)
+        create_metadata_process_table(metadata_schema)
+        create_metadata_key_columns_table(metadata_schema)
+        create_execution_logs_table(metadata_schema)
+        create_holiday_date_table(metadata_schema)
+        create_working_date_table(metadata_schema)
+        create_holiday_calendar_table(metadata_schema)
+        create_duplicate_logs_table(metadata_schema)
+        return jsonify({'message': f'Successfully Created {metadata_schema} Metadata Schema and Metadata Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_utility_tables/', methods = ['GET'])
+def create_utlity_tables():
+    try:
+        utility_schema = request.args.get("utility_schema") or f"{env}T_UTIL"
+        create_utility_schema(utility_schema)
+        create_processing_date_table(utility_schema)
+        create_processing_type_table(utility_schema)
+        return jsonify({'message': f'Successfully Created {utility_schema} Utility Schema and Utility Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_auth_tables/', methods = ['GET'])
+def create_auth_tables():
+    try:
+        auth_schema = request.args.get("auth_schema") or f"{env}T_AUTH"
+        create_authorization_schema(auth_schema)
+        create_users_table(auth_schema)
+        create_user_profile_table(auth_schema)
+        create_user_security_table(auth_schema)
+        create_user_sessions_table(auth_schema)
+        create_password_resets_table(auth_schema)
+        create_auth_audit_table(auth_schema)
+        return jsonify({'message': f'Successfully Created {auth_schema} Authorization Schema and Authorization Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_log_tables/', methods = ['GET'])
+def create_log_tables():
+    try:
+        log_schema = request.args.get("log_schema") or f"{env}T_LOG"
+        create_log_schema(log_schema)
+        create_execution_logs_table(log_schema)
+        create_duplicate_logs_table(log_schema)
+        return jsonify({'message': f'Successfully Created {log_schema} Logging Schema and Logging Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/migrate_data_to_aws/', methods = ['GET'])
+def migrate_data_from_sqlite3_to_aws():
+    try:
+        schema = request.args.get('schema') or None
+        sqlite_table_name = request.args.get('sqlite_table_name') or None
+        aws_table_name = request.args.get('aws_table_name') or None
+        truncate_table(schema, aws_table_name)
+        table_payload = get_from_sqlite_component(sqlite_table_name)
+        inserted_count = insert_into_table(schema, aws_table_name, table_payload)
+        return jsonify({'message': f'Successfully Migrated {inserted_count} records from SQLITE3 to AWS', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})

@@ -89,10 +89,25 @@ GROUP BY 1,2,3,4;
     return max_value_date_data
 
 def get_max_value_date_by_portfolio_type(portfolio_type = None):
-    if portfolio_type:
-        max_value_date_for_each_portfolio = fetch_queries_as_dictionaries(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL WHERE MS.PORTFOLIO_TYPE = '{portfolio_type}' GROUP BY 1,2,3,4;")
-    else:
-        max_value_date_for_each_portfolio = fetch_queries_as_dictionaries(f"SELECT MS.ALT_SYMBOL, MS.EXCHANGE_SYMBOL, MS.YAHOO_SYMBOL, MS.PORTFOLIO_TYPE, MAX(PT.VALUE_DATE)  FROM METADATA_STORE MS LEFT OUTER JOIN PRICE_TABLE PT ON MS.ALT_SYMBOL = PT.ALT_SYMBOL GROUP BY 1,2,3,4;")
+    portfolio_type_filter = f"AND MS.PORTFOLIO_TYPE = {portfolio_type}" if portfolio_type else ""
+    max_value_date_for_each_portfolio = fetch_queries_as_dictionaries(f"""
+SELECT
+    MS.ALT_SYMBOL
+    ,MS.EXCHANGE_SYMBOL
+    ,MS.YAHOO_SYMBOL
+    ,MS.PORTFOLIO_TYPE
+    ,MAX(PT.VALUE_DATE)
+FROM
+    METADATA_STORE MS
+LEFT OUTER JOIN
+    PRICE_TABLE PT
+ON
+    MS.ALT_SYMBOL = PT.ALT_SYMBOL
+WHERE
+    1 = 1
+    {portfolio_type_filter}
+GROUP BY 1,2,3,4;
+    """)
     return max_value_date_for_each_portfolio
 
 def get_max_next_processing_date_from_table(table_name):
@@ -215,14 +230,12 @@ WHERE
     """)
     return open_trades_payload
 
-def get_first_swing_trade_date_from_trades_table():
+def get_first_trade_date_from_trades_table():
     first_swing_trade_data = fetch_queries_as_dictionaries("""
 SELECT
-    MIN(TRADE_DATE) AS FIRST_SWING_TRADE_DATE
+    MIN(TRADE_DATE) AS FIRST_TRADE_DATE
 FROM
-    TRADES
-WHERE
-    TRADE_EXIT_DATE IS NULL;
+    TRADES;
     """)
     return first_swing_trade_data[0]
 
@@ -473,27 +486,57 @@ ORDER BY CONS.PROCESSING_DATE;
     """)
     return simulated_returns_dict
 
-def get_component_info_from_db(component = None):
-    type_filter = f"AND TYPE = '{component}'" if component else ""
-    component_info_dict = {}
-    component_list = fetch_queries_as_dictionaries(f"""
+def get_component_info_from_db(component_type = None, schema_name = None, table_name = None):
+    schema_info_dict = {}
+    schema_filter = f"AND SCHEMA_NAME = '{schema_name}'" if schema_name else ""
+    schema_list = fetch_queries_as_dictionaries(f"""
 SELECT
-    NAME AS COMPONENT_NAME
+    SCHEMA_NAME AS SCHEMA_NAME
 FROM
-    SQLITE_MASTER
+    INFORMATION_SCHEMA.SCHEMATA
 WHERE
     1 = 1
+    {schema_filter}
+    AND SCHEMA_NAME NOT IN ('information_schema','mysql','performance_schema','sys')
+ORDER BY SCHEMA_NAME;
+    """, "return_none")
+    for schema in schema_list:
+        schema_filter = f"AND TABLE_SCHEMA = '{schema['SCHEMA_NAME']}'"
+        type_filter = f"AND TABLE_TYPE = '{component_type}'" if component_type else ""
+        table_filter = f"AND TABLE_NAME = '{table_name}'" if table_name else ""
+        component_info_dict = {}
+        component_list = fetch_queries_as_dictionaries(f"""
+SELECT
+    TABLE_NAME AS COMPONENT_NAME
+FROM
+    INFORMATION_SCHEMA.TABLES
+WHERE
+    1 = 1
+    {schema_filter}
     {type_filter}
-    AND NAME NOT LIKE 'sqlite_%'
-ORDER BY 1;
+    {table_filter}
+    AND TABLE_NAME NOT LIKE 'mysql_%'
+ORDER BY TABLE_NAME;
+    """, "return_none")
+        for component in component_list:
+            component_filter = f"AND TABLE_NAME = '{component['COMPONENT_NAME']}'"
+            component_column_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    COLUMN_NAME AS COLUMN_NAME
+FROM
+    INFORMATION_SCHEMA.COLUMNS
+WHERE
+    1 = 1
+    {schema_filter}
+    {component_filter}
+ORDER BY ORDINAL_POSITION;
     """)
-    for component in component_list:
-        component_column_data = fetch_queries_as_dictionaries(f"""
-PRAGMA 
-    TABLE_INFO({component['COMPONENT_NAME']});
-    """)
-        component_info_dict[component['COMPONENT_NAME']] = component_column_data
-    return component_info_dict
+            columns_list = []
+            for column in component_column_data:
+                columns_list.append(column['COLUMN_NAME'])
+            component_info_dict[component['COMPONENT_NAME']] = columns_list
+        schema_info_dict[schema['SCHEMA_NAME']] = component_info_dict
+    return schema_info_dict
 
 def get_missing_prices_from_price_table():
     missing_prices_data = fetch_queries_as_dictionaries("""
@@ -525,3 +568,7 @@ GROUP BY 1,2,3,4
 ORDER BY 2;
     """)
     return missing_prices_data
+
+def get_from_sqlite_component(component_name):
+    component_data = fetch_queries_as_dictionaries(f'SELECT * FROM "{component_name}";')
+    return component_data

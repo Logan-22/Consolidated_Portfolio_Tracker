@@ -24,7 +24,11 @@ app.register_blueprint(frontend)
 app.register_blueprint(api)
 app.register_blueprint(auth)
 
-app.config['ENVIRONMENT'] = getenv('ENVIRONMENT')
+app.config['ENVIRONMENT']         = getenv('ENVIRONMENT')
+app.config['SESSION_COOKIE_AGE']  = int(getenv("SESSION_COOKIE_AGE", 60 * 60 * 24))
+app.config['SESSION_COOKIE_NAME'] = getenv("SESSION_COOKIE_NAME", "session")
+app.config['SESSION_IDLE_TIMEOUT'] = getenv("SESSION_IDLE_TIMEOUT", 60 * 30)
+app.config['PASSWORD_RESET_EXP_HOURS'] = int(getenv('PASSWORD_RESET_EXP_HOURS', 1))
 
 @app.context_processor
 def inject_data():

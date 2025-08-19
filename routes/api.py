@@ -102,7 +102,7 @@ create_metadata_schema,\
 create_metadata_store_table,\
 create_metadata_process_group_table,\
 create_metadata_process_table,\
-create_metadata_key_columns_table,\
+create_metadata_columns_table,\
 create_holiday_date_table,\
 create_working_date_table,\
 create_holiday_calendar_table
@@ -118,13 +118,13 @@ create_users_table,\
 create_user_profile_table,\
 create_user_security_table,\
 create_user_sessions_table,\
-create_password_resets_table,\
-create_auth_audit_table
+create_password_resets_table
 
 from utils.sql_utils.tables.p1t_log import\
 create_log_schema,\
 create_execution_logs_table,\
-create_duplicate_logs_table
+create_duplicate_logs_table,\
+create_auth_audit_table
 
 api = Blueprint('api', __name__)
 
@@ -951,10 +951,10 @@ def get_component_info():
 @api.route('/api/process_entry/', methods = ['POST'])
 def add_process_entry():
     try:
-        process_entry_payloads       = loads(request.form.get('process_entry_values')) # json.loads
-        process_group_payloads       = []
-        process_payloads             = []
-        process_keycolumns_payloads  = []
+        process_entry_payloads   = loads(request.form.get('process_entry_values')) # json.loads
+        process_group_payloads   = []
+        process_payloads         = []
+        process_columns_payloads = []
         for payload in process_entry_payloads:
             process_group_payload = {
                 'PROCESS_GROUP'             : payload['PROCESS_GROUP']
@@ -979,18 +979,28 @@ def add_process_entry():
             }
             process_payloads.append(process_payload)
 
-            for keycolumn_name in payload['PROCESS_KEYCOLUMNS']:
+            for column_name in payload['PROCESS_KEYCOLUMNS']:
                 process_keycolumn_payload = {
-                    'OUT_PROCESS_NAME'          : payload['OUT_PROCESS_NAME']
-                    ,'KEYCOLUMN_NAME'           : keycolumn_name
-                    ,'CONSIDER_FOR_PROCESSING'  : payload['CONSIDER_FOR_PROCESSING']
+                    'OUT_PROCESS_NAME'         : payload['OUT_PROCESS_NAME']
+                    ,'COLUMN_NAME'             : column_name
+                    ,'COLUMN_TYP_CD'           : 'KEY_COLUMN'
+                    ,'CONSIDER_FOR_PROCESSING' : payload['CONSIDER_FOR_PROCESSING']
                 }
-                process_keycolumns_payloads.append(process_keycolumn_payload)
+                process_columns_payloads.append(process_keycolumn_payload)
+            
+            for column_name in payload['PROCESS_EXCL_COLUMNS']:
+                process_exclcolumn_payload = {
+                    'OUT_PROCESS_NAME'         : payload['OUT_PROCESS_NAME']
+                    ,'COLUMN_NAME'             : column_name
+                    ,'COLUMN_TYP_CD'           : 'EXCL_COLUMN'
+                    ,'CONSIDER_FOR_PROCESSING' : payload['CONSIDER_FOR_PROCESSING']
+                }
+                process_columns_payloads.append(process_exclcolumn_payload)
         
         process_group_final_payloads = {
             'PR_METADATA_PROCESS_GROUP_LOAD': process_group_payloads
             ,'PR_METADATA_PROCESS_LOAD'     : process_payloads
-            ,'PR_METADATA_KEYCOLUMNS_LOAD'  : process_keycolumns_payloads
+            ,'PR_METADATA_KEYCOLUMNS_LOAD'  : process_columns_payloads
         }
             
         process_group_logs = execute_process_group_using_metadata('PG_METADATA_PROCESS_LOAD', payloads = process_group_final_payloads)
@@ -1035,7 +1045,7 @@ def create_metadata_tables():
         create_metadata_store_table(metadata_schema)
         create_metadata_process_group_table(metadata_schema)
         create_metadata_process_table(metadata_schema)
-        create_metadata_key_columns_table(metadata_schema)
+        create_metadata_columns_table(metadata_schema)
         create_execution_logs_table(metadata_schema)
         create_holiday_date_table(metadata_schema)
         create_working_date_table(metadata_schema)
@@ -1066,7 +1076,6 @@ def create_auth_tables():
         create_user_security_table(auth_schema)
         create_user_sessions_table(auth_schema)
         create_password_resets_table(auth_schema)
-        create_auth_audit_table(auth_schema)
         return jsonify({'message': f'Successfully Created {auth_schema} Authorization Schema and Authorization Tables', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
@@ -1078,6 +1087,7 @@ def create_log_tables():
         create_log_schema(log_schema)
         create_execution_logs_table(log_schema)
         create_duplicate_logs_table(log_schema)
+        create_auth_audit_table(log_schema)
         return jsonify({'message': f'Successfully Created {log_schema} Logging Schema and Logging Tables', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})

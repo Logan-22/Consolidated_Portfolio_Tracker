@@ -111,15 +111,16 @@ COLLATE=utf8mb4_unicode_ci;
     cursor.close()
     conn.close()
 
-def create_metadata_key_columns_table(metadata_schema = f"{env}T_META"):
+def create_metadata_columns_table(metadata_schema = f"{env}T_META"):
     conn = connection_pool.get_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
-CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_KEY_COLUMNS
+CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_COLUMNS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
     OUT_PROCESS_NAME         VARCHAR (100),
-    KEYCOLUMN_NAME           VARCHAR (100),
+    COLUMN_NAME              VARCHAR (100),
+    COLUMN_TYP_CD            VARCHAR (20),
     CONSIDER_FOR_PROCESSING  TINYINT,
     UPDATE_PROCESS_NAME      VARCHAR (100),
     UPDATE_PROCESS_ID        INT,

@@ -77,3 +77,7 @@ def create_tables():
 @frontend.route('/login')
 def user_login():
     return render_template('user_login.html')
+
+@frontend.route('/password_reset/confirm')
+def confirm_password_reset():
+    return render_template('password_reset_confirm.html')

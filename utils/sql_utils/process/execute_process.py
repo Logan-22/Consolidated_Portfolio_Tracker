@@ -3,6 +3,7 @@ from flask import current_app
 
 from utils.sql_utils.scd2_framework.upsert_scd2_table import upsert_scd2
 from utils.sql_utils.scd1_framework.delsert_scd1_table import delsert_scd1
+from utils.sql_utils.insert_append_framework.insert_append_table import insert_append
 from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
 from utils.log_utils.insert_initial_log import insert_intitial_log_record
 from utils.log_utils.update_log import update_log_record
@@ -144,6 +145,8 @@ WHERE
         logs = upsert_scd2(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
     elif process_metadata['PROCESS_TYPE'] == 'SCD1':
         logs = delsert_scd1(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
+    elif process_metadata['PROCESS_TYPE'] == 'INS':
+        logs = insert_append(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
 
     if end_date:
         update_log_record(process_name, process_id, logs['status'], logs['message'], start_date, log_end_date, logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['deleted_count'], logs['no_change_count'], logs['skipped_count'], logs['null_count'], str(logs['skipped_due_to_schema_mismatch']))

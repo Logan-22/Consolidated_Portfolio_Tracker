@@ -12,7 +12,6 @@ let process_count = 0
 let table_info_data = {}
 let view_info_data = {}
 let schema_list = []
-const frequency_list = ['Ad hoc','On Start']
 
 async function initialize_process_entry_form(){
 const table_info_response = await fetch('/api/component_info?component_type=BASE%20TABLE',{
@@ -55,7 +54,7 @@ async function add_process_entry_block(e){
   <div class="field-grid">
     ${create_input_element("Process Group"               , "text"  , "process_group")}
     ${create_input_element("Process Name"                , "text"  , "process_name")}
-    ${create_input_element("Process Type"                , "select", "process_type", ["SCD1", "SCD2", "SCD3"])}
+    ${create_input_element("Process Type"                , "select", "process_type", ["SCD1", "SCD2", "SCD3", "INS"])}
     ${create_input_element("Process Type Codes"          , "text"  , "process_type_codes")}
     ${create_input_element("Input Database"              , "select", "input_database", schema_list)}
     ${create_input_element("Input View"                  , "select", "process_input_view")}
@@ -77,6 +76,15 @@ async function add_process_entry_block(e){
   </select>
   <div class = "selected-values" id = "selected-values-${process_count}">
   </div>
+  </div>
+  </br>
+  <div class="excl-columns">
+  <label for ="excl-column-list-${process_count}">Excluded Columns</label>
+  <select id = "excl-column-list-${process_count}" name = "excl-column-list" multiple size = 6>
+  </select>
+  <div class = "selected-values" id = "selected-excl-values-${process_count}">
+  </div>
+  </div>
   `
 
 process_entry_form_container.appendChild(process_entry_block_div);
@@ -87,6 +95,15 @@ const select_input_display = document.querySelector(`#selected-values-${process_
 select_input_element.addEventListener('change', ()=>{
   const selected_options = Array.from(select_input_element.selectedOptions).map(opt => opt.value)
   select_input_display.innerHTML = selected_options.map(opt => `<span>${opt}</span>`).join('')
+})
+
+const select_excl_element = document.querySelector(`#excl-column-list-${process_count}`)
+const select_excl_display = document.querySelector(`#selected-excl-values-${process_count}`)
+
+
+select_excl_element.addEventListener('change', ()=>{
+  const selected_options = Array.from(select_excl_element.selectedOptions).map(opt => opt.value)
+  select_excl_display.innerHTML = selected_options.map(opt => `<span>${opt}</span>`).join('')
 })
 
 const input_database_field = document.querySelector(`#input_database-${process_count}`)
@@ -109,9 +126,11 @@ const target_table_field = document.querySelector(`#process_target_table-${proce
 target_table_field.addEventListener('change', (e) => {
   let process_count_of_the_selected_field = e.target.id.split("-")[1]
   get_column_list_options(process_count_of_the_selected_field)
+  get_excl_column_list_options(process_count_of_the_selected_field)
 })
 
 get_column_list_options(process_count)
+get_excl_column_list_options(process_count)
 
 process_count += 1
 }
@@ -174,6 +193,7 @@ let table_option_list = ""
     }
 process_target_table_name.innerHTML = table_option_list
 get_column_list_options(process_count_of_the_selected_target_database_field)
+get_excl_column_list_options(process_count_of_the_selected_target_database_field)
 }
 
 function get_column_list_options(process_count_of_the_selected_field){
@@ -195,11 +215,31 @@ let column_option_list = ""
 key_column_select_list.innerHTML = column_option_list
 }
 
+function get_excl_column_list_options(process_count_of_the_selected_field){
+const target_database_field = document.getElementById(`target_database-${process_count_of_the_selected_field}`)
+const excl_column_select_list = document.getElementById(`excl-column-list-${process_count_of_the_selected_field}`)
+const selected_excl_values_list = document.getElementById(`selected-excl-values-${process_count_of_the_selected_field}`)
+selected_excl_values_list.innerHTML = ""
+const process_target_table_name = document.getElementById(`process_target_table-${process_count_of_the_selected_field}`)
+let column_option_list = ""
+  for (let schema in table_info_data.component_info){
+    if(schema == target_database_field.value){
+      for(let table in table_info_data.component_info[schema]){
+        if(table == process_target_table_name.value){
+          column_option_list = table_info_data.component_info[schema][table].map(column => `<option value = "${column}">${column}</option>`).join(" ")
+        }
+      }
+      }
+    }
+excl_column_select_list.innerHTML = column_option_list
+}
+
 document.getElementById("process_entry_form").addEventListener("submit", async (e) => {
 e.preventDefault()
 const process_entries = document.querySelectorAll('.process-entry')
 const process_entry_payloads = Array.from(process_entries).map(entry => {
 const key_columns = Array.from(entry.querySelector('[name="key-column-list"]').selectedOptions).map(opt => opt.value)
+const excl_columns = Array.from(entry.querySelector('[name="excl-column-list"]').selectedOptions).map(opt => opt.value)
 return {
   PROCESS_GROUP              : entry.querySelector('[name="process_group"]').value.trim(),
   OUT_PROCESS_NAME           : entry.querySelector('[name="process_name"]').value.trim(),
@@ -215,10 +255,25 @@ return {
   CONSIDER_FOR_PROCESSING    : entry.querySelector('[name="consider_for_processing"]').checked ? 1 : 0,
   DEFAULT_START_DATE_TYPE_CD : entry.querySelector('[name="process_default_start_date_type_code"]').value.trim(),
   EXECUTION_ORDER            : entry.querySelector('[name="execution_order"]').value,
-  PROCESS_KEYCOLUMNS         : key_columns
+  PROCESS_KEYCOLUMNS         : key_columns,
+  PROCESS_EXCL_COLUMNS       : excl_columns
 }
 })
 
+let overlapping_field_status = false
+
+for(let payload in process_entry_payloads){
+let excl_set = new Set(process_entry_payloads[payload]['PROCESS_EXCL_COLUMNS'])
+let overlapping_fields_between_key_and_excl = process_entry_payloads[payload]['PROCESS_KEYCOLUMNS'].filter(key => excl_set.has(key))
+
+if(overlapping_fields_between_key_and_excl.length != 0){
+  create_notification(`There are overlapping fields between Key column list and Exclusion List: ${overlapping_fields_between_key_and_excl}`, 'Failed')
+  overlapping_field_status = true
+  break
+}
+}
+
+if(! overlapping_field_status){
 const formData = new FormData();
 formData.append('process_entry_values', JSON.stringify(process_entry_payloads));
 
@@ -230,5 +285,5 @@ body: formData
 const process_entry_data = await process_entry_response.json();
 
 create_notification(process_entry_data.message, process_entry_data.status)
-
+}
 })

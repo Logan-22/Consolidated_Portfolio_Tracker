@@ -1,7 +1,7 @@
 from mysql.connector import Error
 from utils.connection_utils.connection_pool_config import connection_pool
 
-def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", params = None):
+def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", params = None, fetch = "All"):
     """
     Execute a MySQL query and return the results as a list of dictionaries.
 
@@ -13,7 +13,10 @@ def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", p
         conn = connection_pool.get_connection()
         cursor = conn.cursor(dictionary = True)
         cursor.execute(query, params)
-        rows = cursor.fetchall()
+        if fetch == "All":
+            rows = cursor.fetchall()
+        elif fetch == "One":
+            rows = cursor.fetchone()
         if rows:
             result = rows
         elif on_empty_result == "return_none_list":
@@ -21,8 +24,10 @@ def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", p
             column_names = [desc[0] for desc in cursor.description]
             # Create a single dict with None values
             result = [{col: None for col in column_names}]
-        else:
+        elif fetch == "All":
             result = []
+        elif fetch == "One":
+            result = None
         return result
     except Error as e:
         print(f"MySQL error: {e}")

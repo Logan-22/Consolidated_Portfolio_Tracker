@@ -1,28 +1,9 @@
 import { create_notification } from './create_notification.js'
 
-document.addEventListener('DOMContentLoaded', async () => {
-  if (document.getElementById('sqlite_table_name')) {
-    await init_sqlite_table_name_dropdown();
-  }
-});
-
-async function init_sqlite_table_name_dropdown(){
-const table_name = document.getElementById("sqlite_table_name")
-table_name.innerHTML = ""
-const table_info_response = await fetch('/api/component_info?component_type=table',{
-method: 'GET'
-})
-
-const table_info_data = await table_info_response.json()
-for(let table in table_info_data.component_info){
-table_name.innerHTML += `<option>${table}</option>`
-}
-}
-
 document.getElementById("create_metadata_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
 const metadata_schema = document.getElementById("metadata_schema").value
-const create_metadata_tables_response = await fetch(`/api/create_metadata_tables/?metadata_schema=${metadata_schema}/`, {
+const create_metadata_tables_response = await fetch(`/api/create_metadata_tables/?metadata_schema=${metadata_schema}`, {
 method: 'GET'
 })
 
@@ -31,16 +12,16 @@ const create_metadata_tables_data = await create_metadata_tables_response.json()
 create_notification(create_metadata_tables_data.message, create_metadata_tables_data.status)
 })
 
-document.getElementById("create_metadata_tables").addEventListener("submit", async (e) => {
+document.getElementById("create_utility_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
-const metadata_schema = document.getElementById("metadata_schema").value
-const create_metadata_tables_response = await fetch(`/api/create_metadata_tables/?metadata_schema=${metadata_schema}/`, {
+const utility_schema = document.getElementById("utility_schema").value
+const create_utility_tables_response = await fetch(`/api/create_utility_tables/?utility_schema=${utility_schema}`, {
 method: 'GET'
 })
 
-const create_metadata_tables_data = await create_metadata_tables_response.json();
+const create_utility_tables_data = await create_utility_tables_response.json();
 
-create_notification(create_metadata_tables_data.message, create_metadata_tables_data.status)
+create_notification(create_utility_tables_data.message, create_utility_tables_data.status)
 })
 
 document.getElementById("create_auth_tables").addEventListener("submit", async (e) => {

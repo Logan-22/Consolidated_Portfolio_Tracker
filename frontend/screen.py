@@ -78,6 +78,10 @@ def create_tables():
 def user_login():
     return render_template('user_login.html')
 
+@frontend.route('/register')
+def user_register():
+    return render_template('user_register.html')
+
 @frontend.route('/password_reset/confirm')
 def confirm_password_reset():
     return render_template('password_reset_confirm.html')

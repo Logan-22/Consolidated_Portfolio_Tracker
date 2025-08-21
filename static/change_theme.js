@@ -7,7 +7,9 @@ const change_theme_button = document.getElementById('change-theme');
 const saved_theme = localStorage.getItem('theme');
 if (saved_theme) {
   document.body.classList.add(saved_theme);
+  if(change_theme_button){
   change_theme_button.value = saved_theme.replaceAll("_"," ")
+  }
 }
 
 if (change_theme_button) {

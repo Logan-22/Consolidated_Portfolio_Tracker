@@ -1,5 +1,4 @@
-from flask import Blueprint, jsonify, request, current_app, make_response
-from routes.limiter import limiter
+from flask import Blueprint, jsonify, request, current_app, make_response, url_for
 from argon2 import PasswordHasher
 from hmac import compare_digest
 from secrets import token_urlsafe
@@ -17,6 +16,7 @@ generate_csrf_token,\
 login_limit_based_on_email_or_ip,\
 require_csrf_token
 from utils.log_utils.auth_audit_log import auth_audit_log_entry
+from extensions import oauth, limiter
 
 auth = Blueprint('auth', __name__)
 
@@ -451,10 +451,130 @@ LIMIT 1;
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"}), 500
 
-@auth.route('/auth/test/')
-def test_functions():
+@auth.route('/auth/login/google/', methods = ['GET'])
+def login_using_google():
+    redirect_uri = url_for('auth.auth_google_callback', _external = True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@auth.route('/auth/google/callback')
+def auth_google_callback():
     try:
-        variable = generate_session_id()
-        return jsonify({'message': variable, 'status': 'Success'})
+        env = current_app.config['ENVIRONMENT']
+        SESSION_COOKIE_NAME = current_app.config['SESSION_COOKIE_NAME']
+        SESSION_COOKIE_AGE = current_app.config['SESSION_COOKIE_AGE']
+        token = oauth.google.authorize_access_token()
+        user_info = oauth.google.parse_id_token(token)
+        email_id = (user_info.get('email') or "").strip().lower()
+        if not email_id:
+            auth_audit_log_entry(None, None, 'Login Using Google', 'Failed', 'Email not present')
+            return jsonify({'message': 'Gmail Not Present', 'status': 'Failed'}), 400
+        user_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    USER_ID
+FROM
+    {env}T_AUTH.USERS
+WHERE
+    EMAIL_ID = '{email_id}'
+    """, 'return_none', fetch = 'One')
+        user_id = ""
+        if not user_data:
+            user_id = generate_user_id(email_id)
+            user_load_payload = {
+                'USER_ID'           : user_id
+                ,'EMAIL_ID'         : email_id
+                ,'PASSWORD_HASH'    : None
+                ,'ROLE'             : 'User'
+                ,'PERMISSIONS_JSON' : None
+            }
+
+            user_info_load_payload = {
+                'USER_ID'              : user_id
+                ,'FIRST_NAME'          : None
+                ,'LAST_NAME'           : None
+                ,'USER_NAME'           : None
+                ,'PHONE_NUMBER'        : None
+                ,'DATE_OF_BIRTH'       : None
+                ,'PROFILE_PICTURE_URL' : None
+            }
+
+            user_security_payload = {
+                'USER_ID'                  : user_id
+                ,'LAST_LOGIN_AT'           : None
+                ,'CURRENT_LOGIN_AT'        : None
+                ,'LOGIN_COUNT'             : 0
+                ,'LAST_PASSWORD_CHANGE_AT' : None
+                ,'PASSWORD_EXPIRES_AT'     : None
+                ,'TWO_FACTOR_ENABLED'      : 0
+                ,'TWO_FACTOR_SECRET'       : None
+                ,'LAST_LOGIN_IP'           : None
+                ,'LAST_LOGIN_DEVICE'       : None
+                ,'CURRENT_LOGIN_IP'        : None
+                ,'CURRENT_LOGIN_DEVICE'    : None
+                ,'FAILED_LOGIN_AT'         : None
+                ,'FAILED_LOGIN_COUNT'      : 0
+                ,'EMAIL_VERIFIED'          : 1 # Email is verified by google
+                ,'LOCKED_UNTIL'            : None
+            }
+
+            user_register_final_payloads = {
+                'PR_USERS_LOAD'          : user_load_payload
+                ,'PR_USER_INFO_LOAD'     : user_info_load_payload
+                ,'PR_USER_SECURITY_LOAD' : user_security_payload
+            }
+
+            user_registry_logs = execute_process_group_using_metadata('PG_USERS_REGISTER', payloads = user_register_final_payloads)
+            if user_registry_logs['status'] == 'Success':
+                auth_audit_log_entry(None, None, 'Oauth Register', 'Success', f'Registered using Google OAuth with Email ID {email_id}')
+            else:
+                auth_audit_log_entry(None, None, 'Oauth Register', 'Failed', f"Registration failed for {email_id} - Internal Error: {user_registry_logs['message']}")
+                return jsonify({'message': 'Error while registering! Please try again after some time.', 'status': 'Failed'}), 500
+        else: # if user is present
+            user_security_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    USER_ID
+    ,EMAIL_VERIFIED
+FROM
+    {env}T_AUTH.USER_SECURITY
+WHERE
+    USER_ID = (SELECT DISTINCT USER_ID FROM {env}T_AUTH.USERS WHERE EMAIL_ID = {email_id});
+    """, 'return_none', fetch = 'One')
+            if user_security_data.get('EMAIL_VERIFIED') and user_security_data['EMAIL_VERIFIED'] != 1:
+                update_user_security_payload = {
+                    'data': {
+                        'EMAIL_VERIFIED' : 1
+                    }
+                    ,'conditions' : {
+                        'USER_ID' : user_security_data['USER_ID']
+                    }
+                }
+                update_table_with_payload(f'{env}T_AUTH', 'USER_SECURITY', update_user_security_payload)
+        # Create session as usual
+        session_id = generate_session_id()
+        csrf_token = generate_csrf_token()
+        session_expires_at = datetime.now() + timedelta(seconds = SESSION_COOKIE_AGE)
+        user_sessions_payload = {
+            'USER_ID'         : user_data.get('USER_ID') if user_data.get('USER_ID') else user_id
+            ,'SESSION_ID'     : session_id
+            ,'CSRF_TOKEN'     : csrf_token
+            ,'LOGIN_DEVICE'   : request.headers.get("User-Agent")
+            ,'LOGIN_IP'       : request.remote_addr
+            ,'ISSUED_AT'      : datetime.now()
+            ,'LAST_ACTIVE_AT' : datetime.now()
+            ,'EXPIRES_AT'     : session_expires_at
+            ,'REVOKED'        : 0
+        }
+
+        user_sessions_entry_final_payload = {
+            'PR_USER_SESSIONS_LOAD' : user_sessions_payload
+        }
+
+        user_sessions_logs = execute_process_group_using_metadata('PG_USERS_SESSIONS_ENTRY', payloads = user_sessions_entry_final_payload)
+        if user_sessions_logs['status'] == "Success":
+            response = make_response(jsonify({'message': 'Login Completed Successfully using Google OAuth Sevice', 'status': 'Success'}))
+            response.set_cookie(SESSION_COOKIE_NAME, session_id, httponly = True, secure = True, samesite = "Strict", max_age = SESSION_COOKIE_AGE)
+            response.set_cookie('XSRF-TOKEN', csrf_token, httponly = False, secure = True, samesite = "Strict", max_age = SESSION_COOKIE_AGE)
+            auth_audit_log_entry(user_data.get('USER_ID') if user_data.get('USER_ID') else user_id, session_id, 'Login', 'Success', 'Logged in using Email ID and Password')
+            return response, 200
+            
     except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
+        return jsonify({'message': repr(e), 'status': "Failed"}), 500

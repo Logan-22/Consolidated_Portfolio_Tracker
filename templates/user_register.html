@@ -61,8 +61,10 @@
         </div>
     </div>
 </div>
+<!-- Dummy Container to create notification -->
+<div id="notification-container" class="notification-container"></div> 
 </body>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script type="module" src="{{ url_for('static', filename='change_theme.js') }}" defer></script>
-<script type="module" src="{{ url_for('static', filename='user_login.js') }}" defer></script>
+<script type="module" src="{{ url_for('static', filename='user_auth.js') }}" defer></script>
 </html>

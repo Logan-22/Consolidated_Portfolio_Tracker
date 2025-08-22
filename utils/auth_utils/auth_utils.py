@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, make_response, current_app
 from flask_limiter.util import get_remote_address
 from hmac import new
 from hashlib import sha256
@@ -43,9 +43,15 @@ def generate_user_id(email_id):
 def require_csrf_token(function):
     @wraps(function)
     def decorated(*args, **kwargs):
+        SESSION_COOKIE_NAME = current_app.config['SESSION_COOKIE_NAME']
+        redirect_url        = current_app.config['REDIRECT_URL']
         header = request.headers.get("X-XSRF-TOKEN")
         cookie = request.cookies.get("XSRF-TOKEN")
         if not header or not cookie or header != cookie:
-            return jsonify({'message': 'Invalid CSRF Token', 'status': 'Failed'}), 403
+            response = make_response("", 302)
+            response.headers["Location"] = f"{redirect_url}/login"
+            response.delete_cookie(SESSION_COOKIE_NAME)
+            response.delete_cookie('XSRF-TOKEN')
+            return response
         return function(*args, **kwargs)
     return decorated

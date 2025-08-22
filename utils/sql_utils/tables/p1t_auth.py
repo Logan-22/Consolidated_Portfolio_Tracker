@@ -21,7 +21,7 @@ def create_users_table(auth_schema = f"{env}T_AUTH"):
 CREATE TABLE IF NOT EXISTS {auth_schema}.USERS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    USER_ID                  INT            UNIQUE NOT NULL,
+    USER_ID                  BIGINT         UNIQUE NOT NULL,
     EMAIL_ID                 VARCHAR(255),
     PASSWORD_HASH            VARCHAR(1024),
     ROLE                     VARCHAR(20),
@@ -52,7 +52,7 @@ def create_user_profile_table(auth_schema = f"{env}T_AUTH"):
 CREATE TABLE IF NOT EXISTS {auth_schema}.USER_INFO
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    USER_ID                  INT            NOT NULL,
+    USER_ID                  BIGINT         UNIQUE NOT NULL,
     FIRST_NAME               VARCHAR(255),
     LAST_NAME                VARCHAR(255),
     USER_NAME                VARCHAR(255),
@@ -82,7 +82,7 @@ def create_user_security_table(auth_schema = f"{env}T_AUTH"):
 CREATE TABLE IF NOT EXISTS {auth_schema}.USER_SECURITY
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    USER_ID                  INT            NOT NULL,
+    USER_ID                  BIGINT         UNIQUE NOT NULL,
     LAST_LOGIN_AT            DATETIME,
     CURRENT_LOGIN_AT         DATETIME,
     LOGIN_COUNT              TINYINT        DEFAULT 0,
@@ -121,7 +121,7 @@ def create_user_sessions_table(auth_schema = f"{env}T_AUTH"):
 CREATE TABLE IF NOT EXISTS {auth_schema}.USER_SESSIONS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    USER_ID                  INT            NOT NULL,
+    USER_ID                  BIGINT         UNIQUE NOT NULL,
     SESSION_ID               VARCHAR(255),
     CSRF_TOKEN               VARCHAR(255),
     LOGIN_DEVICE             VARCHAR(255),
@@ -153,7 +153,7 @@ def create_password_resets_table(auth_schema = f"{env}T_AUTH"):
 CREATE TABLE IF NOT EXISTS {auth_schema}.PASSWORD_RESETS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    USER_ID                  INT            NOT NULL,
+    USER_ID                  BIGINT         UNIQUE NOT NULL,
     TOKEN_HASH               VARCHAR(512),
     EXPIRES_AT               DATETIME,
     USED_AT                  DATETIME,

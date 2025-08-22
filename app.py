@@ -44,7 +44,8 @@ app.config['SESSION_COOKIE_AGE']       = int(getenv("SESSION_COOKIE_AGE", 60 * 6
 app.config['SESSION_COOKIE_NAME']      = getenv("SESSION_COOKIE_NAME", "session")
 app.config['SESSION_IDLE_TIMEOUT']     = getenv("SESSION_IDLE_TIMEOUT", 60 * 30)
 app.config['PASSWORD_RESET_EXP_HOURS'] = int(getenv('PASSWORD_RESET_EXP_HOURS', 1))
-GOOGLE_CLIENT_ID                       = getenv('GOOGLE_CLIENT_ID')
+app.config['GOOGLE_CLIENT_ID']         = GOOGLE_CLIENT_ID
+app.config['REDIRECT_URL']             = getenv('REDIRECT_URL')
 
 @app.context_processor
 def inject_data():

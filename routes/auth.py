@@ -325,8 +325,9 @@ WHERE
 @limiter.limit('5 per hour')
 def password_reset_request():
     try:
-        env = current_app.config['ENVIRONMENT']
+        env                      = current_app.config['ENVIRONMENT']
         PASSWORD_RESET_EXP_HOURS = current_app.config['PASSWORD_RESET_EXP_HOURS']
+        redirect_url             = current_app.config['REDIRECT_URL']
         email_id = (request.form.get('email_id') or "").strip().lower()
         if not email_id:
             auth_audit_log_entry(None, None, 'Password Reset', 'Failed', f'Email ID {email_id} is Empty')
@@ -363,7 +364,7 @@ WHERE
         password_reset_entry_logs = execute_process_group_using_metadata('PG_PASSWORD_RESETS_ENTRY', payloads = password_reset_final_payload)
         if password_reset_entry_logs['status'] == 'Success':
             auth_audit_log_entry(user_data['USER_ID'], None, 'Password Reset', 'Success', f'Password Reset Instructions sent to {email_id}')
-            reset_link = f"http://127.0.0.1:5000/password_reset/confirm?token={password_reset_token}&user_id={user_data['USER_ID']}"
+            reset_link = f"{redirect_url}/password_reset/confirm?token={password_reset_token}&user_id={user_data['USER_ID']}"
             print(f"DEV Link -> {reset_link}")
             return jsonify({'message': 'Password reset instructions will be sent if the email is registered.', 'status': 'Success'}), 200
         else:

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from utils.auth_utils.auth_utils import require_csrf_token
+from utils.auth_utils.auth_utils import require_login
 
 frontend = Blueprint('frontend', __name__)
 
@@ -64,7 +64,7 @@ def process_consolidated_allocation():
     return render_template('process_consolidated_allocation.html')
 
 @frontend.route('/process_entry')
-@require_csrf_token
+@require_login
 def process_entry():
     return render_template('process_entry.html')
 

@@ -484,7 +484,6 @@ def auth_google_callback():
         if not email_id:
             auth_audit_log_entry(None, None, 'Login Using Google', 'Failed', 'Email not present')
             return redirect(f'{redirect_url}/login?error=gmail_not_found')
-        auth_audit_log_entry(None, None, 'OAuth Email', 'Entry', f'Email:{email_id}')
         user_data = fetch_queries_as_dictionaries(f"""
 SELECT
     USER_ID
@@ -493,11 +492,9 @@ FROM
 WHERE
     EMAIL_ID = '{email_id}'
     """, 'return_none', fetch = 'One')
-        auth_audit_log_entry(None, None, 'OAuth User Payload', 'Entry', f'{str(user_data)}')
         user_id = ""
         if not user_data:
             user_id = generate_user_id(email_id)
-            auth_audit_log_entry(None, None, 'OAuth User ID Generated', 'Entry', f'{user_id}')
             user_load_payload = {
                 'USER_ID'           : user_id
                 ,'EMAIL_ID'         : email_id
@@ -592,10 +589,10 @@ WHERE
         if user_sessions_logs['status'] == "Success":
             response = make_response("", 302)
             response.headers["Location"] = f"{redirect_url}/process_entry"
-            response.set_cookie(SESSION_COOKIE_NAME, session_id, httponly = True, secure = True, samesite = "Strict", max_age = SESSION_COOKIE_AGE)
-            response.set_cookie('XSRF-TOKEN', csrf_token, httponly = False, secure = True, samesite = "Strict", max_age = SESSION_COOKIE_AGE)
+            response.set_cookie(SESSION_COOKIE_NAME, session_id, httponly = True, secure = False, samesite = "Lax", max_age = SESSION_COOKIE_AGE, path = "/", domain = None)
+            response.set_cookie('XSRF-TOKEN', csrf_token, httponly = False, secure = False, samesite = "Lax", max_age = SESSION_COOKIE_AGE, path = "/", domain = None)
             auth_audit_log_entry(user_id, session_id, 'Login', 'Success', 'Logged in using Google OAuth')
             return response
-            
+
     except Exception as e:
         return redirect(f'{redirect_url}/login?error={repr(e)}'), 500

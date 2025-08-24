@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, redirect, request, current_app, make_response, url_for
+from json import loads
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from argon2 import PasswordHasher
@@ -28,18 +29,20 @@ ph = PasswordHasher(time_cost = 2, memory_cost = 102400, parallelism = 4)
 @limiter.limit('5 per minute')
 def user_register():
     try:
-        env = current_app.config['ENVIRONMENT']
-        email_id = (request.form.get('email_id') or "").strip().lower()
-        password = request.form.get('password') or ""
-        first_name = request.form.get('first_name') or ""
-        last_name = request.form.get('last_name') or ""
-        phone_number = request.form.get('phone_number') or ""
-        date_of_birth = request.form.get('date_of_birth') or ""
+        env          = current_app.config['ENVIRONMENT']
+        redirect_url = current_app.config['REDIRECT_URL']
+        user_register_form_data = loads(request.form.get('user_register_form_data'))
+        email_id = (user_register_form_data.get('email_id') or "").strip().lower()
+        password = user_register_form_data.get('password') or ""
+        first_name = user_register_form_data.get('first_name') or ""
+        last_name = user_register_form_data.get('last_name') or ""
         if not email_id or not password:
             return jsonify({'message': 'Missing Email ID or Password', 'status': 'Failed'}), 400
+        if not first_name or not last_name:
+            return jsonify({'message': 'Missing First Name or Last Name', 'status': 'Failed'}), 400
         if len(password) < 12:
             return jsonify({'message': 'Weak Password', 'status': 'Failed'}), 400
-        
+
         email_id_exists = fetch_queries_as_dictionaries(f"""
 SELECT
     EMAIL_ID
@@ -69,8 +72,8 @@ WHERE
             ,'FIRST_NAME'          : first_name
             ,'LAST_NAME'           : last_name
             ,'USER_NAME'           : first_name + ' ' + last_name
-            ,'PHONE_NUMBER'        : phone_number
-            ,'DATE_OF_BIRTH'       : date_of_birth
+            ,'PHONE_NUMBER'        : None
+            ,'DATE_OF_BIRTH'       : None
             ,'PROFILE_PICTURE_URL' : None
         }
 
@@ -102,7 +105,7 @@ WHERE
         user_registry_logs = execute_process_group_using_metadata('PG_USERS_REGISTER', payloads = user_register_final_payloads)
         if user_registry_logs['status'] == 'Success':
             auth_audit_log_entry(None, None, 'Register', 'Success', f'Registered with Email ID {email_id}')
-            return jsonify({'message': 'Registration Completed Successfully', 'status': 'Success'}), 201
+            return jsonify({'message': 'Registration Completed Successfully', 'status': 'Success', 'redirect_url' : f'{redirect_url}/login'}), 201
         else:
             auth_audit_log_entry(None, None, 'Register', 'Failed', f"Registration failed for {email_id} - Internal Error: {user_registry_logs['message']}")
             return jsonify({'message': 'Error while registering! Please try again after some time.', 'status': 'Failed'}), 500
@@ -113,9 +116,10 @@ WHERE
 @limiter.limit("10 per 10 minutes", key_func = login_limit_based_on_email_or_ip)
 def user_login():
     try:
-        env = current_app.config['ENVIRONMENT']
+        env                 = current_app.config['ENVIRONMENT']
         SESSION_COOKIE_NAME = current_app.config['SESSION_COOKIE_NAME']
         SESSION_COOKIE_AGE  = current_app.config['SESSION_COOKIE_AGE']
+        redirect_url        = current_app.config['REDIRECT_URL']
         email_id = (request.form.get('email_id') or "").strip().lower()
         password = request.form.get('password') or ""
         if not email_id or not password:
@@ -189,9 +193,9 @@ WHERE
                 locked_until = datetime.now() + timedelta(minutes = 15)
             update_user_security_fail_login_payload = {
                 'data': {
-                    'FAILED_LOGIN_AT'    : datetime.now()
+                    'FAILED_LOGIN_AT'     : datetime.now()
                     ,'FAILED_LOGIN_COUNT' : failed_login_count
-                    ,'LOCKED_UNTIL'      : locked_until
+                    ,'LOCKED_UNTIL'       : locked_until
                 }
                 ,'conditions': {
                     'USER_ID' : user_data['USER_ID']
@@ -224,7 +228,7 @@ WHERE
 
         user_sessions_logs = execute_process_group_using_metadata('PG_USERS_SESSIONS_ENTRY', payloads = user_sessions_entry_final_payload)
         if user_sessions_logs['status'] == "Success":
-            response = make_response(jsonify({'message': 'Login Completed Successfully', 'status': 'Success'}))
+            response = make_response(jsonify({'message': 'Login Completed Successfully', 'status': 'Success', 'redirect_url': f'{redirect_url}/process_entry'}))
             response.set_cookie(SESSION_COOKIE_NAME, session_id, httponly = True, secure = True, samesite = "Strict", max_age = SESSION_COOKIE_AGE)
             response.set_cookie('XSRF-TOKEN', csrf_token, httponly = False, secure = True, samesite = "Strict", max_age = SESSION_COOKIE_AGE)
             auth_audit_log_entry(user_data['USER_ID'], session_id, 'Login', 'Success', 'Logged in using Email ID and Password')
@@ -264,8 +268,8 @@ def user_logout():
 @require_csrf_token
 def authenticate_user():
     try:
-        env = current_app.config['ENVIRONMENT']
-        SESSION_COOKIE_NAME = current_app.config['SESSION_COOKIE_NAME']
+        env                  = current_app.config['ENVIRONMENT']
+        SESSION_COOKIE_NAME  = current_app.config['SESSION_COOKIE_NAME']
         SESSION_IDLE_TIMEOUT = current_app.config['SESSION_IDLE_TIMEOUT']
         session_id = request.cookies.get(SESSION_COOKIE_NAME)
         if not session_id:

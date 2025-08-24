@@ -431,14 +431,8 @@ canvas {
   flex-direction: column;
   justify-content: center;
   z-index: 2;
-  background: var(--text);
-  color: var(--bg);
-}
-
-.Dark_Theme .left-panel,
-.Zerodha_Theme .left-panel {
-  background: var(--bg);
-  color:var(--text);
+  background: #181818;
+  color: #fafafa;
 }
 
 .left-panel h1 {
@@ -449,7 +443,7 @@ canvas {
 }
 
 .left-panel h1 span {
-  color: var(--accent);
+  color: #f6461a;
 }
 
 .left-panel p {
@@ -460,20 +454,14 @@ canvas {
 }
 
 .right-panel {
-  background: var(--bg);
-  color: var(--text);
+  background: #fafafa;
+  color: #181818;
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   z-index: 2;
-}
-
-.Dark_Theme .right-panel,
-.Zerodha_Theme .right-panel {
-  background: var(--text);
-  color:var(--bg);
 }
 
 .login-box {
@@ -505,6 +493,8 @@ canvas {
   background-color: transparent;
   transition: 0.3s;
   margin-bottom: 0;
+  color: #181818;
+  font-family: 'Inter';
 }
 
 .login-input-group label {
@@ -512,7 +502,7 @@ canvas {
  top: 50%;
  left: 12px;
  transform: translateY(-50%);
- color: var(--accent);
+ color: #f6461a;
  font-size: 0.9rem;
  pointer-events: none;
  transition: 0.3s;
@@ -521,7 +511,7 @@ canvas {
 }
 
 .login-input-group input:focus {
-  border-color: var(--accent);
+  border-color: #f6461a;
 }
 
 .login-input-group input:focus + label,
@@ -530,7 +520,7 @@ canvas {
   left: 8px;
   font-size: 0.75rem;
   padding: 0 4px;
-  color: var(--accent);
+  color: #f6461a;
 }
 
 .login-button {
@@ -539,6 +529,11 @@ canvas {
   font-size: 1rem;
   font-weight: 600;
   border-radius: var(--border-radius);
+  background: #f6461a;
+}
+
+.login-button:hover {
+  background: rgba(246, 70, 26, 0.5);;
 }
 
 .right-panel p {
@@ -572,7 +567,7 @@ canvas {
 }
 
 .sign-up-text a {
-  color: var(--accent);
+  color: #f6461a;
   text-decoration: none;
 }
 

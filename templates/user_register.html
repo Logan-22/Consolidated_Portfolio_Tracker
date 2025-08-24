@@ -18,19 +18,19 @@
             <h2>Sign Up</h2>
             <form id = "user_register_form">
                 <div class = "login-input-group">
-                    <input type = "text" id = "first_name" required>
+                    <input type = "text" id = "first_name" required autocomplete="off">
                     <label for = "first_name">First Name</label>
                 </div>
                 <div class = "login-input-group">
-                    <input type = "text" id = "last_name" required>
+                    <input type = "text" id = "last_name" required autocomplete="off">
                     <label for = "last_name">Last Name</label>
                 </div>
                 <div class = "login-input-group">
-                    <input type = "email" id = "email_id" required>
+                    <input type = "email" id = "email_id" required autocomplete="off">
                     <label for = "email_id">Email ID</label>
                 </div>
                 <div class = "login-input-group">
-                    <input type = "password" id = "password" required>
+                    <input type = "password" id = "password" required autocomplete="off">
                     <label for = "password">Password</label>
                 </div>
                 <button type="submit" class="login-button">Sign Up</button>
@@ -66,5 +66,5 @@
 </body>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script type="module" src="{{ url_for('static', filename='change_theme.js') }}" defer></script>
-<script type="module" src="{{ url_for('static', filename='user_auth.js') }}" defer></script>
+<script type="module" src="{{ url_for('static', filename='user_register.js') }}" defer></script>
 </html>

@@ -89,3 +89,36 @@ WHERE
         g.user_id = user_session['USER_ID']
         return function(*args, **kwargs)
     return decorated
+
+def require_admin_access(function):
+    @wraps(function)
+    def decorated(*args, **kwargs):
+        env                 = current_app.config['ENVIRONMENT']
+        SESSION_COOKIE_NAME = current_app.config['SESSION_COOKIE_NAME']
+        redirect_url        = current_app.config['REDIRECT_URL']
+        session_id          = request.cookies.get(SESSION_COOKIE_NAME)
+
+        user_session = fetch_queries_as_dictionaries(f"""
+SELECT
+    SESS.USER_ID
+    ,SESS.SESSION_ID
+    ,SESS.EXPIRES_AT
+    ,SESS.REVOKED
+    ,USER.IS_ADMIN
+FROM
+    {env}T_AUTH.USER_SESSIONS SESS
+INNER JOIN
+    {env}T_AUTH.USERS USER
+ON
+    SESS.USER_ID = USER.USER_ID
+WHERE
+    SESSION_ID = '{session_id}'
+    AND USER.IS_ADMIN = 1;
+""", 'return_none', fetch = 'One')
+        if not user_session or user_session['REVOKED'] == 1 or user_session['EXPIRES_AT'] < datetime.now():
+            response = make_response("", 302)
+            response.headers["Location"] = f"{redirect_url}/process_entry"
+            return response
+
+        return function(*args, **kwargs)
+    return decorated

@@ -1,3 +1,4 @@
+from flask import current_app
 import sqlite3
 from utils.folder_utils.paths import db_path
 from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
@@ -572,3 +573,32 @@ ORDER BY 2;
 def get_from_sqlite_component(component_name):
     component_data = fetch_queries_as_dictionaries(f'SELECT * FROM "{component_name}";')
     return component_data
+
+def get_instrument_id_for_instrument(exchange_symbol):
+    env = current_app.config['ENVIRONMENT']
+    starting_key_value = int(current_app.config['STARTING_KEY_VALUE'])
+    instruments_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    INSTRUMENT_ID
+FROM
+    {env}T_META.METADATA_INSTRUMENTS
+WHERE
+    EXCHANGE_SYMBOL = '{exchange_symbol}'
+    AND RECORD_DELETED_FLAG = 0;
+""", 'return_none', fetch = 'One')
+    if instruments_data:
+        instrument_id = instruments_data['INSTRUMENT_ID']
+    else:
+        instrument_id_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    MAX(INSTRUMENT_ID) AS INSTRUMENT_ID
+FROM
+    {env}T_META.METADATA_INSTRUMENTS
+WHERE
+    RECORD_DELETED_FLAG = 0;
+""", 'return_none', fetch = 'One')
+        if instrument_id_data and instrument_id_data.get('INSTRUMENT_ID'):
+            instrument_id = instrument_id_data['INSTRUMENT_ID'] + 1
+        else:
+            instrument_id = starting_key_value
+    return instrument_id

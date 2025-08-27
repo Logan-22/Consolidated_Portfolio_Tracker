@@ -49,21 +49,12 @@ mf_optional_form.classList.add('hidden')
 }
 }
 
-document.getElementById('exchange_symbol').addEventListener('input', function (e){
-e.preventDefault();
-let exchange_symbol   = document.getElementById('exchange_symbol').value;
-const alt_symbol      = document.getElementById('alt_symbol');
-alt_symbol.value      = exchange_symbol.replaceAll(" ", "_").replaceAll(".", "_").toLowerCase()
-})
-
-
 document.getElementById('metadata_entry_form').addEventListener('submit', async function (e) {
 e.preventDefault();
-const exchange_symbol         = document.getElementById('exchange_symbol').value;
-const yahoo_symbol            = document.getElementById('yahoo_symbol').value;
-const alt_symbol              = document.getElementById('alt_symbol').value;
-const allocation_category     = document.getElementById('allocation_category').value;
-const portfolio_type          = document.getElementById('portfolio_type').value;
+const exchange_symbol         = document.getElementById('exchange_symbol').value
+const yahoo_symbol            = document.getElementById('yahoo_symbol').value
+const allocation_category     = document.getElementById('allocation_category').value
+const portfolio_type          = document.getElementById('portfolio_type').value
 const amc                     = document.getElementById('amc').value
 const type                    = document.getElementById('type').value
 const fund_category           = document.getElementById('fund_category').value
@@ -76,10 +67,9 @@ const isin                    = document.getElementById('isin').value
 const process_flag            = document.getElementById('process_flag').checked
 const consider_for_returns    = document.getElementById('consider_for_returns').checked
 
-const metadata_payload = {
+const metadata_instruments_payload = {
 'EXCHANGE_SYMBOL'            : exchange_symbol
 ,'YAHOO_SYMBOL'              : yahoo_symbol
-,'ALT_SYMBOL'                : alt_symbol
 ,'ALLOCATION_CATEGORY'       : allocation_category
 ,'PORTFOLIO_TYPE'            : portfolio_type
 ,'AMC'                       : amc
@@ -96,9 +86,9 @@ const metadata_payload = {
 }
 
 const formData = new FormData();
-formData.append('metadata_payload', JSON.stringify(metadata_payload));
+formData.append('metadata_instruments_payload', JSON.stringify(metadata_instruments_payload));
 
-const metadata_post_response = await fetch(`/api/metadata_store/`, {
+const metadata_post_response = await fetch(`/api/metadata/instruments/`, {
 method: 'POST',
 body: formData
 })

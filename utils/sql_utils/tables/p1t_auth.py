@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS {auth_schema}.USERS
     ROLE                     VARCHAR(20),
     PERMISSIONS_JSON         JSON,
     IS_ACTIVE                TINYINT        DEFAULT 1,
+    IS_ADMIN                 TINYINT        DEFAULT 0,
+    REGISTERED_METHOD        VARCHAR(20),
     CREATED_AT               DATETIME       DEFAULT CURRENT_TIMESTAMP,
     UPDATED_AT               DATETIME       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UPDATE_PROCESS_NAME      VARCHAR(100),
@@ -121,7 +123,7 @@ def create_user_sessions_table(auth_schema = f"{env}T_AUTH"):
 CREATE TABLE IF NOT EXISTS {auth_schema}.USER_SESSIONS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    USER_ID                  BIGINT         UNIQUE NOT NULL,
+    USER_ID                  BIGINT         NOT NULL,
     SESSION_ID               VARCHAR(255),
     CSRF_TOKEN               VARCHAR(255),
     LOGIN_DEVICE             VARCHAR(255),
@@ -153,7 +155,7 @@ def create_password_resets_table(auth_schema = f"{env}T_AUTH"):
 CREATE TABLE IF NOT EXISTS {auth_schema}.PASSWORD_RESETS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    USER_ID                  BIGINT         UNIQUE NOT NULL,
+    USER_ID                  BIGINT         NOT NULL,
     TOKEN_HASH               VARCHAR(512),
     EXPIRES_AT               DATETIME,
     USED_AT                  DATETIME,

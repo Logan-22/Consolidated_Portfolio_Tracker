@@ -60,11 +60,12 @@ WHERE
         user_id = generate_user_id(email_id)
 
         user_load_payload = {
-            'USER_ID'           : user_id
-            ,'EMAIL_ID'         : email_id
-            ,'PASSWORD_HASH'    : password_hash
-            ,'ROLE'             : 'User'
-            ,'PERMISSIONS_JSON' : None
+            'USER_ID'            : user_id
+            ,'EMAIL_ID'          : email_id
+            ,'PASSWORD_HASH'     : password_hash
+            ,'ROLE'              : 'User'
+            ,'PERMISSIONS_JSON'  : None
+            ,'REGISTERED_METHOD' : 'Email'
         }
 
         user_info_load_payload = {
@@ -127,34 +128,29 @@ def user_login():
         
         user_data = fetch_queries_as_dictionaries(f"""
 SELECT
-    USER_ID
-    ,EMAIL_ID
-    ,PASSWORD_HASH
+    USER.USER_ID
+    ,USER.EMAIL_ID
+    ,USER.PASSWORD_HASH
+    ,SEC.FAILED_LOGIN_COUNT
+    ,SEC.LOCKED_UNTIL
 FROM
-    {env}T_AUTH.USERS
+    {env}T_AUTH.USERS USER
+LEFT OUTER JOIN
+    {env}T_AUTH.USER_SECURITY SEC
+ON
+    USER.USER_ID                = SEC.USER_ID
+    AND SEC.RECORD_DELETED_FLAG = 0
 WHERE
-    EMAIL_ID = '{email_id}'
-    AND RECORD_DELETED_FLAG = 0;
+    USER.EMAIL_ID = '{email_id}'
+    AND USER.RECORD_DELETED_FLAG = 0;
     """, 'return_none', fetch = 'One')
         if not user_data:
             auth_audit_log_entry(None, None, 'Login', 'Failed', f'Unknown Email {email_id} Login Attempt')
             return jsonify({'message': 'Invalid Credentials', 'status': 'Failed'}), 401
 
-        user_security_data = fetch_queries_as_dictionaries(f"""
-SELECT
-    USER_ID
-    ,FAILED_LOGIN_COUNT
-    ,LOCKED_UNTIL
-FROM
-    {env}T_AUTH.USER_SECURITY
-WHERE
-    USER_ID = {user_data['USER_ID']}
-    AND RECORD_DELETED_FLAG = 0;
-    """, 'return_none', fetch = 'One')
-
-        if user_security_data.get('LOCKED_UNTIL') and user_security_data['LOCKED_UNTIL'] > datetime.now():
-            auth_audit_log_entry(user_data['USER_ID'], None, 'Login', 'Locked', f"User is locked until {user_security_data['LOCKED_UNTIL']}")
-            return jsonify({'message': f"Due to mutliple unsuccessful login attempts, user is locked until {user_security_data['LOCKED_UNTIL']}", 'status': 'Failed'}), 403
+        if user_data and user_data.get('LOCKED_UNTIL') and user_data['LOCKED_UNTIL'] > datetime.now():
+            auth_audit_log_entry(user_data['USER_ID'], None, 'Login', 'Locked', f"User is locked until {user_data['LOCKED_UNTIL']}")
+            return jsonify({'message': f"Due to mutliple unsuccessful login attempts, user is locked until {user_data['LOCKED_UNTIL']}", 'status': 'Failed'}), 403
         
         try:
             ph.verify(user_data['PASSWORD_HASH'], password)
@@ -187,7 +183,7 @@ WHERE
             }
             update_table_with_payload(f"{env}T_AUTH", "USER_SECURITY", update_user_security_payload)
         except VerifyMismatchError:
-            failed_login_count = (user_security_data.get('FAILED_LOGIN_COUNT') or 0) + 1
+            failed_login_count = (user_data.get('FAILED_LOGIN_COUNT') or 0) + 1
             locked_until = None
             if failed_login_count >= 5:
                 locked_until = datetime.now() + timedelta(minutes = 15)
@@ -285,7 +281,8 @@ FROM
     {env}T_AUTH.USER_SESSIONS
 WHERE
     SESSION_ID  = '{session_id}'
-    AND REVOKED = 0;
+    AND REVOKED = 0
+    AND RECORD_DELETED_FLAG = 0;
     """, 'return_none', fetch = 'One')
 
         if not session_data:
@@ -314,7 +311,8 @@ SELECT
 FROM
     {env}T_AUTH.USER_INFO
 WHERE
-    USER_ID = {session_data['USER_ID']};
+    USER_ID = {session_data['USER_ID']}
+    AND RECORD_DELETED_FLAG = 0;
     """, 'return_none', fetch = 'One')
 
         if not user_info_data or not user_info_data['USER_ID']:
@@ -342,7 +340,8 @@ SELECT
 FROM
     {env}T_AUTH.USERS
 WHERE
-    EMAIL_ID = '{email_id}';
+    EMAIL_ID = '{email_id}'
+    AND RECORD_DELETED_FLAG = 0;
     """, 'return_none', fetch = "One")
         if not user_data:
             auth_audit_log_entry(None, None, 'Password Reset', 'Failed', f'Email ID {email_id} is not registered')
@@ -401,6 +400,7 @@ FROM
 WHERE
     USED_AT IS NULL
     AND USER_ID = {user_id}
+    AND RECORD_DELETED_FLAG = 0
 ORDER BY CREATED_AT DESC
 LIMIT 1;
     """, 'return_none', fetch = 'One')
@@ -495,16 +495,18 @@ FROM
     {env}T_AUTH.USERS
 WHERE
     EMAIL_ID = '{email_id}'
+    AND RECORD_DELETED_FLAG = 0;
     """, 'return_none', fetch = 'One')
         user_id = ""
         if not user_data:
             user_id = generate_user_id(email_id)
             user_load_payload = {
-                'USER_ID'           : user_id
-                ,'EMAIL_ID'         : email_id
-                ,'PASSWORD_HASH'    : None
-                ,'ROLE'             : 'User'
-                ,'PERMISSIONS_JSON' : None
+                'USER_ID'            : user_id
+                ,'EMAIL_ID'          : email_id
+                ,'PASSWORD_HASH'     : None
+                ,'ROLE'              : 'User'
+                ,'PERMISSIONS_JSON'  : None
+                ,'REGISTERED_METHOD' : 'Google_OAuth'
             }
 
             user_info_load_payload = {
@@ -556,7 +558,8 @@ SELECT
 FROM
     {env}T_AUTH.USER_SECURITY
 WHERE
-    USER_ID = (SELECT DISTINCT USER_ID FROM {env}T_AUTH.USERS WHERE EMAIL_ID = '{email_id}');
+    USER_ID = (SELECT DISTINCT USER_ID FROM {env}T_AUTH.USERS WHERE EMAIL_ID = '{email_id}')
+    AND RECORD_DELETED_FLAG = 0;
     """, 'return_none', fetch = 'One')
             user_id = user_security_data['USER_ID']
             if user_security_data and user_security_data.get('EMAIL_VERIFIED') and user_security_data['EMAIL_VERIFIED'] != 1:

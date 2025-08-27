@@ -36,6 +36,18 @@ const create_auth_tables_data = await create_auth_tables_response.json();
 create_notification(create_auth_tables_data.message, create_auth_tables_data.status)
 })
 
+document.getElementById("create_user_investment_tables").addEventListener("submit", async (e) => {
+e.preventDefault()
+const invs_schema = document.getElementById("invs_schema").value
+const create_invs_tables_response = await fetch(`/api/create_invs_tables/?invs_schema=${invs_schema}`, {
+method: 'GET'
+})
+
+const create_invs_tables_data = await create_invs_tables_response.json();
+
+create_notification(create_invs_tables_data.message, create_invs_tables_data.status)
+})
+
 document.getElementById("migrate_data_to_aws").addEventListener("submit", async (e) => {
 e.preventDefault()
 const schema = document.getElementById("schema").value

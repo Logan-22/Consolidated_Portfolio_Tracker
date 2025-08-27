@@ -1,7 +1,7 @@
 from mysql.connector import Error
 from utils.connection_utils.connection_pool_config import connection_pool
 
-def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", params = None, fetch = "All"):
+def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", params = None, fetch = "All", parent_cursor = None):
     """
     Execute a MySQL query and return the results as a list of dictionaries.
 
@@ -13,10 +13,11 @@ def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", p
         conn = connection_pool.get_connection()
         cursor = conn.cursor(dictionary = True)
         cursor.execute(query, params)
-        if fetch == "All":
-            rows = cursor.fetchall()
-        elif fetch == "One":
+        if fetch == "One":
             rows = cursor.fetchone()
+        else:
+            rows = cursor.fetchall()
+
         if rows:
             result = rows
         elif on_empty_result == "return_none_list":
@@ -24,16 +25,16 @@ def fetch_queries_as_dictionaries(query, on_empty_result = "return_none_list", p
             column_names = [desc[0] for desc in cursor.description]
             # Create a single dict with None values
             result = [{col: None for col in column_names}]
-        elif fetch == "All":
-            result = []
-        elif fetch == "One":
-            result = None
+        else:
+            if fetch == "One":
+                result = None
+            else:
+                result = []
         return result
     except Error as e:
         print(f"MySQL error: {e}")
         return []
 
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()

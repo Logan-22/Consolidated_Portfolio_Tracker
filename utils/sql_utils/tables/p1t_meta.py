@@ -14,17 +14,17 @@ COLLATE utf8mb4_unicode_ci;
     cursor.close()
     conn.close()
 
-def create_metadata_store_table(metadata_schema = f"{env}T_META"):
+def create_metadata_instruments_table(metadata_schema = f"{env}T_META"):
     conn = connection_pool.get_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
-CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_STORE
+CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_INSTRUMENTS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    EXCHANGE_SYMBOL          VARCHAR (100),
-    YAHOO_SYMBOL             VARCHAR (100),
-    ALT_SYMBOL               VARCHAR (100),
-    ALLOCATION_CATEGORY      VARCHAR (100),
+    INSTRUMENT_ID            INT,
+    EXCHANGE_SYMBOL          VARCHAR (200),
+    YAHOO_SYMBOL             VARCHAR (200),
+    ALLOCATION_CATEGORY      VARCHAR (200),
     PORTFOLIO_TYPE           VARCHAR (50),
     AMC                      VARCHAR (50),
     MF_TYPE                  VARCHAR (100),

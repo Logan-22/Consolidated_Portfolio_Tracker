@@ -6,6 +6,8 @@ from flask import Flask, g
 from frontend.screen import frontend
 from routes.api import api
 from routes.auth import auth
+from routes.apis.metadata import metadata_bp
+from routes.apis.user_investments import user_transactions_bp
 from datetime import datetime
 from os import getenv
 from secrets import token_urlsafe
@@ -38,6 +40,8 @@ oauth.register(
 app.register_blueprint(frontend)
 app.register_blueprint(api)
 app.register_blueprint(auth)
+app.register_blueprint(metadata_bp, url_prefix = '/api/metadata')
+app.register_blueprint(user_transactions_bp, url_prefix = '/api/user_txn')
 
 app.config['ENVIRONMENT']              = getenv('ENVIRONMENT')
 app.config['SESSION_COOKIE_AGE']       = int(getenv("SESSION_COOKIE_AGE", 60 * 60 * 24))
@@ -46,6 +50,7 @@ app.config['SESSION_IDLE_TIMEOUT']     = getenv("SESSION_IDLE_TIMEOUT", 60 * 30)
 app.config['PASSWORD_RESET_EXP_HOURS'] = int(getenv('PASSWORD_RESET_EXP_HOURS', 1))
 app.config['GOOGLE_CLIENT_ID']         = GOOGLE_CLIENT_ID
 app.config['REDIRECT_URL']             = getenv('REDIRECT_URL')
+app.config['STARTING_KEY_VALUE']       = 10000
 
 @app.context_processor
 def inject_data():

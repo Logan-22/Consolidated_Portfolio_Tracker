@@ -68,11 +68,11 @@ WHERE
     #columns_in_payload_to_be_ignored_set = {} # Add If Any
 
     value_columns_to_be_compared = [column for column in column_names_list if column not in scd1_columns_set and column not in columns_in_table_to_be_ignored_set] # column_names_list is already with ""
-    column_index_map = {column: index for index, column in enumerate(value_columns_to_be_compared)} # value_columns_to_be_compared already has ""
+    column_index_map = {column: index for index, column in enumerate(value_columns_to_be_compared)} # value_columns_to_be_compared already has ``
     select_clause = ", ".join(value_columns_to_be_compared)
 
     conn = connection_pool.get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary = True)
     for payload in payloads:
         logs['payload_count'] += 1
 
@@ -98,14 +98,14 @@ WHERE
         where_clause = ' AND '.join(f'`{key_column}` = %s' for key_column in key_columns_list) + \
                        ' AND `END_DATE` = %s AND `RECORD_DELETED_FLAG` = 0'
         where_values = [payload[key_column.replace('`','')] for key_column in key_columns_list] + [high_end_date]
-        existing_rows = fetch_queries_as_dictionaries(f"""
+        existing_rows = cursor.execute(f"""
 SELECT
     {select_clause}
 FROM
     {schema_name}.{table_name}
 WHERE
     {where_clause}
-    """, 'return_none', where_values)
+    """, where_values)
         if existing_rows:
             has_changed = any(payload[value_column.replace('`','')] != existing_rows[column_index_map[value_column]] for value_column in value_columns_to_be_compared)
             if has_changed:

@@ -99,7 +99,7 @@ from PyPDF2 import PdfReader
 
 from utils.sql_utils.tables.p1t_meta import\
 create_metadata_schema,\
-create_metadata_store_table,\
+create_metadata_instruments_table,\
 create_metadata_process_group_table,\
 create_metadata_process_table,\
 create_metadata_columns_table,\
@@ -125,6 +125,10 @@ create_log_schema,\
 create_execution_logs_table,\
 create_duplicate_logs_table,\
 create_auth_audit_table
+
+from utils.sql_utils.tables.p1t_user_invs import\
+create_user_investment_schema,\
+create_mf_transaction_table
 
 api = Blueprint('api', __name__)
 
@@ -192,20 +196,6 @@ def upsert_price_table_for_alt_symbol(alt_symbol):
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
 
-@api.route('/api/metadata_store/', methods = ['POST'])
-def metadata_entry():
-    try:
-        metadata_payload = loads(request.form.get('metadata_payload'))
-        holiday_calendar_data                        = get_date_setup_from_holiday_calendar(date.today().strftime('%Y-%m-%d'))
-        metadata_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
-        metadata_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
-        metadata_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
-
-        metadata_entry_logs = execute_process_group_using_metadata('METADATA_STORE_ENTRY_PROCESS_GROUP', None, None, metadata_payload, "true")
-        return jsonify(metadata_entry_logs)
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
-
 @api.route('/api/metadata_store/symbols/', methods = ['GET'])
 def get_all_symbols_list():
     try:
@@ -222,21 +212,6 @@ def price_table_lookup():
         purchase_date = request.args.get('purchase_date') or None
         price_data = get_price_from_price_table(alt_symbol, purchase_date)
         return jsonify({'price_data': price_data, 'message': "Successfully retrieved Price data from PRICE_TABLE", 'status': "Success"})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
-
-@api.route('/api/mf_order/', methods = ['POST'])
-def mf_order():
-    try:
-        mf_order_payload = loads(request.form.get('mf_order_payload'))
-        mf_order_payload['STAMP_FEES_AMOUNT'] = round(float(mf_order_payload['INVESTED_AMOUNT']) - float(mf_order_payload['AMC_AMOUNT']),2)
-        holiday_calendar_data                        = get_date_setup_from_holiday_calendar(mf_order_payload['PURCHASED_ON'])
-        mf_order_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
-        mf_order_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
-        mf_order_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
-
-        mf_order_entry_logs = execute_process_group_using_metadata('MF_ORDER_ENTRY_PROCESS_GROUP', mf_order_payload['PURCHASED_ON'], None, mf_order_payload, "true")
-        return jsonify(mf_order_entry_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
@@ -1042,7 +1017,7 @@ def create_metadata_tables():
     try:
         metadata_schema = request.args.get("metadata_schema") or f"{env}T_META"
         create_metadata_schema(metadata_schema)
-        create_metadata_store_table(metadata_schema)
+        create_metadata_instruments_table(metadata_schema)
         create_metadata_process_group_table(metadata_schema)
         create_metadata_process_table(metadata_schema)
         create_metadata_columns_table(metadata_schema)
@@ -1092,6 +1067,17 @@ def create_log_tables():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
+@api.route('/api/create_invs_tables/', methods = ['GET'])
+def create_invs_tables():
+    try:
+        invs_schema = request.args.get("invs_schema") or f"{env}T_USER_INVS"
+        create_user_investment_schema(invs_schema)
+        create_mf_transaction_table(invs_schema)
+        return jsonify({'message': f'Successfully Created {invs_schema} User Investment Schema and Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+
 @api.route('/api/migrate_data_to_aws/', methods = ['GET'])
 def migrate_data_from_sqlite3_to_aws():
     try:
@@ -1104,3 +1090,4 @@ def migrate_data_from_sqlite3_to_aws():
         return jsonify({'message': f'Successfully Migrated {inserted_count} records from SQLITE3 to AWS', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
+

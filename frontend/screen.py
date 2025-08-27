@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template
-from utils.auth_utils.auth_utils import require_login
+from utils.auth_utils.auth_utils import require_login, require_admin_access
 
 frontend = Blueprint('frontend', __name__)
 
@@ -16,6 +16,7 @@ def process_price_form():
     return render_template('process_price_form.html')
 
 @frontend.route('/metadata/')
+@require_admin_access
 def metadata_entry():
     return render_template('metadata_entry.html')
 

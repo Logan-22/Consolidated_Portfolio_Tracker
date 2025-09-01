@@ -20,9 +20,9 @@ def process_price_form():
 def metadata_entry():
     return render_template('metadata_entry.html')
 
-@frontend.route('/mf_order/')
+@frontend.route('/mf_txn/')
 def mf_order_entry():
-    return render_template('mf_order_entry.html')
+    return render_template('mf_txn_entry.html')
 
 @frontend.route('/stock_order_pdf/')
 def stock_order_pdf():

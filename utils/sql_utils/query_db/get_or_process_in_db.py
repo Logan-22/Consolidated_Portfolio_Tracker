@@ -4,20 +4,19 @@ from utils.folder_utils.paths import db_path
 from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
 
 def get_all_symbols_list_from_metadata_store(portfolio_type = None):
+    env = current_app.config['ENVIRONMENT']
     portfolio_type_filter = f"AND PORTFOLIO_TYPE = '{portfolio_type}'" if portfolio_type else ""
     symbol_data = fetch_queries_as_dictionaries(f"""
 SELECT DISTINCT
     EXCHANGE_SYMBOL
     ,YAHOO_SYMBOL
-    ,ALT_SYMBOL
     ,PORTFOLIO_TYPE
 FROM
-    METADATA_STORE
-WHERE 
-    1 =  1
-    {portfolio_type_filter}
-    AND RECORD_DELETED_FLAG = 0;
-    """)
+    {env}T_META.METADATA_INSTRUMENTS
+WHERE
+    RECORD_DELETED_FLAG = 0
+    {portfolio_type_filter};
+    """, 'return_none', fetch = 'All')
     return symbol_data
 
 def get_yahoo_symbol_from_metadata_store(alt_symbol):
@@ -115,22 +114,39 @@ def get_max_next_processing_date_from_table(table_name):
     max_next_proc_date = fetch_queries_as_dictionaries(f"SELECT MAX(NEXT_PROCESSING_DATE) FROM {table_name};")
     return max_next_proc_date
 
-def get_holiday_date_from_holiday_dates_table(current_year = '1900'):
-    current_year_filter = f"AND HOLIDAY_DATE >= '{current_year}-01-01'" if current_year else ""
+def get_holiday_dates(year = None):
+    env = current_app.config['ENVIRONMENT']
+    current_year_filter = f"AND HOLIDAY_DATE >= '{year}-01-01' AND HOLIDAY_DATE <= '{year}-12-31'" if year else ""
     holiday_date_data = fetch_queries_as_dictionaries(f"""
 SELECT
-    HOLIDAY_DATE
+    DATE_FORMAT(HOLIDAY_DATE,'%Y-%m-%d') AS HOLIDAY_DATE
     ,HOLIDAY_NAME
     ,HOLIDAY_DAY
 FROM
-    HOLIDAY_DATES
+    {env}T_META.HOLIDAY_DATES
 WHERE
-    1 = 1
-    AND RECORD_DELETED_FLAG = 0
+    RECORD_DELETED_FLAG = 0
     {current_year_filter}
     ORDER BY HOLIDAY_DATE;
-    """)
+    """, 'return_none')
     return holiday_date_data
+
+def get_working_dates(year = None):
+    env = current_app.config['ENVIRONMENT']
+    current_year_filter = f"AND WORKING_DATE >= '{year}-01-01' AND WORKING_DATE <= '{year}-12-31'" if year else ""
+    working_date_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    DATE_FORMAT(WORKING_DATE,'%Y-%m-%d') AS WORKING_DATE
+    ,WORKING_DAY_NAME
+    ,WORKING_DAY
+FROM
+    {env}T_META.WORKING_DATES
+WHERE
+    RECORD_DELETED_FLAG = 0
+    {current_year_filter}
+    ORDER BY WORKING_DATE;
+    """, 'return_none')
+    return working_date_data
 
 def get_working_date_from_working_dates_table(current_year = '1900'):
     current_year_filter = f"AND WORKING_DATE >= '{current_year}-01-01'" if current_year else ""
@@ -160,18 +176,21 @@ WHERE
     return first_mf_purchase_data[0]
 
 def get_date_setup_from_holiday_calendar(input_date):
+    env = current_app.config['ENVIRONMENT']
     holiday_calendar_payload = fetch_queries_as_dictionaries(f"""
 SELECT DISTINCT
     PROCESSING_DATE
     ,NEXT_PROCESSING_DATE
     ,PREVIOUS_PROCESSING_DATE
-FROM HOLIDAY_CALENDAR
+FROM
+    {env}T_META.HOLIDAY_CALENDAR
 WHERE
     PROCESSING_DATE <= '{input_date}'
+    AND RECORD_DELETED_FLAG = 0
 ORDER BY PROCESSING_DATE DESC
 LIMIT 1;
-    """)
-    return holiday_calendar_payload[0]
+    """, 'return_none', fetch = 'One')
+    return holiday_calendar_payload
 
 def get_mf_returns():
     mf_returns_data = fetch_queries_as_dictionaries("""
@@ -574,21 +593,30 @@ def get_from_sqlite_component(component_name):
     component_data = fetch_queries_as_dictionaries(f'SELECT * FROM "{component_name}";')
     return component_data
 
-def get_instrument_id_for_instrument(exchange_symbol):
+def get_or_create_instrument_id(exchange_symbol, process_type, process_flag = None):
     env = current_app.config['ENVIRONMENT']
-    starting_key_value = int(current_app.config['STARTING_KEY_VALUE'])
+    starting_key_value  = int(current_app.config['STARTING_KEY_VALUE'])
+    exchange_symbol_filter = f"AND EXCHANGE_SYMBOL = '{exchange_symbol}'" if exchange_symbol else ""
+    process_flag_filter    = f"AND PROCESS_FLAG    = {process_flag}"    if process_flag else ""
+    instrument_ids = []
     instruments_data = fetch_queries_as_dictionaries(f"""
 SELECT
     INSTRUMENT_ID
 FROM
     {env}T_META.METADATA_INSTRUMENTS
 WHERE
-    EXCHANGE_SYMBOL = '{exchange_symbol}'
-    AND RECORD_DELETED_FLAG = 0;
-""", 'return_none', fetch = 'One')
-    if instruments_data:
+    RECORD_DELETED_FLAG = 0
+    {exchange_symbol_filter}
+    {process_flag_filter};
+""", 'return_none', fetch = 'One' if exchange_symbol else 'All')
+    if instruments_data and exchange_symbol:
         instrument_id = instruments_data['INSTRUMENT_ID']
-    else:
+        return instrument_id
+    if instruments_data and not exchange_symbol:
+        for instrument in instruments_data:
+            instrument_ids.append(instrument['INSTRUMENT_ID'])
+        return instrument_ids
+    elif process_type == 'create':
         instrument_id_data = fetch_queries_as_dictionaries(f"""
 SELECT
     MAX(INSTRUMENT_ID) AS INSTRUMENT_ID
@@ -601,4 +629,33 @@ WHERE
             instrument_id = instrument_id_data['INSTRUMENT_ID'] + 1
         else:
             instrument_id = starting_key_value
+    else:
+        instrument_id = None
     return instrument_id
+
+def get_metadata_instruments(instrument_id, portfolio_type = None):
+    env = current_app.config['ENVIRONMENT']
+    price_start_date = current_app.config['PRICE_START_DATE']
+    instrument_id_filter =  f"AND MI.INSTRUMENT_ID  = {instrument_id}"  if instrument_id else ""
+    portfolio_type_filter = f"AND MI.PORTFOLIO_TYPE = {portfolio_type}" if portfolio_type else ""
+    metadata_instruments_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    MI.INSTRUMENT_ID
+    ,MI.EXCHANGE_SYMBOL
+    ,MI.YAHOO_SYMBOL
+    ,MI.PORTFOLIO_TYPE
+    ,COALESCE(MAX(PR.NEXT_PROCESSING_DATE), '{price_start_date}') AS START_DATE
+FROM
+    {env}T_META.METADATA_INSTRUMENTS MI
+LEFT OUTER JOIN
+    {env}T_TIER0_METRICS.DAILY_INSTRUMENT_PRICES PR
+ON
+    MI.INSTRUMENT_ID           = PR.INSTRUMENT_ID
+    AND PR.RECORD_DELETED_FLAG = 0
+WHERE
+    MI.RECORD_DELETED_FLAG = 0
+    {instrument_id_filter}
+    {portfolio_type_filter}
+GROUP BY 1,2,3,4;
+    """, 'return_none', fetch = 'One')
+    return metadata_instruments_data

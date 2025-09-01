@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_INSTRUMENTS
     PROCESS_ID               INT,
     START_DATE               DATE,
     END_DATE                 DATE,
-    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0
+    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0,
+    INDEX idx_metadata_instruments(INSTRUMENT_ID)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -69,7 +70,8 @@ CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_PROCESS_GROUP
     PROCESS_ID               INT,
     START_DATE               DATE,
     END_DATE                 DATE,
-    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0
+    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0,
+    INDEX idx_metadata_process_group(PROCESS_GROUP)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -102,7 +104,8 @@ CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_PROCESS
     PROCESS_ID                 INT,
     START_DATE                 DATE,
     END_DATE                   DATE,
-    RECORD_DELETED_FLAG        TINYINT      DEFAULT 0
+    RECORD_DELETED_FLAG        TINYINT      DEFAULT 0,
+    INDEX idx_metadata_process(OUT_PROCESS_NAME)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -128,32 +131,8 @@ CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_COLUMNS
     PROCESS_ID               INT,
     START_DATE               DATE,
     END_DATE                 DATE,
-    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0
-)
-ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
-    """)
-    cursor.close()
-    conn.close()
-
-def create_metadata_excluded_columns_table(metadata_schema = f"{env}T_META"):
-    conn = connection_pool.get_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-CREATE TABLE IF NOT EXISTS {metadata_schema}.METADATA_EXCL_COLUMNS
-(
-    ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    OUT_PROCESS_NAME         VARCHAR (100),
-    EXCL_COLUMN_NAME         VARCHAR (100),
-    CONSIDER_FOR_PROCESSING  TINYINT,
-    UPDATE_PROCESS_NAME      VARCHAR (100),
-    UPDATE_PROCESS_ID        INT,
-    PROCESS_NAME             VARCHAR (100),
-    PROCESS_ID               INT,
-    START_DATE               DATE,
-    END_DATE                 DATE,
-    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0
+    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0,
+    INDEX idx_metadata_columns(OUT_PROCESS_NAME)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -170,18 +149,16 @@ CREATE TABLE IF NOT EXISTS {metadata_schema}.HOLIDAY_DATES
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
     HOLIDAY_DATE             DATE,
-    HOLIDAY_NAME             VARCHAR (200),
-    HOLIDAY_DAY              VARCHAR (20),
-    PROCESSING_DATE          DATE,
-    PREVIOUS_PROCESSING_DATE DATE,
-    NEXT_PROCESSING_DATE     DATE,
-    UPDATE_PROCESS_NAME      VARCHAR (100),
+    HOLIDAY_NAME             VARCHAR(200),
+    HOLIDAY_DAY              VARCHAR(20),
+    UPDATE_PROCESS_NAME      VARCHAR(100),
     UPDATE_PROCESS_ID        INT,
-    PROCESS_NAME             VARCHAR (100),
+    PROCESS_NAME             VARCHAR(100),
     PROCESS_ID               INT,
     START_DATE               DATE,
     END_DATE                 DATE,
-    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0
+    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0,
+    INDEX idx_holiday_dates(HOLIDAY_DATE)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -200,16 +177,14 @@ CREATE TABLE IF NOT EXISTS {metadata_schema}.WORKING_DATES
     WORKING_DATE             DATE,
     WORKING_DAY_NAME         VARCHAR (200),
     WORKING_DAY              VARCHAR (20),
-    PROCESSING_DATE          DATE,
-    PREVIOUS_PROCESSING_DATE DATE,
-    NEXT_PROCESSING_DATE     DATE,
     UPDATE_PROCESS_NAME      VARCHAR (100),
     UPDATE_PROCESS_ID        INT,
     PROCESS_NAME             VARCHAR (100),
     PROCESS_ID               INT,
     START_DATE               DATE,
     END_DATE                 DATE,
-    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0
+    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0,
+    INDEX idx_working_dates(WORKING_DATE)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -236,7 +211,8 @@ CREATE TABLE IF NOT EXISTS {metadata_schema}.HOLIDAY_CALENDAR (
     PROCESS_ID               INT,
     START_DATE               DATE,
     END_DATE                 DATE,
-    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0
+    RECORD_DELETED_FLAG      TINYINT        DEFAULT 0,
+    INDEX idx_holiday_calendar(PROCESSING_DATE)
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4

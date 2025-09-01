@@ -7,6 +7,7 @@ from frontend.screen import frontend
 from routes.api import api
 from routes.auth import auth
 from routes.apis.metadata import metadata_bp
+from routes.apis.metrics import metrics_bp
 from routes.apis.user_investments import user_transactions_bp
 from datetime import datetime
 from os import getenv
@@ -41,6 +42,7 @@ app.register_blueprint(frontend)
 app.register_blueprint(api)
 app.register_blueprint(auth)
 app.register_blueprint(metadata_bp, url_prefix = '/api/metadata')
+app.register_blueprint(metrics_bp, url_prefix = '/api/metrics')
 app.register_blueprint(user_transactions_bp, url_prefix = '/api/user_txn')
 
 app.config['ENVIRONMENT']              = getenv('ENVIRONMENT')
@@ -51,6 +53,7 @@ app.config['PASSWORD_RESET_EXP_HOURS'] = int(getenv('PASSWORD_RESET_EXP_HOURS', 
 app.config['GOOGLE_CLIENT_ID']         = GOOGLE_CLIENT_ID
 app.config['REDIRECT_URL']             = getenv('REDIRECT_URL')
 app.config['STARTING_KEY_VALUE']       = 10000
+app.config['PRICE_START_DATE']         = '2024-01-01'
 
 @app.context_processor
 def inject_data():

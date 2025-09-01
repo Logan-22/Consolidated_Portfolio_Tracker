@@ -16,13 +16,13 @@ async function init_holiday_table(){
 const today = new Date()
 const current_year = today.getFullYear()
 
-const get_current_year_holiday_response = await fetch (`/api/holiday_date?current_year=${current_year}`, {
+const get_current_year_holiday_response = await fetch (`/api/metadata/holiday_date?year=${current_year}`, {
   method: 'GET'
 })
 
 const get_current_year_holiday_data = await get_current_year_holiday_response.json()
 
-if(get_current_year_holiday_data.status === "Success"){
+if(get_current_year_holiday_data.status === "Success" && get_current_year_holiday_data.data.length != 0){
     const holiday_table = document.getElementById('holiday_table')
     holiday_table.innerHTML = "<tr><th class='color-accent'>Holiday Date</th><th class='color-accent'>Holiday Name</th><th class='color-accent'>Holiday Day</th></tr>"
 
@@ -39,7 +39,6 @@ create_notification(get_current_year_holiday_data.message, get_current_year_holi
 
 document.getElementById('holiday_date_setup_form').addEventListener('submit', async function (e) {
 e.preventDefault();
-
 
 const holiday_date = document.getElementById('holiday_date').value
 const holiday_name = document.getElementById('holiday_name').value
@@ -67,7 +66,7 @@ const holiday_date_payload = {
 const formData = new FormData()
 formData.append('holiday_date_payload', JSON.stringify(holiday_date_payload))
 
-const post_holiday_response = await fetch(`/api/holiday_date/`, {
+const post_holiday_response = await fetch(`/api/metadata/holiday_date/`, {
 method: 'POST',
 body: formData
 })
@@ -80,6 +79,16 @@ if(post_holiday_data.status === "Success"){
 }
 
 create_notification(post_holiday_data.message, post_holiday_data.status)
+
+const week_data = get_week_before_and_week_after_dates(holiday_date)
+
+const setup_holiday_calendar_response = await fetch(`/api/metadata/holiday_calendar_setup?start_date=${week_data.week_before}&end_date=${week_data.week_after}`, {
+method: 'GET'
+})
+
+const setup_holiday_calendar_data = await setup_holiday_calendar_response.json();
+
+create_notification(setup_holiday_calendar_data.message, setup_holiday_calendar_data.status)
 })
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -114,14 +123,29 @@ const working_date_payload = {
 const formData = new FormData();
 formData.append('working_date_payload', JSON.stringify(working_date_payload))
 
-const post_working_day_response = await fetch(`/api/working_date/`, {
+const post_working_day_response = await fetch(`/api/metadata/working_date/`, {
 method: 'POST',
 body: formData
 })
 
 const post_working_day_data = await post_working_day_response.json();
 
+if(post_working_day_data.status === "Success"){
+    document.getElementById("working_date_setup_form").reset()
+}
+
 create_notification(post_working_day_data.message, post_working_day_data.status)
+
+const week_data = get_week_before_and_week_after_dates(working_date)
+
+const setup_holiday_calendar_response = await fetch(`/api/metadata/holiday_calendar_setup?start_date=${week_data.week_before}&end_date=${week_data.week_after}`, {
+method: 'GET'
+})
+
+const setup_holiday_calendar_data = await setup_holiday_calendar_response.json();
+
+create_notification(setup_holiday_calendar_data.message, setup_holiday_calendar_data.status)
+
 })
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -132,46 +156,20 @@ e.preventDefault();
 const holiday_calendar_start_date = document.getElementById('holiday_calendar_start_date').value;
 const holiday_calendar_end_date   = document.getElementById('holiday_calendar_end_date').value;
 
-const holiday_date_response = await fetch(`/api/holiday_date/`, {
+const setup_holiday_calendar_response = await fetch(`/api/metadata/holiday_calendar_setup?start_date=${holiday_calendar_start_date}&end_date=${holiday_calendar_end_date}`, {
 method: 'GET'
-})
-
-const holiday_date_data = await holiday_date_response.json();
-
-create_notification(holiday_date_data.message, holiday_date_data.status)
-
-const holiday_list = holiday_date_data.data
-
-const working_date_response = await fetch(`/api/working_date/`, {
-method: 'GET'
-})
-
-const working_date_data = await working_date_response.json();
-
-create_notification(working_date_data.message, working_date_data.status)
-
-const working_day_list  = working_date_data.data
-
-const holiday_data = []
-const working_day_data = []
-
-if(holiday_date_data.status == "Success" && working_date_data.status == "Success"){
-holiday_list.forEach(holiday => holiday_data.push(holiday['HOLIDAY_DATE']))
-if(working_day_list){
-  working_day_list.forEach(working_day => working_day_data.push(working_day['WORKING_DATE']))
-}
-
-const formData = new FormData();
-formData.append('holiday_data', JSON.stringify(holiday_data));
-formData.append('working_day_data', JSON.stringify(working_day_data));
-
-const setup_holiday_calendar_response = await fetch(`/api/holiday_calendar_setup/?start_date=${holiday_calendar_start_date}&end_date=${holiday_calendar_end_date}`, {
-method: 'POST',
-body: formData
 })
 
 const setup_holiday_calendar_data = await setup_holiday_calendar_response.json();
 
 create_notification(setup_holiday_calendar_data.message, setup_holiday_calendar_data.status)
 }
-})
+)
+
+function get_week_before_and_week_after_dates(dt){
+const date = new Date(dt)
+const one_week_in_milliseconds = 7 * 24 * 60 * 60 * 1000
+const week_before = new Date(date.getTime() - one_week_in_milliseconds)
+const week_after = new Date(date.getTime() + one_week_in_milliseconds)
+return {'week_before': week_before.toISOString().split("T")[0], 'week_after': week_after.toISOString().split("T")[0]}
+}

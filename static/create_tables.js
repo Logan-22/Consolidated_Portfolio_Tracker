@@ -36,6 +36,18 @@ const create_auth_tables_data = await create_auth_tables_response.json();
 create_notification(create_auth_tables_data.message, create_auth_tables_data.status)
 })
 
+document.getElementById("create_tier0_metrics_tables").addEventListener("submit", async (e) => {
+e.preventDefault()
+const tier0_metrics_schema = document.getElementById("tier0_metrics_schema").value
+const create_tier0_metrics_tables_response = await fetch(`/api/create_tier0_metrics_tables/?tier0_metrics_schema=${tier0_metrics_schema}`, {
+method: 'GET'
+})
+
+const create_tier0_metrics_tables_data = await create_tier0_metrics_tables_response.json();
+
+create_notification(create_tier0_metrics_tables_data.message, create_tier0_metrics_tables_data.status)
+})
+
 document.getElementById("create_user_investment_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
 const invs_schema = document.getElementById("invs_schema").value

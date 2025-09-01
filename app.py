@@ -8,7 +8,7 @@ from routes.api import api
 from routes.auth import auth
 from routes.apis.metadata import metadata_bp
 from routes.apis.metrics import metrics_bp
-from routes.apis.user_investments import user_transactions_bp
+from routes.apis.user_transactions import user_transactions_bp
 from datetime import datetime
 from os import getenv
 from secrets import token_urlsafe

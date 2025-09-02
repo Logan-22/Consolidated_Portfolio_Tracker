@@ -1,8 +1,11 @@
+from flask import current_app
 from datetime import date
 from utils.sql_utils.query_db.get_or_process_in_db import get_component_info_from_db
 from utils.connection_utils.connection_pool_config import connection_pool
+from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
 
 def insert_append(process_name, schema_name, table_name, payloads, process_id):
+    env = current_app.config['ENVIRONMENT']
     high_end_date = '9998-12-31'
     logs = {
         'payload_count': 0
@@ -17,6 +20,19 @@ def insert_append(process_name, schema_name, table_name, payloads, process_id):
         ,'message': ''
     }
 
+    excl_columns_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    OUT_PROCESS_NAME
+    ,COLUMN_NAME
+FROM
+    {env}T_META.METADATA_COLUMNS
+WHERE
+    OUT_PROCESS_NAME = '{process_name}'
+    AND COLUMN_TYP_CD = 'EXCL_COLUMN'
+    AND CONSIDER_FOR_PROCESSING = 1;
+    """, 'return_none')
+    excl_columns_list = [f"`{row['COLUMN_NAME']}`" for row in excl_columns_data]
+
     # Fetch Table Schema
     target_component_info = get_component_info_from_db('BASE TABLE', schema_name, table_name)
     column_names_list = target_component_info[schema_name][table_name]
@@ -24,7 +40,7 @@ def insert_append(process_name, schema_name, table_name, payloads, process_id):
     table_column_set = set(column_names_list)
     meta_columns_set = {'`UPDATE_PROCESS_NAME`', '`UPDATE_PROCESS_ID`', '`PROCESS_NAME`',\
                         '`PROCESS_ID`', '`START_DATE`', '`END_DATE`', '`RECORD_DELETED_FLAG`'}
-    columns_in_table_to_be_ignored_set = {'`ID`'} # Generic Column to be ignored
+    columns_in_table_to_be_ignored_set = set(excl_columns_list)
     value_columns_to_be_compared = [column for column in column_names_list if column not in meta_columns_set and column not in columns_in_table_to_be_ignored_set] # column_names_list is already with ""
 
     conn = connection_pool.get_connection()
@@ -61,13 +77,7 @@ def insert_append(process_name, schema_name, table_name, payloads, process_id):
         logs['inserted_count'] += 1
 
     logs['status'] = 'Success'
-    try:
-        if payloads[0].get('ALT_SYMBOL'):
-            logs['message'] = f'Insert/Append Completed for Process {process_name} for {payloads[0]["ALT_SYMBOL"]}'
-        else:
-            logs['message'] = f'Insert/Append Completed for Process {process_name}'
-    except Exception as e:
-        logs['message'] = f'Insert/Append Completed for Process {process_name}'
+    logs['message'] = f'Insert/Append Completed for Process {process_name}'
 
     conn.commit()
     cursor.close()

@@ -3,7 +3,7 @@ import { create_notification } from './create_notification.js'
 document.getElementById("create_metadata_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
 const metadata_schema = document.getElementById("metadata_schema").value
-const create_metadata_tables_response = await fetch(`/api/create_metadata_tables/?metadata_schema=${metadata_schema}`, {
+const create_metadata_tables_response = await fetch(`/api/create_metadata_tables?metadata_schema=${metadata_schema}`, {
 method: 'GET'
 })
 
@@ -15,7 +15,7 @@ create_notification(create_metadata_tables_data.message, create_metadata_tables_
 document.getElementById("create_utility_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
 const utility_schema = document.getElementById("utility_schema").value
-const create_utility_tables_response = await fetch(`/api/create_utility_tables/?utility_schema=${utility_schema}`, {
+const create_utility_tables_response = await fetch(`/api/create_utility_tables?utility_schema=${utility_schema}`, {
 method: 'GET'
 })
 
@@ -27,7 +27,7 @@ create_notification(create_utility_tables_data.message, create_utility_tables_da
 document.getElementById("create_auth_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
 const auth_schema = document.getElementById("auth_schema").value
-const create_auth_tables_response = await fetch(`/api/create_auth_tables/?auth_schema=${auth_schema}`, {
+const create_auth_tables_response = await fetch(`/api/create_auth_tables?auth_schema=${auth_schema}`, {
 method: 'GET'
 })
 
@@ -39,7 +39,7 @@ create_notification(create_auth_tables_data.message, create_auth_tables_data.sta
 document.getElementById("create_tier0_metrics_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
 const tier0_metrics_schema = document.getElementById("tier0_metrics_schema").value
-const create_tier0_metrics_tables_response = await fetch(`/api/create_tier0_metrics_tables/?tier0_metrics_schema=${tier0_metrics_schema}`, {
+const create_tier0_metrics_tables_response = await fetch(`/api/create_tier0_metrics_tables?tier0_metrics_schema=${tier0_metrics_schema}`, {
 method: 'GET'
 })
 
@@ -48,16 +48,16 @@ const create_tier0_metrics_tables_data = await create_tier0_metrics_tables_respo
 create_notification(create_tier0_metrics_tables_data.message, create_tier0_metrics_tables_data.status)
 })
 
-document.getElementById("create_user_investment_tables").addEventListener("submit", async (e) => {
+document.getElementById("create_user_transaction_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
-const invs_schema = document.getElementById("invs_schema").value
-const create_invs_tables_response = await fetch(`/api/create_invs_tables/?invs_schema=${invs_schema}`, {
+const txn_schema = document.getElementById("txn_schema").value
+const create_txn_tables_response = await fetch(`/api/create_txn_tables?txn_schema=${txn_schema}`, {
 method: 'GET'
 })
 
-const create_invs_tables_data = await create_invs_tables_response.json();
+const create_txn_tables_data = await create_txn_tables_response.json();
 
-create_notification(create_invs_tables_data.message, create_invs_tables_data.status)
+create_notification(create_txn_tables_data.message, create_txn_tables_data.status)
 })
 
 document.getElementById("migrate_data_to_aws").addEventListener("submit", async (e) => {
@@ -65,7 +65,7 @@ e.preventDefault()
 const schema = document.getElementById("schema").value
 const sqlite_table_name = document.getElementById("sqlite_table_name").value
 const aws_table_name = document.getElementById("aws_table_name").value
-const migrate_data_to_aws_response = await fetch(`/api/migrate_data_to_aws/?schema=${schema}&sqlite_table_name=${sqlite_table_name}&aws_table_name=${aws_table_name}`, {
+const migrate_data_to_aws_response = await fetch(`/api/migrate_data_to_aws?schema=${schema}&sqlite_table_name=${sqlite_table_name}&aws_table_name=${aws_table_name}`, {
 method: 'GET'
 })
 

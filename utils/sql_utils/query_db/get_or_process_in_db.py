@@ -30,25 +30,25 @@ def get_yahoo_symbol_from_metadata_store(alt_symbol):
         yahoo_symbol = rows[0]
     return yahoo_symbol
 
-def get_price_from_price_table(alt_symbol = None, purchase_date = None):
-    alt_symbol_filter    = f"AND ALT_SYMBOL = '{alt_symbol}'"    if alt_symbol    else ""
-    purchase_date_filter = f"AND VALUE_DATE = '{purchase_date}'" if purchase_date else ""
-    price_data = fetch_queries_as_dictionaries(f"""
-SELECT DISTINCT
-    PRICE
-    ,ALT_SYMBOL
+def get_instrument_price(instrument_id, value_date):
+    env = current_app.config['ENVIRONMENT']
+    instrument_id_filter = f"AND INSTRUMENT_ID = {instrument_id}" if instrument_id else ""
+    value_date_filter    = f"AND VALUE_DATE    = '{value_date}'"  if value_date    else ""
+    instrument_price_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    INSTRUMENT_ID
     ,VALUE_DATE
+    ,PRICE
 FROM
-    PRICE_TABLE
+    {env}T_TIER0_METRICS.DAILY_INSTRUMENT_PRICES
 WHERE
-    1 = 1 
-    {alt_symbol_filter}
-    {purchase_date_filter}
-    AND PRICE_TYP_CD = 'CLOSE_PRICE'
-    AND RECORD_DELETED_FLAG = 0
-    ORDER BY ALT_SYMBOL, VALUE_DATE;
-    """)
-    return price_data[0]
+    RECORD_DELETED_FLAG = 0
+    {instrument_id_filter}
+    {value_date_filter}
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
+    """, 'return_none', fetch = 'One')
+    return instrument_price_data
 
 def get_proc_date_from_processing_date_table():
     processing_date_data = fetch_queries_as_dictionaries(f"""

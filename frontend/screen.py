@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, session, g
 from utils.auth_utils.auth_utils import require_login, require_admin_access
 
 frontend = Blueprint('frontend', __name__)
@@ -21,7 +21,8 @@ def metadata_entry():
     return render_template('metadata_entry.html')
 
 @frontend.route('/mf_txn/')
-def mf_order_entry():
+@require_login
+def mf_txn_entry():
     return render_template('mf_txn_entry.html')
 
 @frontend.route('/stock_order_pdf/')

@@ -48,7 +48,7 @@ const mf_txn_payload = {
 const formData = new FormData();
 formData.append('mf_txn_payload', JSON.stringify(mf_txn_payload));
 
-const mf_txn_response = await fetch(`/user_txn/mf_txn/`, {
+const mf_txn_response = await fetch(`/api/user_txn/mf_txn/`, {
 method: 'POST',
 body: formData
 })

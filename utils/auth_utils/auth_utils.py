@@ -119,6 +119,5 @@ WHERE
             response = make_response("", 302)
             response.headers["Location"] = f"{redirect_url}/process_entry"
             return response
-
         return function(*args, **kwargs)
     return decorated

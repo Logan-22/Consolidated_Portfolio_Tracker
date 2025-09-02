@@ -58,7 +58,6 @@ create_consolidated_portfolio_views_in_db,\
 create_simulated_portfolio_views_in_db
 
 from utils.sql_utils.query_db.get_or_process_in_db import\
-get_price_from_price_table,\
 get_proc_date_from_processing_date_table,\
 get_max_value_date_for_alt_symbol,\
 get_holiday_dates,\
@@ -125,8 +124,8 @@ create_execution_logs_table,\
 create_duplicate_logs_table,\
 create_auth_audit_table
 
-from utils.sql_utils.tables.p1t_user_invs import\
-create_user_investment_schema,\
+from utils.sql_utils.tables.p1t_usr_txn import\
+create_user_transaction_schema,\
 create_mf_transaction_table
 
 from utils.sql_utils.tables.p1t_tier0_metrics import\
@@ -913,13 +912,13 @@ def create_tier0_metrics_tables():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
-@api.route('/api/create_invs_tables/', methods = ['GET'])
-def create_invs_tables():
+@api.route('/api/create_txn_tables/', methods = ['GET'])
+def create_txn_tables():
     try:
-        invs_schema = request.args.get("invs_schema") or f"{env}T_USER_INVS"
-        create_user_investment_schema(invs_schema)
-        create_mf_transaction_table(invs_schema)
-        return jsonify({'message': f'Successfully Created {invs_schema} User Investment Schema and Tables', 'status': 'Success'})
+        txn_schema = request.args.get("txn_schema") or f"{env}T_USER_INVS"
+        create_user_transaction_schema(txn_schema)
+        create_mf_transaction_table(txn_schema)
+        return jsonify({'message': f'Successfully Created {txn_schema} User Transaction Schema and Tables', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 

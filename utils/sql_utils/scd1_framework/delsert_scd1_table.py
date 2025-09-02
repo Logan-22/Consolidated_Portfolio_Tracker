@@ -2,6 +2,8 @@ from flask import current_app
 from datetime import date
 from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
 from utils.sql_utils.query_db.get_or_process_in_db import get_component_info_from_db
+from utils.sql_utils.process.get_column_data_type_dictionary import get_column_type_dictionary
+from utils.sql_utils.process.normalize_values import normalize_payload_and_existing_values
 from utils.connection_utils.connection_pool_config import connection_pool
 
 def delsert_scd1(process_name, schema_name, table_name, payloads, process_id):
@@ -107,7 +109,9 @@ WHERE
     """, where_values)
         existing_row = cursor.fetchone()
         if existing_row:
-            has_changed = any(payload[value_column.replace('`','')] != existing_row[value_column.replace('`','')] for value_column in value_columns_to_be_compared)
+            column_field_map = get_column_type_dictionary(schema_name, table_name)
+            has_changed = any(normalize_payload_and_existing_values(payload[value_column.replace('`','')],column_field_map[value_column.replace('`','')])\
+                           != normalize_payload_and_existing_values(existing_row[value_column.replace('`','')],column_field_map[value_column.replace('`','')]) for value_column in value_columns_to_be_compared)
             if has_changed:
                 # Hard Delete Existing Record
                 cursor.execute(f"DELETE FROM {schema_name}.{table_name} WHERE {where_clause}", where_values)
@@ -127,13 +131,7 @@ WHERE
         logs['inserted_count'] += 1
 
     logs['status'] = 'Success'
-    try:
-        if payloads[0]['ALT_SYMBOL']:
-            logs['message'] = f'SCD1 Completed for Process {process_name} for {payloads[0]["ALT_SYMBOL"]}'
-        else:
-            logs['message'] = f'SCD1 Completed for Process {process_name}'
-    except Exception as e:
-        logs['message'] = f'SCD1 Completed for Process {process_name}'
+    logs['message'] = f'SCD1 Completed for Process {process_name}'
 
     conn.commit()
     cursor.close()

@@ -3,7 +3,7 @@ from utils.connection_utils.connection_pool_config import connection_pool
 
 env = getenv('ENVIRONMENT')
 
-def create_user_investment_schema(invs_schema = f"{env}T_USER_INVS"):
+def create_user_transaction_schema(invs_schema = f"{env}T_USR_TXN"):
     conn = connection_pool.get_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
@@ -14,7 +14,7 @@ COLLATE utf8mb4_unicode_ci;
     cursor.close()
     conn.close()
 
-def create_mf_transaction_table(invs_schema = f"{env}T_USER_INVS"):
+def create_mf_transaction_table(invs_schema = f"{env}T_USR_TXN"):
     conn = connection_pool.get_connection()
     cursor = conn.cursor()
     cursor.execute(f"""

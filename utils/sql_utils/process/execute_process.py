@@ -9,148 +9,153 @@ from utils.log_utils.insert_initial_log import insert_intitial_log_record
 from utils.log_utils.update_log import update_log_record
 from utils.sql_utils.query_db.get_or_process_in_db import \
 get_first_purchase_date_from_all_portfolios,\
-get_first_purchase_date_from_mf_order_date_table,\
+get_first_purchase_date_from_mf_txn_table,\
 get_first_trade_date_from_trades_table,\
 get_date_setup_from_holiday_calendar,\
 get_max_value_date_by_portfolio_type,\
 get_max_next_processing_date_from_table
 from utils.sql_utils.query_db.update_in_db import \
-update_proc_date_in_processing_date_table
+update_table_with_payload
 
-def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None):
-    payloads          = []
-    proc_typ_cds_list = []
-    env = current_app.config['ENVIRONMENT']
+def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None, user_id = None):
+    try:
+        payloads          = []
+        proc_typ_cds_list = []
+        env = current_app.config['ENVIRONMENT']
 
-    # Insert Initial Log
-    process_id = insert_intitial_log_record(process_name)
-    if end_date:
-        end_date = datetime.strptime(end_date,'%Y-%m-%d')
-        log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
+        # Insert Initial Log
+        process_id = insert_intitial_log_record(process_name)
+        if end_date:
+            end_date = datetime.strptime(end_date,'%Y-%m-%d')
+            log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
 
-    # Get process metadata and validate
-    process_metadata_row = fetch_queries_as_dictionaries(f"""
-SELECT
-    OUT_PROCESS_NAME
-    ,PROCESS_TYPE
-    ,PROC_TYP_CD_LIST
-    ,INPUT_DATABASE
-    ,INPUT_VIEW
-    ,TARGET_DATABASE
-    ,TARGET_TABLE
-    ,DEFAULT_START_DATE_TYPE_CD
-    ,PROCESS_DECOMMISSIONED
-FROM
-    {env}T_META.METADATA_PROCESS
-WHERE
-    OUT_PROCESS_NAME           = '{process_name}'
-    AND RECORD_DELETED_FLAG    = 0;
-    """, "return_none")
-    if not process_metadata_row:
-        message = f'Process {process_name} is Not Present in METADATA_PROCESS table'
-        update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
-        return({'message': message, 'status': 'Failed'})
-    # Check for Duplicate Process Entry
-    elif len(process_metadata_row) > 1:
-        message = f'Duplicate entry present for Process {process_name} in METADATA_PROCESS table'
-        update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
-        return({'message': message, 'status': 'Failed'})
-    # Check if Process is decommissioned
-    elif process_metadata_row[0]['PROCESS_DECOMMISSIONED'] == 1:
-        message = f'Process {process_name} has been Decommissioned in METADATA_PROCESS table'
-        update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
-        return({'message': message, 'status': 'Failed'})
-
-    process_metadata = process_metadata_row[0]
-
-    if payload_from_source:
-        if type(payload_from_source).__name__ == 'dict':
-            payloads = [payload_from_source] # Skip to data load if the payload is already present
-        elif type(payload_from_source).__name__ == 'list':
-            payloads = payload_from_source
-        else:
-            message = f'Expected dict/list payloads, but received {type(payload_from_source).__name__}'
+        # Get process metadata and validate
+        process_metadata = fetch_queries_as_dictionaries(f"""
+    SELECT
+        OUT_PROCESS_NAME
+        ,PROCESS_TYPE
+        ,PROC_TYP_CD_LIST
+        ,INPUT_DATABASE
+        ,INPUT_VIEW
+        ,TARGET_DATABASE
+        ,TARGET_TABLE
+        ,DEFAULT_START_DATE_TYPE_CD
+        ,PROCESS_DECOMMISSIONED
+    FROM
+        {env}T_META.METADATA_PROCESS
+    WHERE
+        OUT_PROCESS_NAME           = '{process_name}'
+        AND RECORD_DELETED_FLAG    = 0;
+        """, "return_none", fetch = 'One')
+        if not process_metadata:
+            message = f'Process {process_name} is Not Present in METADATA_PROCESS table'
             update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
             return({'message': message, 'status': 'Failed'})
-    else:
-
-        # Get the Associated Proc Type Codes from Metadata
-        if process_metadata['PROC_TYP_CD_LIST']:
-            proc_typ_cds_list = process_metadata['PROC_TYP_CD_LIST'].split(",")
-
-        # Prepare Start Date
-        if process_frequency == 'Ad hoc':
-            if not start_date:
-                if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'ALL':
-                    first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios()
-                    start_date = first_purchase_data_across_portfolio_type['FIRST_PURCHASE_DATE']
-                if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'MUTUAL_FUND':
-                    first_mf_purchase_data = get_first_purchase_date_from_mf_order_date_table()
-                    start_date = first_mf_purchase_data['MF_FIRST_PURHCASE_DATE']
-                if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'STOCK':
-                    first_swing_trade_data = get_first_trade_date_from_trades_table()
-                    start_date = first_swing_trade_data['FIRST_TRADE_DATE']
-        elif process_metadata['FREQUENCY'] == 'On Start':
-            if not start_date:
-                max_next_proc_date_from_target_table = get_max_next_processing_date_from_table(process_metadata['TARGET_TABLE'])
-                start_date = max_next_proc_date_from_target_table[0]['MAX(NEXT_PROCESSING_DATE)']
-
-        # Prepare End Date
-        if not end_date:
-            if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'ALL':
-                max_value_date_for_each_portfolio = get_max_value_date_by_portfolio_type()
-            if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'MUTUAL_FUND':
-                max_value_date_for_each_portfolio = get_max_value_date_by_portfolio_type('Mutual Fund')
-            if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'STOCK':
-                max_value_date_for_each_portfolio = get_max_value_date_by_portfolio_type('Stock')
-            min_value_date = datetime.strptime('9998-12-31','%Y-%m-%d') # Setting Minumum to high end date
-            for portfolio in max_value_date_for_each_portfolio:
-                max_value_date_in_portfolio = datetime.strptime(portfolio['MAX(PT.VALUE_DATE)'],'%Y-%m-%d')
-                if max_value_date_in_portfolio < min_value_date:
-                    min_value_date = max_value_date_in_portfolio
-            end_date = min_value_date
-
-        counter_date = datetime.strptime(start_date,'%Y-%m-%d')
-        log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
-
-        if counter_date > end_date and process_metadata['FREQUENCY'] == 'On Start':
-            message = f"Start Date {start_date} is greater than End Date {log_end_date} for {process_name}"
-            update_log_record(process_name, process_id, 'Skipped', message, start_date, log_end_date, None, None, None, None, None, None, None)
-            return({'message': message, 'status': 'Success'})
-        elif counter_date > end_date and process_metadata['FREQUENCY'] != 'On Start':
-            message = f"Start Date {start_date} is greater than End Date {log_end_date} for {process_name}"
-            update_log_record(process_name, process_id, 'Failed', message, start_date, log_end_date, None, None, None, None, None, None, None)
+        # Check if Process is decommissioned
+        elif process_metadata['PROCESS_DECOMMISSIONED'] == 1:
+            message = f'Process {process_name} has been Decommissioned in METADATA_PROCESS table'
+            update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
             return({'message': message, 'status': 'Failed'})
 
-        # Prepare Loop
-        while(counter_date <= end_date):
-                holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
-                processing_date      = holiday_calendar_data['PROCESSING_DATE']
-                next_processing_date = holiday_calendar_data['NEXT_PROCESSING_DATE']
-                prev_processing_date = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+        if payload_from_source:
+            if type(payload_from_source).__name__ == 'dict':
+                payloads = [payload_from_source] # Skip to data load if the payload is already present
+            elif type(payload_from_source).__name__ == 'list':
+                payloads = payload_from_source
+            else:
+                message = f'Expected dict/list payloads, but received {type(payload_from_source).__name__}'
+                update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
+                return({'message': message, 'status': 'Failed'})
+        else:
+            # Get the Associated Proc Type Codes from Metadata
+            if process_metadata['PROC_TYP_CD_LIST']:
+                proc_typ_cds_list = process_metadata['PROC_TYP_CD_LIST'].split(",")
 
-                # Update Processing Dates Table
-                for proc_typ_cd in proc_typ_cds_list:
-                    update_proc_date_in_processing_date_table(proc_typ_cd, processing_date, next_processing_date, prev_processing_date)
+            # Prepare Start Date
+            if process_frequency == 'Ad hoc':
+                if not start_date:
+                    if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'ALL':
+                        first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios()
+                        start_date = first_purchase_data_across_portfolio_type['FIRST_PURCHASE_DATE']
+                    if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'MUTUAL_FUND':
+                        first_mf_purchase_data = get_first_purchase_date_from_mf_txn_table()
+                        start_date = first_mf_purchase_data['MF_FIRST_PURCHASE_DATE']
+                    if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'STOCK':
+                        first_swing_trade_data = get_first_trade_date_from_trades_table()
+                        start_date = first_swing_trade_data['FIRST_TRADE_DATE']
+            elif process_frequency == 'On Start':
+                if not start_date:
+                    max_next_proc_date_from_target_table = get_max_next_processing_date_from_table(process_metadata['TARGET_TABLE'])
+                    start_date = max_next_proc_date_from_target_table[0]['MAX(NEXT_PROCESSING_DATE)']
 
-                # Input View Payload
-                input_view_rows = fetch_queries_as_dictionaries(f"SELECT INP.* FROM {process_metadata['INPUT_VIEW']} INP;")
-                for row in input_view_rows:
-                    payloads.append(row)
+            # Prepare End Date
+            if not end_date:
+                if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'ALL':
+                    max_value_date_for_each_portfolio = get_max_value_date_by_portfolio_type()
+                if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'MUTUAL_FUND':
+                    max_value_date_for_each_portfolio = get_max_value_date_by_portfolio_type('Mutual Fund')
+                if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'STOCK':
+                    max_value_date_for_each_portfolio = get_max_value_date_by_portfolio_type('Stock')
+                min_value_date = datetime.strptime('9998-12-31','%Y-%m-%d').date() # Setting Minimum to high end date
+                for portfolio in max_value_date_for_each_portfolio:
+                    if portfolio.get('MAX_PRICE_DATE') is not None:
+                        if portfolio['MAX_PRICE_DATE'] < min_value_date:
+                            min_value_date = portfolio['MAX_PRICE_DATE']
+                end_date = min_value_date
 
-                counter_date = datetime.strptime(next_processing_date,'%Y-%m-%d')
+            counter_date = datetime.strptime(start_date,'%Y-%m-%d').date()
+            log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
 
-    # SCD2 Processing
-    if process_metadata['PROCESS_TYPE'] == 'SCD2':
-        logs = upsert_scd2(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
-    elif process_metadata['PROCESS_TYPE'] == 'SCD1':
-        logs = delsert_scd1(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
-    elif process_metadata['PROCESS_TYPE'] == 'INS':
-        logs = insert_append(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
+            if counter_date > end_date and process_frequency == 'On Start':
+                message = f"Start Date {start_date} is greater than End Date {log_end_date} for {process_name}"
+                update_log_record(process_name, process_id, 'Skipped', message, start_date, log_end_date, None, None, None, None, None, None, None)
+                return({'message': message, 'status': 'Success'})
+            elif counter_date > end_date and process_frequency != 'On Start':
+                message = f"Start Date {start_date} is greater than End Date {log_end_date} for {process_name}"
+                update_log_record(process_name, process_id, 'Failed', message, start_date, log_end_date, None, None, None, None, None, None, None)
+                return({'message': message, 'status': 'Failed'})
 
-    if end_date:
-        update_log_record(process_name, process_id, logs['status'], logs['message'], start_date, log_end_date, logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['deleted_count'], logs['no_change_count'], logs['skipped_count'], logs['null_count'], str(logs['skipped_due_to_schema_mismatch']))
-    else:
-        update_log_record(process_name, process_id, logs['status'], logs['message'], None, None, logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['deleted_count'], logs['no_change_count'], logs['skipped_count'], logs['null_count'], str(logs['skipped_due_to_schema_mismatch']))
+            # Prepare Loop
+            while(counter_date <= end_date):
+                    holiday_calendar_data = get_date_setup_from_holiday_calendar(counter_date.strftime('%Y-%m-%d'))
+                    processing_date          = holiday_calendar_data['PROCESSING_DATE']
+                    next_processing_date     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+                    previous_processing_date = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
 
-    return({'message': logs['message'], 'status': logs['status']})
+                    # Update Processing Dates Table
+                    for proc_typ_cd in proc_typ_cds_list:
+                        update_user_payload = {
+                            'data': {
+                                'PROCESSING_DATE'           : processing_date
+                                ,'PREVIOUS_PROCESSING_DATE' : previous_processing_date
+                                ,'NEXT_PROCESSING_DATE'     : next_processing_date
+                            },
+                            'conditions': {
+                                'PROC_TYP_CD' : proc_typ_cd
+                            }
+                        }
+                        update_table_with_payload(f"{env}T_UTIL", "PROCESSING_DATE", update_user_payload)
+
+                    # Input View Payload
+                    user_id_filter = f"WHERE INP.USER_ID = {user_id}" if user_id else ""
+                    input_view_rows = fetch_queries_as_dictionaries(f"SELECT INP.* FROM {process_metadata['INPUT_DATABASE']}.{process_metadata['INPUT_VIEW']} INP {user_id_filter};")
+                    for row in input_view_rows:
+                        payloads.append(row)
+                    counter_date = next_processing_date
+
+        # SCD2 Processing
+        if process_metadata['PROCESS_TYPE'] == 'SCD2':
+            logs = upsert_scd2(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
+        elif process_metadata['PROCESS_TYPE'] == 'SCD1':
+            logs = delsert_scd1(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
+        elif process_metadata['PROCESS_TYPE'] == 'INS':
+            logs = insert_append(process_name, process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'], payloads, process_id)
+
+        if end_date:
+            update_log_record(process_name, process_id, logs['status'], logs['message'], start_date, log_end_date, logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['deleted_count'], logs['no_change_count'], logs['skipped_count'], logs['null_count'], str(logs['skipped_due_to_schema_mismatch']))
+        else:
+            update_log_record(process_name, process_id, logs['status'], logs['message'], None, None, logs['payload_count'], logs['inserted_count'], logs['updated_count'], logs['deleted_count'], logs['no_change_count'], logs['skipped_count'], logs['null_count'], str(logs['skipped_due_to_schema_mismatch']))
+
+        return({'message': logs['message'], 'status': logs['status']})
+    except Exception as e:
+        update_log_record(process_name, process_id, 'Failed', repr(e), None, None, None, None, None, None, None, None, None)

@@ -22,11 +22,11 @@ def create_processing_date_table(utility_schema = f"{env}T_UTIL"):
     cursor.execute(f"""
 CREATE TABLE IF NOT EXISTS {utility_schema}.PROCESSING_DATE
 (
-    ID             INT                      AUTO_INCREMENT PRIMARY KEY,
-    PROC_TYP_CD    VARCHAR (100),
-    PROC_DATE      DATE,
-    NEXT_PROC_DATE DATE,
-    PREV_PROC_DATE DATE
+    ID                       INT            AUTO_INCREMENT PRIMARY KEY,
+    PROC_TYP_CD              VARCHAR (100),
+    PROCESSING_DATE          DATE,
+    NEXT_PROCESSING_DATE     DATE,
+    PREVIOUS_PROCESSING_DATE DATE
 )
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4

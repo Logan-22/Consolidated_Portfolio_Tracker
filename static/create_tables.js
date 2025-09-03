@@ -36,6 +36,18 @@ const create_auth_tables_data = await create_auth_tables_response.json();
 create_notification(create_auth_tables_data.message, create_auth_tables_data.status)
 })
 
+document.getElementById("create_user_transaction_tables").addEventListener("submit", async (e) => {
+e.preventDefault()
+const txn_schema = document.getElementById("txn_schema").value
+const create_txn_tables_response = await fetch(`/api/create_txn_tables?txn_schema=${txn_schema}`, {
+method: 'GET'
+})
+
+const create_txn_tables_data = await create_txn_tables_response.json();
+
+create_notification(create_txn_tables_data.message, create_txn_tables_data.status)
+})
+
 document.getElementById("create_tier0_metrics_tables").addEventListener("submit", async (e) => {
 e.preventDefault()
 const tier0_metrics_schema = document.getElementById("tier0_metrics_schema").value
@@ -48,16 +60,16 @@ const create_tier0_metrics_tables_data = await create_tier0_metrics_tables_respo
 create_notification(create_tier0_metrics_tables_data.message, create_tier0_metrics_tables_data.status)
 })
 
-document.getElementById("create_user_transaction_tables").addEventListener("submit", async (e) => {
+document.getElementById("create_tier0_inp_view").addEventListener("submit", async (e) => {
 e.preventDefault()
-const txn_schema = document.getElementById("txn_schema").value
-const create_txn_tables_response = await fetch(`/api/create_txn_tables?txn_schema=${txn_schema}`, {
+const tier0_inp_view_schema = document.getElementById("tier0_inp_view_schema").value
+const create_tier0_input_view_response = await fetch(`/api/create_tier0_inp_view?tier0_inp_view_schema=${tier0_inp_view_schema}`, {
 method: 'GET'
 })
 
-const create_txn_tables_data = await create_txn_tables_response.json();
+const create_tier0_input_view_data = await create_tier0_input_view_response.json();
 
-create_notification(create_txn_tables_data.message, create_txn_tables_data.status)
+create_notification(create_tier0_input_view_data.message, create_tier0_input_view_data.status)
 })
 
 document.getElementById("migrate_data_to_aws").addEventListener("submit", async (e) => {

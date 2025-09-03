@@ -89,24 +89,24 @@ GROUP BY 1,2,3,4;
     return max_value_date_data
 
 def get_max_value_date_by_portfolio_type(portfolio_type = None):
-    portfolio_type_filter = f"AND MS.PORTFOLIO_TYPE = {portfolio_type}" if portfolio_type else ""
+    env = current_app.config['ENVIRONMENT']
+    portfolio_type_filter = f"AND MI.PORTFOLIO_TYPE = '{portfolio_type}'" if portfolio_type else ""
     max_value_date_for_each_portfolio = fetch_queries_as_dictionaries(f"""
 SELECT
-    MS.ALT_SYMBOL
-    ,MS.EXCHANGE_SYMBOL
-    ,MS.YAHOO_SYMBOL
-    ,MS.PORTFOLIO_TYPE
-    ,MAX(PT.VALUE_DATE)
+    MI.EXCHANGE_SYMBOL
+    ,MI.PORTFOLIO_TYPE
+    ,MAX(PR.VALUE_DATE) AS MAX_PRICE_DATE
 FROM
-    METADATA_STORE MS
+    {env}T_META.METADATA_INSTRUMENTS MI
 LEFT OUTER JOIN
-    PRICE_TABLE PT
+    {env}T_TIER0_METRICS.DAILY_INSTRUMENT_PRICES PR
 ON
-    MS.ALT_SYMBOL = PT.ALT_SYMBOL
+    MI.INSTRUMENT_ID           = PR.INSTRUMENT_ID
+    AND PR.RECORD_DELETED_FLAG = 0
 WHERE
-    1 = 1
+    MI.RECORD_DELETED_FLAG = 0
     {portfolio_type_filter}
-GROUP BY 1,2,3,4;
+GROUP BY 1,2;
     """)
     return max_value_date_for_each_portfolio
 
@@ -164,16 +164,19 @@ WHERE
     """)
     return working_day_data
 
-def get_first_purchase_date_from_mf_order_date_table():
-    first_mf_purchase_data = fetch_queries_as_dictionaries("""
+def get_first_purchase_date_from_mf_txn_table(user_id = None):
+    env = current_app.config['ENVIRONMENT']
+    user_id_filter = f"AND TXN.USER_ID = {user_id}" if user_id else None
+    first_mf_purchase_data = fetch_queries_as_dictionaries(f"""
 SELECT
-    MIN(PURCHASED_ON) AS MF_FIRST_PURHCASE_DATE
+    MIN(TXN.TXN_DATE) AS MF_FIRST_PURCHASE_DATE
 FROM
-    MF_ORDER
+    {env}T_USR_TXN.MF_TRANSACTIONS TXN
 WHERE
-    RECORD_DELETED_FLAG = 0;
-    """)
-    return first_mf_purchase_data[0]
+    TXN.RECORD_DELETED_FLAG = 0
+    {user_id_filter};
+    """, 'return_none', fetch = 'One')
+    return first_mf_purchase_data
 
 def get_date_setup_from_holiday_calendar(input_date):
     env = current_app.config['ENVIRONMENT']
@@ -637,7 +640,7 @@ def get_metadata_instruments(instrument_id, portfolio_type = None):
     env = current_app.config['ENVIRONMENT']
     price_start_date = current_app.config['PRICE_START_DATE']
     instrument_id_filter =  f"AND MI.INSTRUMENT_ID  = {instrument_id}"  if instrument_id else ""
-    portfolio_type_filter = f"AND MI.PORTFOLIO_TYPE = {portfolio_type}" if portfolio_type else ""
+    portfolio_type_filter = f"AND MI.PORTFOLIO_TYPE = '{portfolio_type}'" if portfolio_type else ""
     metadata_instruments_data = fetch_queries_as_dictionaries(f"""
 SELECT
     MI.INSTRUMENT_ID
@@ -659,3 +662,45 @@ WHERE
 GROUP BY 1,2,3,4;
     """, 'return_none', fetch = 'One')
     return metadata_instruments_data
+
+def get_holding_data(instrument_id, user_id, value_date):
+    env = current_app.config['ENVIRONMENT']
+    instrument_id_filter = f"AND DEP.INSTRUMENT_ID  = {instrument_id}"  if instrument_id else ""
+    user_id_filter       = f"AND DEP.USER_ID = {user_id}" if user_id else ""
+    value_date_filter    = f"AND DEP.START_DATE = '{value_date}'" if value_date else ""
+    holding_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    DEP.INSTRUMENT_ID
+    ,DEP.USER_ID
+    ,DEP.START_DATE
+    ,DEP.TOTAL_QUANTITY
+FROM
+    {env}T_TIER0_METRICS.MF_DEPOSITORY_HOLDINGS DEP
+WHERE
+    DEP.RECORD_DELETED_FLAG = 0
+    {instrument_id_filter}
+    {user_id_filter}
+    {value_date_filter}
+GROUP BY 1,2,3,4;
+    """, 'return_none', fetch = 'One')
+    return holding_data
+
+def get_consolidated_quantity_from_mf_txn(instrument_id, user_id):
+    env = current_app.config['ENVIRONMENT']
+    instrument_id_filter = f"AND TXN.INSTRUMENT_ID  = {instrument_id}"  if instrument_id else ""
+    user_id_filter       = f"AND TXN.USER_ID = {user_id}" if user_id else ""
+    consolidated_quantity_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    TXN.INSTRUMENT_ID
+    ,TXN.USER_ID
+    ,SUM(CASE WHEN TXN.TXN_TYPE = 'Buy'  THEN TXN.UNITS
+              WHEN TXN.TXN_TYPE = 'Sell' THEN -1 * TXN.UNITS END) AS CONSOLIDATED_QUANTITY
+FROM
+    {env}T_USR_TXN.MF_TRANSACTIONS TXN
+WHERE
+    TXN.RECORD_DELETED_FLAG = 0
+    {instrument_id_filter}
+    {user_id_filter}
+GROUP BY 1,2,3,4;
+    """, 'return_none', fetch = 'One')
+    return consolidated_quantity_data

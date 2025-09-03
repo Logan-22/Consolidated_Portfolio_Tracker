@@ -6,7 +6,9 @@ from utils.sql_utils.process.execute_process_group import execute_process_group_
 from utils.auth_utils.auth_utils import require_login
 from utils.sql_utils.query_db.get_or_process_in_db import\
 get_or_create_instrument_id,\
-get_instrument_price
+get_instrument_price,\
+get_holding_data,\
+get_consolidated_quantity_from_mf_txn
 
 env = getenv('ENVIRONMENT')
 
@@ -22,16 +24,31 @@ def mf_transaction_entry():
         else:
             return jsonify({'message': 'Invalid User Request', 'status' : 'Failed'})
         mf_txn_payload['INSTRUMENT_ID']       = get_or_create_instrument_id(mf_txn_payload['EXCHANGE_SYMBOL'], 'get')
-        mf_txn_payload['STAMP_FEES_AMOUNT']   = round(float(mf_txn_payload['TXN_AMOUNT']) - float(mf_txn_payload['AMC_AMOUNT']),4)
-        instrument_price_data = get_instrument_price(mf_txn_payload['INSTRUMENT_ID'], mf_txn_payload['TXN_DATE'])
-        mf_txn_payload['NAV_DURING_PURCHASE'] = instrument_price_data['PRICE']
+        mf_txn_payload['STAMP_FEES_AMOUNT']   = round(Decimal(mf_txn_payload['TXN_AMOUNT']) - Decimal(mf_txn_payload['AMC_AMOUNT']), 4)
+        instrument_price_data                 = get_instrument_price(mf_txn_payload['INSTRUMENT_ID'], mf_txn_payload['TXN_DATE'])
+        if instrument_price_data and instrument_price_data.get('PRICE'):
+            mf_txn_payload['NAV_DURING_PURCHASE'] = instrument_price_data['PRICE']
+        else:
+            return jsonify({'message': 'Invalid Purchase Date', 'status' : 'Failed'})
         mf_txn_payload['UNITS']               = round(Decimal(mf_txn_payload['AMC_AMOUNT']) / Decimal(mf_txn_payload['NAV_DURING_PURCHASE']), 4)
+
+        if mf_txn_payload['TXN_TYPE'] == 'Sell':
+            holding_as_on_purchase_date       = get_holding_data(mf_txn_payload['INSTRUMENT_ID'], mf_txn_payload['USER_ID'], mf_txn_payload['TXN_DATE'])   
+            if holding_as_on_purchase_date and holding_as_on_purchase_date.get('TOTAL_QUANTITY') and holding_as_on_purchase_date['TOTAL_QUANTITY'] >= mf_txn_payload['UNITS']:
+                get_consolidated_quantity     = get_consolidated_quantity_from_mf_txn(mf_txn_payload['INSTRUMENT_ID'], mf_txn_payload['USER_ID'])
+                if get_consolidated_quantity and get_consolidated_quantity.get('CONSOLIDATED_QUANTITY') and get_consolidated_quantity['CONSOLIDATED_QUANTITY'] >= mf_txn_payload['UNITS']:
+                    pass
+                else:
+                    return jsonify({'message': 'Transaction Declined: Inconsistent Sell Order due Insufficient Units Held', 'status' : 'Failed'})
+            else:
+                return jsonify({'message': 'Transaction Declined: No units available for this sell request', 'status' : 'Failed'})
 
         mf_txn_final_payload = {
             'PR_MF_TRASACTION_LOAD' : mf_txn_payload
+            ,'PR_MF_DEP_HOLD_LOAD'  : None
         }
 
-        mf_txn_entry_logs = execute_process_group_using_metadata('PG_MF_TRANSACTION_LOAD', payloads = mf_txn_final_payload)
+        mf_txn_entry_logs = execute_process_group_using_metadata('PG_MF_TRANSACTION_LOAD', start_date = mf_txn_payload['TXN_DATE'], payloads = mf_txn_final_payload, process_frequency = 'Ad hoc', user_id = mf_txn_payload['USER_ID'])
         return jsonify(mf_txn_entry_logs)
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})

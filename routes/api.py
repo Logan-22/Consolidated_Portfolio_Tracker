@@ -77,9 +77,6 @@ get_component_info_from_db,\
 get_missing_prices_from_price_table,\
 get_from_sqlite_component
 
-from utils.sql_utils.query_db.update_in_db import\
-update_proc_date_in_processing_date_table
-
 from utils.sql_utils.query_db.delete_in_db import\
 truncate_table
 
@@ -130,7 +127,12 @@ create_mf_transaction_table
 
 from utils.sql_utils.tables.p1t_tier0_metrics import\
 create_tier0_metrics_schema,\
-create_daily_instrument_prices_table
+create_daily_instrument_prices_table,\
+create_mf_depository_holding_table
+
+from utils.sql_utils.views.p1v_tier0_inp import\
+create_tier0_inp_view_schema,\
+create_tier0_depository_holding_view
 
 api = Blueprint('api', __name__)
 
@@ -164,11 +166,11 @@ def proc_date_update():
         create_processing_date_table()
 
         processing_date_payload = loads(request.form.get('processing_date_payload'))
-        update_proc_date_in_processing_date_table('MF_PROC',         processing_date_payload['mf_proc_date'],        processing_date_payload['mf_next_proc_date'],        processing_date_payload['mf_prev_proc_date'])
-        update_proc_date_in_processing_date_table('PPF_MF_PROC',     processing_date_payload['ppf_mf_proc_date'],    processing_date_payload['ppf_mf_next_proc_date'],    processing_date_payload['ppf_mf_prev_proc_date'])
-        update_proc_date_in_processing_date_table('STOCK_PROC',      processing_date_payload['stock_proc_date'],     processing_date_payload['stock_next_proc_date'],     processing_date_payload['stock_prev_proc_date'])
-        update_proc_date_in_processing_date_table('SIM_MF_PROC',     processing_date_payload['sim_mf_proc_date'],    processing_date_payload['sim_mf_next_proc_date'],    processing_date_payload['sim_mf_prev_proc_date'])
-        update_proc_date_in_processing_date_table('SIM_STOCK_PROC',  processing_date_payload['sim_stock_proc_date'], processing_date_payload['sim_stock_next_proc_date'], processing_date_payload['sim_stock_prev_proc_date'])
+        #update_proc_date_in_processing_date_table('MF_PROC',         processing_date_payload['mf_proc_date'],        processing_date_payload['mf_next_proc_date'],        processing_date_payload['mf_prev_proc_date'])
+        #update_proc_date_in_processing_date_table('PPF_MF_PROC',     processing_date_payload['ppf_mf_proc_date'],    processing_date_payload['ppf_mf_next_proc_date'],    processing_date_payload['ppf_mf_prev_proc_date'])
+        #update_proc_date_in_processing_date_table('STOCK_PROC',      processing_date_payload['stock_proc_date'],     processing_date_payload['stock_next_proc_date'],     processing_date_payload['stock_prev_proc_date'])
+        #update_proc_date_in_processing_date_table('SIM_MF_PROC',     processing_date_payload['sim_mf_proc_date'],    processing_date_payload['sim_mf_next_proc_date'],    processing_date_payload['sim_mf_prev_proc_date'])
+        #update_proc_date_in_processing_date_table('SIM_STOCK_PROC',  processing_date_payload['sim_stock_proc_date'], processing_date_payload['sim_stock_next_proc_date'], processing_date_payload['sim_stock_prev_proc_date'])
         return jsonify({'message': "Successfully updated Processing Dates Table", 'status': "Success"})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'})
@@ -908,6 +910,7 @@ def create_tier0_metrics_tables():
         tier0_metrics_schema = request.args.get("tier0_metrics_schema") or f"{env}T_TIER0_METRICS"
         create_tier0_metrics_schema(tier0_metrics_schema)
         create_daily_instrument_prices_table(tier0_metrics_schema)
+        create_mf_depository_holding_table(tier0_metrics_schema)
         return jsonify({'message': f'Successfully Created {tier0_metrics_schema} Tier0 Metrics Schema and Tables', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
@@ -922,6 +925,15 @@ def create_txn_tables():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
+@api.route('/api/create_tier0_inp_view/', methods = ['GET'])
+def create_tier0_inp_view():
+    try:
+        tier0_inp_view_schema = request.args.get("tier0_inp_view_schema") or f"{env}V_TIER0_INP"
+        create_tier0_inp_view_schema(tier0_inp_view_schema)
+        create_tier0_depository_holding_view(tier0_inp_view_schema)
+        return jsonify({'message': f'Successfully Created {tier0_inp_view_schema} Tier0 Input Schema and Views', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
 
 @api.route('/api/migrate_data_to_aws/', methods = ['GET'])
 def migrate_data_from_sqlite3_to_aws():

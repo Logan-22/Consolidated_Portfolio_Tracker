@@ -701,6 +701,6 @@ WHERE
     TXN.RECORD_DELETED_FLAG = 0
     {instrument_id_filter}
     {user_id_filter}
-GROUP BY 1,2,3,4;
+GROUP BY 1,2;
     """, 'return_none', fetch = 'One')
     return consolidated_quantity_data

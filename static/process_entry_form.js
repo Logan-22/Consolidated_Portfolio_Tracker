@@ -69,6 +69,8 @@ async function add_process_entry_block(e){
     ${create_input_element("Auto Trigger On Launch?", "checkbox", "process_auto_trigger_on_launch")}
     ${create_input_element("Process Decommissioned?", "checkbox", "process_decommissioned")}
     ${create_input_element("Consider for Processing?", "checkbox", "consider_for_processing")}
+    ${create_input_element("Instrument Level Processing", "checkbox", "instrument_level_processing")}
+    ${create_input_element("User Level Processing", "checkbox", "user_level_processing")}
   </div>
   <div class="key-columns">
   <label for ="key-column-list-${process_count}">Key Columns</label>
@@ -253,6 +255,8 @@ return {
   AUTO_TRIGGER_ON_LAUNCH     : entry.querySelector('[name="process_auto_trigger_on_launch"]').checked ? 1 : 0,
   PROCESS_DECOMMISSIONED     : entry.querySelector('[name="process_decommissioned"]').checked ? 1 : 0,
   CONSIDER_FOR_PROCESSING    : entry.querySelector('[name="consider_for_processing"]').checked ? 1 : 0,
+  INSTRUMENT_LEVEL_PROCESS   : entry.querySelector('[name="instrument_level_processing"]').checked ? 1 : 0,
+  USER_LEVEL_PROCESS         : entry.querySelector('[name="user_level_processing"]').checked ? 1 : 0,
   DEFAULT_START_DATE_TYPE_CD : entry.querySelector('[name="process_default_start_date_type_code"]').value.trim(),
   EXECUTION_ORDER            : entry.querySelector('[name="execution_order"]').value,
   PROCESS_KEYCOLUMNS         : key_columns,
@@ -277,7 +281,7 @@ if(! overlapping_field_status){
 const formData = new FormData();
 formData.append('process_entry_values', JSON.stringify(process_entry_payloads));
 
-const process_entry_response = await fetch(`/api/process_entry/`, {
+const process_entry_response = await fetch(`/api/metadata/process_entry/`, {
 method: 'POST',
 body: formData
 })

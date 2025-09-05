@@ -8,6 +8,7 @@ import { create_notification } from './create_notification.js'
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('exchange_symbol')) {
     init_mutual_fund_names_dropdown();
+    init_change_metrics();
   }
 });
 
@@ -26,6 +27,23 @@ exchange_symbol.innerHTML += `<option id = "options">${element['EXCHANGE_SYMBOL'
 });
 }
 
+document.getElementById('txn_metrics').addEventListener('change', (e) => {
+init_change_metrics()
+})
+
+function init_change_metrics(){
+const txn_metrics = document.getElementById('txn_metrics').value
+const amount_div  = document.getElementById('amount_div')
+const unit_div = document.getElementById('unit_div')
+if(txn_metrics == 'Amount'){
+amount_div.classList = ''
+unit_div.classList   = 'hidden'
+}else if (txn_metrics == 'Units'){
+amount_div.classList = 'hidden'
+unit_div.classList   = ''
+}
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 document.getElementById('mf_txn_form').addEventListener('submit', async function (e) {
@@ -36,6 +54,7 @@ const txn_date        = document.getElementById('txn_date').value;
 const txn_amount      = document.getElementById('txn_amount').value;
 const txn_type        = document.getElementById('txn_type').value;
 const amc_amount      = document.getElementById('amc_amount').value;
+const units           = document.getElementById('units').value;
 
 const mf_txn_payload = {
 'EXCHANGE_SYMBOL'      : exchange_symbol
@@ -43,6 +62,7 @@ const mf_txn_payload = {
 ,'TXN_AMOUNT'          : txn_amount
 ,'TXN_TYPE'            : txn_type
 ,'AMC_AMOUNT'          : amc_amount
+,'UNITS'               : units
 }
 
 const formData = new FormData();

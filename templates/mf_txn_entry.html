@@ -12,24 +12,38 @@
 
     <label for = "txn_date">
     <b>Transaction Date</b></label></br>
-    <input type = "date" id = "txn_date" name = "txn_date" autocomplete="off"></br>
-
-    <label for = "txn_amount">
-    <b>Transaction Amount</b></label></br>
-    <input type = "number" id = "txn_amount" name = "txn_amount" placeholder="Enter the Transaction Amount" autocomplete="off" step = "0.0001"></br>
+    <input type = "date" id = "txn_date" name = "txn_date" autocomplete="off" required></br>
 
     <label for = "txn_type">
     <b>Transaction Type</b></label></br>
-    <select id = "txn_type" name = "txn_type" autocomplete="off">
+    <select id = "txn_type" name = "txn_type" autocomplete="off" required>
         <option value = "Buy">Buy</option>
         <option value = "Sell">Sell</option>
     </select>
     </br>
 
+    <label for = "txn_amount">
+    <b>Transaction Amount</b></label></br>
+    <input type = "number" id = "txn_amount" name = "txn_amount" placeholder="Enter the Transaction Amount" autocomplete="off" step = "0.0001" required></br>
+
+    <label for = "txn_metrics">
+    <b>Transaction Metrics</b></label></br>
+    <select id = "txn_metrics" name = "txn_metrics" placeholder="Enter the Prefered Transaction Metric" autocomplete="off" required></br>
+        <option value = "Amount">Amount</option>
+        <option value = "Units">Units</option>
+    </select>
+
+    <div id = 'amount_div'>
     <label for = "amc_amount">
     <b>AMC Amount</b></label></br>
     <input type = "number" id = "amc_amount" name = "amc_amount" placeholder="Enter the Actual AMC Amount" autocomplete="off" step = "0.0001"></br>
+    </div>
 
+    <div id = 'unit_div'>
+        <label for = "units">
+        <b>Units</b></label></br>
+        <input type = "number" id = "units" name = "units" placeholder="Enter the Transacted units" autocomplete="off" step = "0.0001"></br>
+    </div>
     <button type = "submit" class = "submit">Submit</button>
     </form>
     </div>

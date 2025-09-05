@@ -760,66 +760,6 @@ def get_component_info():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
-@api.route('/api/process_entry/', methods = ['POST'])
-def add_process_entry():
-    try:
-        process_entry_payloads   = loads(request.form.get('process_entry_values')) # json.loads
-        process_group_payloads   = []
-        process_payloads         = []
-        process_columns_payloads = []
-        for payload in process_entry_payloads:
-            process_group_payload = {
-                'PROCESS_GROUP'             : payload['PROCESS_GROUP']
-                ,'OUT_PROCESS_NAME'         : payload['OUT_PROCESS_NAME']
-                ,'CONSIDER_FOR_PROCESSING'  : payload['CONSIDER_FOR_PROCESSING']
-                ,'EXECUTION_ORDER'          : payload['EXECUTION_ORDER']
-            }
-            process_group_payloads.append(process_group_payload)
-
-            process_payload = {
-                'OUT_PROCESS_NAME'            : payload['OUT_PROCESS_NAME']
-                ,'PROCESS_TYPE'               : payload['PROCESS_TYPE']
-                ,'PROC_TYP_CD_LIST'           : payload['PROC_TYP_CD_LIST']
-                ,'INPUT_DATABASE'             : payload['INPUT_DATABASE']
-                ,'INPUT_VIEW'                 : payload['INPUT_VIEW']
-                ,'TARGET_DATABASE'            : payload['TARGET_DATABASE']
-                ,'TARGET_TABLE'               : payload['TARGET_TABLE']
-                ,'PROCESS_DESCRIPTION'        : payload['PROCESS_DESCRIPTION']
-                ,'AUTO_TRIGGER_ON_LAUNCH'     : payload['AUTO_TRIGGER_ON_LAUNCH']
-                ,'PROCESS_DECOMMISSIONED'     : payload['PROCESS_DECOMMISSIONED']
-                ,'DEFAULT_START_DATE_TYPE_CD' : payload['DEFAULT_START_DATE_TYPE_CD']
-            }
-            process_payloads.append(process_payload)
-
-            for column_name in payload['PROCESS_KEYCOLUMNS']:
-                process_keycolumn_payload = {
-                    'OUT_PROCESS_NAME'         : payload['OUT_PROCESS_NAME']
-                    ,'COLUMN_NAME'             : column_name
-                    ,'COLUMN_TYP_CD'           : 'KEY_COLUMN'
-                    ,'CONSIDER_FOR_PROCESSING' : payload['CONSIDER_FOR_PROCESSING']
-                }
-                process_columns_payloads.append(process_keycolumn_payload)
-            
-            for column_name in payload['PROCESS_EXCL_COLUMNS']:
-                process_exclcolumn_payload = {
-                    'OUT_PROCESS_NAME'         : payload['OUT_PROCESS_NAME']
-                    ,'COLUMN_NAME'             : column_name
-                    ,'COLUMN_TYP_CD'           : 'EXCL_COLUMN'
-                    ,'CONSIDER_FOR_PROCESSING' : payload['CONSIDER_FOR_PROCESSING']
-                }
-                process_columns_payloads.append(process_exclcolumn_payload)
-        
-        process_group_final_payloads = {
-            'PR_METADATA_PROCESS_GROUP_LOAD': process_group_payloads
-            ,'PR_METADATA_PROCESS_LOAD'     : process_payloads
-            ,'PR_METADATA_KEYCOLUMNS_LOAD'  : process_columns_payloads
-        }
-            
-        process_group_logs = execute_process_group_using_metadata('PG_METADATA_PROCESS_LOAD', payloads = process_group_final_payloads)
-        return jsonify(process_group_logs)
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
-
 @api.route('/api/missing_prices/', methods = ['GET'])
 def get_missing_prices():
     try:

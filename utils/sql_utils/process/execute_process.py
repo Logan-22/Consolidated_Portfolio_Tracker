@@ -17,7 +17,7 @@ get_max_next_processing_date_from_table
 from utils.sql_utils.query_db.update_in_db import \
 update_table_with_payload
 
-def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None, user_id = None):
+def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None, user_id = None, instrument_id = None):
     try:
         payloads          = []
         proc_typ_cds_list = []
@@ -31,22 +31,24 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
 
         # Get process metadata and validate
         process_metadata = fetch_queries_as_dictionaries(f"""
-    SELECT
-        OUT_PROCESS_NAME
-        ,PROCESS_TYPE
-        ,PROC_TYP_CD_LIST
-        ,INPUT_DATABASE
-        ,INPUT_VIEW
-        ,TARGET_DATABASE
-        ,TARGET_TABLE
-        ,DEFAULT_START_DATE_TYPE_CD
-        ,PROCESS_DECOMMISSIONED
-    FROM
-        {env}T_META.METADATA_PROCESS
-    WHERE
-        OUT_PROCESS_NAME           = '{process_name}'
-        AND RECORD_DELETED_FLAG    = 0;
-        """, "return_none", fetch = 'One')
+SELECT
+    OUT_PROCESS_NAME
+    ,PROCESS_TYPE
+    ,PROC_TYP_CD_LIST
+    ,INPUT_DATABASE
+    ,INPUT_VIEW
+    ,TARGET_DATABASE
+    ,TARGET_TABLE
+    ,DEFAULT_START_DATE_TYPE_CD
+    ,PROCESS_DECOMMISSIONED
+    ,INSTRUMENT_LEVEL_PROCESS
+    ,USER_LEVEL_PROCESS
+FROM
+    {env}T_META.METADATA_PROCESS
+WHERE
+    OUT_PROCESS_NAME           = '{process_name}'
+    AND RECORD_DELETED_FLAG    = 0;
+    """, "return_none", fetch = 'One')
         if not process_metadata:
             message = f'Process {process_name} is Not Present in METADATA_PROCESS table'
             update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
@@ -137,8 +139,9 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
                         update_table_with_payload(f"{env}T_UTIL", "PROCESSING_DATE", update_user_payload)
 
                     # Input View Payload
-                    user_id_filter = f"WHERE INP.USER_ID = {user_id}" if user_id else ""
-                    input_view_rows = fetch_queries_as_dictionaries(f"SELECT INP.* FROM {process_metadata['INPUT_DATABASE']}.{process_metadata['INPUT_VIEW']} INP {user_id_filter};")
+                    user_id_filter = f"AND INP.USER_ID = {user_id}" if user_id and process_metadata['USER_LEVEL_PROCESS'] == 1 else ""
+                    instrument_id_filter = f"AND INP.INSTRUMENT_ID = {instrument_id}" if instrument_id and process_metadata['INSTRUMENT_LEVEL_PROCESS'] == 1 else ""
+                    input_view_rows = fetch_queries_as_dictionaries(f"SELECT INP.* FROM {process_metadata['INPUT_DATABASE']}.{process_metadata['INPUT_VIEW']} INP WHERE 1 = 1 {user_id_filter} {instrument_id_filter};")
                     for row in input_view_rows:
                         payloads.append(row)
                     counter_date = next_processing_date

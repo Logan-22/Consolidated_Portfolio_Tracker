@@ -40,7 +40,9 @@ SELECT
     ,TXN.EXCHANGE_SYMBOL                                             AS EXCHANGE_SYMBOL
     ,SUM(CASE WHEN TXN.TXN_TYPE = 'Buy'  THEN TXN.UNITS
               WHEN TXN.TXN_TYPE = 'Sell' THEN -1 * TXN.UNITS END)    AS TOTAL_QUANTITY
-    ,SUM(TXN.TXN_AMOUNT)                                             AS TOTAL_INVESTED_AMOUNT
+    ,SUM(CASE WHEN TXN.TXN_TYPE = 'Buy'  THEN TXN.TXN_AMOUNT
+              WHEN TXN.TXN_TYPE = 'Sell' THEN -1 * TXN.TXN_AMOUNT END)
+                                                                     AS TOTAL_INVESTED_AMOUNT
     ,MAX(TXN.TXN_ID)                                                 AS LAST_TXN_ID
     ,(SELECT DISTINCT PROCESSING_DATE 
     FROM {env}T_UTIL.PROCESSING_DATE WHERE PROC_TYP_CD = 'MF_PROC')  AS PROCESSING_DATE

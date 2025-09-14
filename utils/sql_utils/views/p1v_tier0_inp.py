@@ -25,6 +25,8 @@ SELECT
     ,SUB.EXCHANGE_SYMBOL                                             AS EXCHANGE_SYMBOL
     ,SUB.TOTAL_QUANTITY                                              AS TOTAL_QUANTITY
     ,SUB.TOTAL_INVESTED_AMOUNT                                       AS TOTAL_INVESTED_AMOUNT
+    ,SUB.TOTAL_AMC_AMOUNT                                            AS TOTAL_AMC_AMOUNT
+    ,SUB.TOTAL_STAMP_FEES_AMOUNT                                     AS TOTAL_STAMP_FEES_AMOUNT
     ,ROUND(SUB.TOTAL_INVESTED_AMOUNT / SUB.TOTAL_QUANTITY, 4)        AS AVERAGE_PRICE
     ,SUB.LAST_TXN_ID                                                 AS LAST_TXN_ID
     ,CASE WHEN SUB.TOTAL_QUANTITY <= 0 THEN 'Closed'
@@ -43,6 +45,10 @@ SELECT
     ,SUM(CASE WHEN TXN.TXN_TYPE = 'Buy'  THEN TXN.TXN_AMOUNT
               WHEN TXN.TXN_TYPE = 'Sell' THEN -1 * TXN.TXN_AMOUNT END)
                                                                      AS TOTAL_INVESTED_AMOUNT
+    ,SUM(CASE WHEN TXN.TXN_TYPE = 'Buy'  THEN TXN.AMC_AMOUNT
+              WHEN TXN.TXN_TYPE = 'Sell' THEN -1 * TXN.AMC_AMOUNT END)
+                                                                     AS TOTAL_AMC_AMOUNT
+    ,SUM(TXN.STAMP_FEES_AMOUNT)                                      AS TOTAL_STAMP_FEES_AMOUNT
     ,MAX(TXN.TXN_ID)                                                 AS LAST_TXN_ID
     ,(SELECT DISTINCT PROCESSING_DATE 
     FROM {env}T_UTIL.PROCESSING_DATE WHERE PROC_TYP_CD = 'MF_PROC')  AS PROCESSING_DATE

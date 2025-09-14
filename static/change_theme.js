@@ -25,7 +25,6 @@ change_theme_button.addEventListener('change', () => {
     document.documentElement.classList = ""
   }
 
-  console.log(document.documentElement.classList)
   create_notification(`Changed theme to ${change_theme_button.value}`, 'success')
   change_title_color_in_chart()
   localStorage.setItem('theme', theme_value);

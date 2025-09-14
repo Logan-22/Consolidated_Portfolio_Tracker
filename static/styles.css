@@ -19,6 +19,10 @@
   --border-radius: 12px;
   --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   --black: #111;
+  --info: #4682b4;
+  --info-border: #b6d4fe;
+  --updated: #88B04B;
+  --immutable: #A0A0A0;
 }
 
 body.Dark_Theme,
@@ -739,11 +743,45 @@ canvas {
 
 /* Footer */
 
-.footer{
+.footer {
   background: var(--half-accent);
   padding: 0.1rem;
   text-align: center;
   border-top: 1px solid var(--accent);
   font-size: 0.9rem;
   margin-top: 1rem;
+}
+
+/* Information Banner */
+
+.info-banner {
+  background-color: var(--info);
+  border: 1px solid var(--info-border);
+  padding:3px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-content {
+  display: flex;
+  align-items: center;
+}
+
+.info-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.info-text {
+  font-weight: 500;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }

@@ -7,6 +7,7 @@ db.md
 *.txt
 # DB
 *.db
+*.sql
 databases/
 files/
 .env

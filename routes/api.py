@@ -105,7 +105,8 @@ create_holiday_calendar_table
 from utils.sql_utils.tables.p1t_util import\
 create_utility_schema,\
 create_processing_date_table,\
-create_processing_type_table
+create_processing_type_table,\
+create_user_processing_date_table
 
 from utils.sql_utils.tables.p1t_auth import\
 create_authorization_schema,\
@@ -814,6 +815,7 @@ def create_utlity_tables():
         create_utility_schema(utility_schema)
         create_processing_date_table(utility_schema)
         create_processing_type_table(utility_schema)
+        create_user_processing_date_table(utility_schema)
         return jsonify({'message': f'Successfully Created {utility_schema} Utility Schema and Utility Tables', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
@@ -858,7 +860,7 @@ def create_tier0_metrics_tables():
 @api.route('/api/create_txn_tables/', methods = ['GET'])
 def create_txn_tables():
     try:
-        txn_schema = request.args.get("txn_schema") or f"{env}T_USER_INVS"
+        txn_schema = request.args.get("txn_schema") or f"{env}T_USR_TXN"
         create_user_transaction_schema(txn_schema)
         create_mf_transaction_table(txn_schema)
         return jsonify({'message': f'Successfully Created {txn_schema} User Transaction Schema and Tables', 'status': 'Success'})

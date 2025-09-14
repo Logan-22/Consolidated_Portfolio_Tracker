@@ -62,6 +62,18 @@ PROCESSING_DATE;
     """)
     return processing_date_data
 
+def get_prev_proc_date_from_holiday_calendar_table(processing_date):
+    env = current_app.config['ENVIRONMENT']
+    prev_processing_date_data = fetch_queries_as_dictionaries(f"""
+SELECT DISTINCT
+    PREVIOUS_PROCESSING_DATE
+FROM
+    {env}T_META.HOLIDAY_CALENDAR
+WHERE
+    PROCESSING_DATE = '{processing_date}';
+    """, 'return_none', fetch = 'One')
+    return prev_processing_date_data['PREVIOUS_PROCESSING_DATE']
+
 def get_max_value_date_for_alt_symbol(process_flag = None, consider_for_returns = None, portfolio_type = None):
     process_flag_filter         = f"AND MS.PROCESS_FLAG         = '{process_flag}'"         if process_flag         else ""
     consider_for_returns_filter = f"AND MS.CONSIDER_FOR_RETURNS = '{consider_for_returns}'" if consider_for_returns else ""
@@ -663,11 +675,11 @@ GROUP BY 1,2,3,4;
     """, 'return_none', fetch = 'One')
     return metadata_instruments_data
 
-def get_holding_data(instrument_id, user_id, value_date):
+def get_holding_data(instrument_id, user_id, processing_date):
     env = current_app.config['ENVIRONMENT']
     instrument_id_filter = f"AND DEP.INSTRUMENT_ID  = {instrument_id}"  if instrument_id else ""
     user_id_filter       = f"AND DEP.USER_ID = {user_id}" if user_id else ""
-    value_date_filter    = f"AND DEP.START_DATE = '{value_date}'" if value_date else ""
+    processing_date_filter    = f"AND DEP.PROCESSING_DATE = '{processing_date}'" if processing_date else ""
     holding_data = fetch_queries_as_dictionaries(f"""
 SELECT
     DEP.INSTRUMENT_ID
@@ -680,7 +692,7 @@ WHERE
     DEP.RECORD_DELETED_FLAG = 0
     {instrument_id_filter}
     {user_id_filter}
-    {value_date_filter}
+    {processing_date_filter}
 GROUP BY 1,2,3,4;
     """, 'return_none', fetch = 'One')
     return holding_data

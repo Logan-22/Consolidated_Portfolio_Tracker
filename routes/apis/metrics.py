@@ -2,12 +2,12 @@ from flask import Blueprint, request, jsonify
 import yfinance as yf
 from dateutil import parser
 from datetime import datetime, date
-from json import loads
 from utils.sql_utils.process.execute_process_group import execute_process_group_using_metadata
 from utils.sql_utils.query_db.get_or_process_in_db import\
 get_date_setup_from_holiday_calendar,\
 get_or_create_instrument_id,\
-get_metadata_instruments
+get_metadata_instruments,\
+get_instrument_price
 
 metrics_bp = Blueprint('metrics', __name__)
 
@@ -20,7 +20,7 @@ def upsert_price_table_for_alt_symbol():
         instrument_ids  = []
         price_payloads  = []
         if exchange_symbol:
-            instrument_id = get_or_create_instrument_id(exchange_symbol, 'get')
+            instrument_id = get_or_create_instrument_id(exchange_symbol, process_type = 'get')
             instrument_ids.append(instrument_id)
         else:
             instrument_ids = get_or_create_instrument_id(exchange_symbol = None, process_type = 'get', process_flag = 1)
@@ -56,4 +56,18 @@ def upsert_price_table_for_alt_symbol():
         process_price_logs = execute_process_group_using_metadata('PG_DAILY_PRICE_LOAD', start_date, end_date, process_price_final_payload)
         return jsonify(process_price_logs)
     except Exception as e:
-        return jsonify({'message': repr(e), 'status': 'Failed'})
+        return jsonify({'message': repr(e), 'status': 'Failed'}), 500
+
+@metrics_bp.route('/instrument_prices/price/', methods = ['GET'])
+def close_price_lookup():
+    try:
+        exchange_symbol = request.args.get('exchange_symbol') or None
+        txn_date        = request.args.get('txn_date') or None
+        if exchange_symbol and txn_date:
+            instrument_id = get_or_create_instrument_id(exchange_symbol, process_type = 'get')
+            instrument_price = get_instrument_price(instrument_id, txn_date)
+            return jsonify({'message': 'Successfully fetched Instrument Price', 'status' : 'Success', 'price': instrument_price.get('PRICE')}), 200
+        else:
+            return jsonify({'message': 'Exchange Symbol and Transaction Date is mandatory for price lookup', 'status' : 'Failed'}), 400
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': 'Failed'}), 500

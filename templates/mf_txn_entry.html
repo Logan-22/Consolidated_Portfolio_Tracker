@@ -4,6 +4,13 @@
 
 {% block content %}
     <div>
+    <div id = "info-banner" class = "info-banner">
+        <div class = "info-content">
+            <span class = "info-icon">ℹ️</span>
+            <span class = "info-text">Save time and receive quicker response by adding multiple transactions before processing</span>
+        </div>
+        <button class = "close-btn" onclick = "document.getElementById('info-banner').style.display='none'">X</button>
+    </div>
     <form id = "mf_txn_form">
 
     <label for = "exchange_symbol">
@@ -26,26 +33,13 @@
     <b>Transaction Amount</b></label></br>
     <input type = "number" id = "txn_amount" name = "txn_amount" placeholder="Enter the Transaction Amount" autocomplete="off" step = "0.0001" required></br>
 
-    <label for = "txn_metrics">
-    <b>Transaction Metrics</b></label></br>
-    <select id = "txn_metrics" name = "txn_metrics" placeholder="Enter the Prefered Transaction Metric" autocomplete="off" required></br>
-        <option value = "Amount">Amount</option>
-        <option value = "Units">Units</option>
-    </select>
-
-    <div id = 'amount_div'>
     <label for = "amc_amount">
     <b>AMC Amount</b></label></br>
     <input type = "number" id = "amc_amount" name = "amc_amount" placeholder="Enter the Actual AMC Amount" autocomplete="off" step = "0.0001"></br>
-    </div>
 
-    <div id = 'unit_div'>
-        <label for = "units">
-        <b>Units</b></label></br>
-        <input type = "number" id = "units" name = "units" placeholder="Enter the Transacted units" autocomplete="off" step = "0.0001"></br>
-    </div>
-    <button type = "submit" class = "submit">Submit</button>
+    <button type = "submit" class = "submit">Add</button>
     </form>
+    <div id = 'mf_txn_form_to_table'></div>
     </div>
 {% endblock %}
 

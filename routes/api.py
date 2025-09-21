@@ -135,6 +135,10 @@ from utils.sql_utils.views.p1v_tier0_inp import\
 create_tier0_inp_view_schema,\
 create_tier0_depository_holding_view
 
+from utils.sql_utils.views.p1v_tier1_inp import\
+create_tier1_inp_view_schema,\
+create_tier1_mf_portfolio_view
+
 api = Blueprint('api', __name__)
 
 env = os.getenv('ENVIRONMENT')
@@ -874,6 +878,16 @@ def create_tier0_inp_view():
         create_tier0_inp_view_schema(tier0_inp_view_schema)
         create_tier0_depository_holding_view(tier0_inp_view_schema)
         return jsonify({'message': f'Successfully Created {tier0_inp_view_schema} Tier0 Input Schema and Views', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_tier1_inp_view/', methods = ['GET'])
+def create_tier1_inp_view():
+    try:
+        tier1_inp_view_schema = request.args.get("tier1_inp_view_schema") or f"{env}V_TIER1_INP"
+        create_tier1_inp_view_schema(tier1_inp_view_schema)
+        create_tier1_mf_portfolio_view(tier1_inp_view_schema)
+        return jsonify({'message': f'Successfully Created {tier1_inp_view_schema} Tier1 Input Schema and Views', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 

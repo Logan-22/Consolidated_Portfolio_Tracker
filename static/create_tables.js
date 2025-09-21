@@ -72,6 +72,18 @@ const create_tier0_input_view_data = await create_tier0_input_view_response.json
 create_notification(create_tier0_input_view_data.message, create_tier0_input_view_data.status)
 })
 
+document.getElementById("create_tier1_inp_view").addEventListener("submit", async (e) => {
+e.preventDefault()
+const tier1_inp_view_schema = document.getElementById("tier1_inp_view_schema").value
+const create_tier1_input_view_response = await fetch(`/api/create_tier1_inp_view?tier1_inp_view_schema=${tier1_inp_view_schema}`, {
+method: 'GET'
+})
+
+const create_tier1_input_view_data = await create_tier1_input_view_response.json();
+
+create_notification(create_tier1_input_view_data.message, create_tier1_input_view_data.status)
+})
+
 document.getElementById("migrate_data_to_aws").addEventListener("submit", async (e) => {
 e.preventDefault()
 const schema = document.getElementById("schema").value

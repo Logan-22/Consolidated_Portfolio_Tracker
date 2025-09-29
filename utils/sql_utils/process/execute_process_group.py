@@ -2,7 +2,7 @@ from flask import current_app
 from utils.sql_utils.process.execute_process import execute_process_using_metadata
 from utils.sql_utils.process.fetch_queries import fetch_queries_as_dictionaries
 
-def execute_process_group_using_metadata(process_group_name, start_date = None, end_date = None, payloads = None, process_frequency = None, user_id = None, instrument_id = None):
+def execute_process_group_using_metadata(process_group_name, start_date = None, end_date = None, payloads = None, payload_sent_from_source = None, process_frequency = None, user_id = None, instrument_id = None):
     env = current_app.config['ENVIRONMENT']
     process_group_metadata_rows = fetch_queries_as_dictionaries(f"""
 SELECT
@@ -26,7 +26,7 @@ WHERE
     
     try:
         for process_group_metadata in process_group_metadata_rows:
-            process_group_logs[process_group_metadata['OUT_PROCESS_NAME']] = execute_process_using_metadata(process_group_metadata['OUT_PROCESS_NAME'], start_date, end_date, payloads[process_group_metadata['OUT_PROCESS_NAME']], process_frequency, user_id, instrument_id)
+            process_group_logs[process_group_metadata['OUT_PROCESS_NAME']] = execute_process_using_metadata(process_group_metadata['OUT_PROCESS_NAME'], start_date, end_date, payloads[process_group_metadata['OUT_PROCESS_NAME']], payload_sent_from_source, process_frequency, user_id, instrument_id)
             if process_group_logs[process_group_metadata['OUT_PROCESS_NAME']]['status'] == "Failed":
                 process_group_status = "Failed"
                 process_group_message = f"Failures in Process Group {process_group_name} in {process_group_metadata['OUT_PROCESS_NAME']} with Error: {process_group_logs[process_group_metadata['OUT_PROCESS_NAME']]['message']}"

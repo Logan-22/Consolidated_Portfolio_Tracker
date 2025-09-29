@@ -122,8 +122,13 @@ GROUP BY 1,2;
     """)
     return max_value_date_for_each_portfolio
 
-def get_max_next_processing_date_from_table(table_name):
-    max_next_proc_date = fetch_queries_as_dictionaries(f"SELECT MAX(NEXT_PROCESSING_DATE) FROM {table_name};")
+def get_max_next_processing_date_from_table(databasename, table_name):
+    max_next_proc_date = fetch_queries_as_dictionaries(f"""
+SELECT
+    MAX(NEXT_PROCESSING_DATE) AS NEXT_PROCESSING_DATE
+FROM
+    {databasename}.{table_name};
+    """, 'return_none', fetch = 'One')
     return max_next_proc_date
 
 def get_holiday_dates(year = None):

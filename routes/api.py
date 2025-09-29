@@ -131,6 +131,18 @@ create_tier0_metrics_schema,\
 create_daily_instrument_prices_table,\
 create_mf_depository_holding_table
 
+from utils.sql_utils.tables.p1t_tier1_metrics import\
+create_tier1_metrics_schema,\
+create_tier1_mf_pf_table
+
+from utils.sql_utils.tables.p1t_tier2_metrics import\
+create_tier2_metrics_schema,\
+create_tier2_agg_mf_pf_table
+
+from utils.sql_utils.tables.p1t_tier3_metrics import\
+create_tier3_metrics_schema,\
+create_tier3_fin_mf_pf_table
+
 from utils.sql_utils.views.p1v_tier0_inp import\
 create_tier0_inp_view_schema,\
 create_tier0_depository_holding_view
@@ -138,6 +150,14 @@ create_tier0_depository_holding_view
 from utils.sql_utils.views.p1v_tier1_inp import\
 create_tier1_inp_view_schema,\
 create_tier1_mf_portfolio_view
+
+from utils.sql_utils.views.p1v_tier2_inp import\
+create_tier2_inp_view_schema,\
+create_tier2_agg_mf_portfolio_view
+
+from utils.sql_utils.views.p1v_tier3_inp import\
+create_tier3_inp_view_schema,\
+create_tier3_fin_mf_portfolio_view
 
 api = Blueprint('api', __name__)
 
@@ -861,6 +881,36 @@ def create_tier0_metrics_tables():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
+@api.route('/api/create_tier1_metrics_tables/', methods = ['GET'])
+def create_tier1_metrics_tables():
+    try:
+        tier1_metrics_schema = request.args.get("tier1_metrics_schema") or f"{env}T_TIER1_METRICS"
+        create_tier1_metrics_schema(tier1_metrics_schema)
+        create_tier1_mf_pf_table(tier1_metrics_schema)
+        return jsonify({'message': f'Successfully Created {tier1_metrics_schema} Tier1 Metrics Schema and Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_tier2_metrics_tables/', methods = ['GET'])
+def create_tier2_metrics_tables():
+    try:
+        tier2_metrics_schema = request.args.get("tier2_metrics_schema") or f"{env}T_TIER2_METRICS"
+        create_tier2_metrics_schema(tier2_metrics_schema)
+        create_tier2_agg_mf_pf_table(tier2_metrics_schema)
+        return jsonify({'message': f'Successfully Created {tier2_metrics_schema} Tier2 Metrics Schema and Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_tier3_metrics_tables/', methods = ['GET'])
+def create_tier3_metrics_tables():
+    try:
+        tier3_metrics_schema = request.args.get("tier3_metrics_schema") or f"{env}T_TIER3_METRICS"
+        create_tier3_metrics_schema(tier3_metrics_schema)
+        create_tier3_fin_mf_pf_table(tier3_metrics_schema)
+        return jsonify({'message': f'Successfully Created {tier3_metrics_schema} Tier3 Metrics Schema and Tables', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
 @api.route('/api/create_txn_tables/', methods = ['GET'])
 def create_txn_tables():
     try:
@@ -888,6 +938,26 @@ def create_tier1_inp_view():
         create_tier1_inp_view_schema(tier1_inp_view_schema)
         create_tier1_mf_portfolio_view(tier1_inp_view_schema)
         return jsonify({'message': f'Successfully Created {tier1_inp_view_schema} Tier1 Input Schema and Views', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_tier2_inp_view/', methods = ['GET'])
+def create_tier2_inp_view():
+    try:
+        tier2_inp_view_schema = request.args.get("tier2_inp_view_schema") or f"{env}V_TIER2_INP"
+        create_tier2_inp_view_schema(tier2_inp_view_schema)
+        create_tier2_agg_mf_portfolio_view(tier2_inp_view_schema)
+        return jsonify({'message': f'Successfully Created {tier2_inp_view_schema} Tier2 Input Schema and Views', 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@api.route('/api/create_tier3_inp_view/', methods = ['GET'])
+def create_tier3_inp_view():
+    try:
+        tier3_inp_view_schema = request.args.get("tier3_inp_view_schema") or f"{env}V_TIER3_INP"
+        create_tier3_inp_view_schema(tier3_inp_view_schema)
+        create_tier3_fin_mf_portfolio_view(tier3_inp_view_schema)
+        return jsonify({'message': f'Successfully Created {tier3_inp_view_schema} Tier3 Input Schema and Views', 'status': 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 

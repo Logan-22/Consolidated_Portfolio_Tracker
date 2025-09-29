@@ -14,13 +14,13 @@ let view_info_data = {}
 let schema_list = []
 
 async function initialize_process_entry_form(){
-const table_info_response = await fetch('/api/component_info?component_type=BASE%20TABLE',{
+const table_info_response = await fetch('/api/component_info/?component_type=BASE%20TABLE',{
 method: 'GET'
 })
 
 table_info_data = await table_info_response.json()
 
-const view_info_response = await fetch('/api/component_info?component_type=VIEW',{
+const view_info_response = await fetch('/api/component_info/?component_type=VIEW',{
 method: 'GET'
 })
 

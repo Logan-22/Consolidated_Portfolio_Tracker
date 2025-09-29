@@ -14,6 +14,7 @@ from datetime import datetime
 from os import getenv
 from secrets import token_urlsafe
 from extensions import oauth, limiter
+from utils.schedule_utils.scheduler import init_scheduler
 
 APP_SECRET           = getenv("FLASK_SECRET_KEY", token_urlsafe(32))
 SESSION_COOKIE_NAME  = getenv("FLASK_SESSION_COOKIE_NAME", "session")
@@ -68,4 +69,5 @@ def close_db_connection(exc):
         db_connection.close()
 
 if __name__ == '__main__':
+    init_scheduler(app)
     app.run(debug=True)

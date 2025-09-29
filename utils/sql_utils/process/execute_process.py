@@ -17,7 +17,7 @@ get_max_next_processing_date_from_table
 from utils.sql_utils.query_db.update_in_db import \
 update_table_with_payload
 
-def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None, user_id = None, instrument_id = None):
+def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, payload_sent_from_source = None, process_frequency = None, user_id = None, instrument_id = None):
     try:
         payloads          = []
         proc_typ_cds_list = []
@@ -26,7 +26,7 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
         # Insert Initial Log
         process_id = insert_intitial_log_record(process_name)
         if end_date:
-            end_date = datetime.strptime(end_date,'%Y-%m-%d')
+            end_date = datetime.strptime(end_date,'%Y-%m-%d').date()
             log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
 
         # Get process metadata and validate
@@ -59,7 +59,7 @@ WHERE
             update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
             return({'message': message, 'status': 'Failed'})
 
-        if payload_from_source:
+        if payload_from_source or payload_sent_from_source == 1:
             if type(payload_from_source).__name__ == 'dict':
                 payloads = [payload_from_source] # Skip to data load if the payload is already present
             elif type(payload_from_source).__name__ == 'list':
@@ -87,8 +87,8 @@ WHERE
                         start_date = first_swing_trade_data['FIRST_TRADE_DATE']
             elif process_frequency == 'On Start':
                 if not start_date:
-                    max_next_proc_date_from_target_table = get_max_next_processing_date_from_table(process_metadata['TARGET_TABLE'])
-                    start_date = max_next_proc_date_from_target_table[0]['MAX(NEXT_PROCESSING_DATE)']
+                    max_next_proc_date_from_target_table = get_max_next_processing_date_from_table(process_metadata['TARGET_DATABASE'], process_metadata['TARGET_TABLE'])
+                    start_date = max_next_proc_date_from_target_table['NEXT_PROCESSING_DATE']
 
             # Prepare End Date
             if not end_date:
@@ -105,7 +105,7 @@ WHERE
                             min_value_date = portfolio['MAX_PRICE_DATE']
                 end_date = min_value_date
 
-            counter_date = datetime.strptime(start_date,'%Y-%m-%d').date()
+            counter_date = start_date
             log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
 
             if counter_date > end_date and process_frequency == 'On Start':

@@ -52,8 +52,8 @@ def create_mf_depository_holding_table(tier0_metrics_schema = f"{env}T_TIER0_MET
 CREATE TABLE IF NOT EXISTS {tier0_metrics_schema}.MF_DEPOSITORY_HOLDINGS
 (
     ID                       INT            AUTO_INCREMENT PRIMARY KEY,
-    INSTRUMENT_ID            INT,
-    USER_ID                  BIGINT,
+    INSTRUMENT_ID            INT            NOT NULL,
+    USER_ID                  BIGINT         NOT NULL,
     EXCHANGE_SYMBOL          VARCHAR(255),
     TOTAL_QUANTITY           INT,
     TOTAL_INVESTED_AMOUNT    DECIMAL(20, 4),

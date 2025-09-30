@@ -44,7 +44,7 @@ def scheduled_refresh(app):
                 'PR_DAILY_INSTRUMENTS_PRICE_LOAD' : price_payloads
             }
 
-            task_id = submit_threaded_task(execute_process_group_using_metadata, 'PG_SCHEDULED_REFRESH', start_date = None, end_date = end_date_for_instrument, payloads = scheduled_refresh_final_payload, payload_sent_from_source = 1, process_frequency = 'On Start')
+            task_id = submit_threaded_task(execute_process_group_using_metadata, 'PG_SCHEDULED_REFRESH', start_date = None, end_date = end_date_for_instrument, payloads = scheduled_refresh_final_payload, process_frequency = 'On Start')
             print(f'Scheduled Refresh has started. Background process started with Task ID: {task_id}')
     except Exception as e:
         print(repr(e))

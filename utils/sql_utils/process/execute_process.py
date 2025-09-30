@@ -17,7 +17,7 @@ get_max_next_processing_date_from_table
 from utils.sql_utils.query_db.update_in_db import \
 update_table_with_payload
 
-def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, payload_sent_from_source = None, process_frequency = None, user_id = None, instrument_id = None):
+def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None, user_id = None, instrument_id = None):
     try:
         payloads          = []
         proc_typ_cds_list = []
@@ -59,7 +59,7 @@ WHERE
             update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
             return({'message': message, 'status': 'Failed'})
 
-        if payload_from_source or payload_sent_from_source == 1:
+        if payload_from_source is not None:
             if type(payload_from_source).__name__ == 'dict':
                 payloads = [payload_from_source] # Skip to data load if the payload is already present
             elif type(payload_from_source).__name__ == 'list':

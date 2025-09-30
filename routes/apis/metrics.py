@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from json import loads
 import yfinance as yf
 from dateutil import parser
 from datetime import datetime, date
@@ -7,7 +8,8 @@ from utils.sql_utils.query_db.get_or_process_in_db import\
 get_date_setup_from_holiday_calendar,\
 get_or_create_instrument_id,\
 get_metadata_instruments,\
-get_instrument_price
+get_instrument_price,\
+get_missing_prices_from_price_table
 
 metrics_bp = Blueprint('metrics', __name__)
 
@@ -71,3 +73,35 @@ def close_price_lookup():
             return jsonify({'message': 'Exchange Symbol and Transaction Date is mandatory for price lookup', 'status' : 'Failed'}), 400
     except Exception as e:
         return jsonify({'message': repr(e), 'status': 'Failed'}), 500
+
+@metrics_bp.route('/missing_prices/', methods = ['GET'])
+def get_missing_prices():
+    try:
+        missing_price_data = get_missing_prices_from_price_table()
+        return jsonify({'missing_price_data': missing_price_data, 'status': 'Success'})
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})
+
+@metrics_bp.route('/missing_prices/', methods = ['POST'])
+def insert_missing_prices():
+    try:
+        missing_price_payloads = loads(request.form.get('missing_price_payload'))
+        filtered_payloads = []
+        for missing_price_payload in missing_price_payloads:
+            if missing_price_payload['PRICE']:
+                value_date = datetime.strptime(missing_price_payload['VALUE_DATE'],'%Y-%m-%d')
+                value_date = value_date.strftime('%Y-%m-%d')
+
+                holiday_calendar_data                             = get_date_setup_from_holiday_calendar(value_date)
+                missing_price_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
+                missing_price_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
+                missing_price_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
+                filtered_payloads.append(missing_price_payload)
+
+        process_price_final_payload = {
+            'PR_DAILY_INSTRUMENTS_PRICE_LOAD' : filtered_payloads
+        }
+        process_price_logs = execute_process_group_using_metadata('PG_DAILY_PRICE_LOAD', start_date = None, end_date = None, payloads = process_price_final_payload)
+        return jsonify(process_price_logs)
+    except Exception as e:
+        return jsonify({'message': repr(e), 'status': "Failed"})

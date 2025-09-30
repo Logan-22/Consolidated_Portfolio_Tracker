@@ -579,34 +579,37 @@ ORDER BY ORDINAL_POSITION;
     return schema_info_dict
 
 def get_missing_prices_from_price_table():
-    missing_prices_data = fetch_queries_as_dictionaries("""
+    env = current_app.config['ENVIRONMENT']
+    price_start_date = current_app.config['PRICE_START_DATE']
+    missing_prices_data = fetch_queries_as_dictionaries(f"""
 SELECT
-    META.ALT_SYMBOL
-    ,HC.PROCESSING_DATE AS VALUE_DATE
+    META.INSTRUMENT_ID
+    ,META.EXCHANGE_SYMBOL
+    ,DATE_FORMAT(HC.PROCESSING_DATE, '%Y-%m-%d') AS VALUE_DATE
     ,PR.PRICE
     ,META.PORTFOLIO_TYPE
 FROM
-    METADATA_STORE META
+    {env}T_META.METADATA_INSTRUMENTS META
 LEFT OUTER JOIN
-    HOLIDAY_CALENDAR HC
+    {env}T_META.HOLIDAY_CALENDAR HC
 ON
-    HC.PROCESSING_DATE    >= META.LAUNCHED_ON
-    AND HC.PROCESSING_DATE    >= STRFTIME('%Y-01-01')
+    HC.PROCESSING_DATE         >= META.LAUNCHED_ON
+    AND HC.PROCESSING_DATE     >= '{price_start_date}'
     AND HC.RECORD_DELETED_FLAG = 0
 LEFT OUTER JOIN
-    PRICE_TABLE PR
+    {env}T_TIER0_METRICS.DAILY_INSTRUMENT_PRICES PR
 ON
-    PR.ALT_SYMBOL              = META.ALT_SYMBOL
+    PR.INSTRUMENT_ID           = META.INSTRUMENT_ID
     AND PR.VALUE_DATE          = HC.PROCESSING_DATE
     AND PR.RECORD_DELETED_FLAG = 0
 WHERE
     PR.PRICE IS NULL
-    AND HC.PROCESSING_DATE NOT IN (SELECT DISTINCT WORKING_DATE FROM WORKING_DATES)
+    AND HC.PROCESSING_DATE NOT IN (SELECT DISTINCT WORKING_DATE FROM {env}T_META.WORKING_DATES)
     AND ((META.PORTFOLIO_TYPE = 'Mutual Fund' AND HC.PROCESSING_DATE < CURRENT_DATE)
     OR (META.PORTFOLIO_TYPE = 'Stock' AND HC.PROCESSING_DATE <= CURRENT_DATE))
 GROUP BY 1,2,3,4
-ORDER BY 2;
-    """)
+ORDER BY 3;
+    """, 'return_none', fetch = 'All')
     return missing_prices_data
 
 def get_from_sqlite_component(component_name):

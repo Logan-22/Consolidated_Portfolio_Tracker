@@ -785,35 +785,6 @@ def get_component_info():
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"})
 
-@api.route('/api/missing_prices/', methods = ['GET'])
-def get_missing_prices():
-    try:
-        missing_price_data = get_missing_prices_from_price_table()
-        return jsonify({'missing_price_data': missing_price_data, 'status': 'Success'})
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
-
-@api.route('/api/missing_prices/', methods = ['POST'])
-def insert_missing_prices():
-    try:
-        missing_price_payloads = loads(request.form.get('missing_price_payload'))
-        filtered_payloads = []
-        for missing_price_payload in missing_price_payloads:
-            if missing_price_payload['PRICE']:
-                value_date = datetime.strptime(missing_price_payload['VALUE_DATE'],'%Y-%m-%d')
-                value_date = value_date.strftime('%Y-%m-%d')
-
-                holiday_calendar_data                             = get_date_setup_from_holiday_calendar(value_date)
-                missing_price_payload['PROCESSING_DATE']          = holiday_calendar_data['PROCESSING_DATE']
-                missing_price_payload['NEXT_PROCESSING_DATE']     = holiday_calendar_data['NEXT_PROCESSING_DATE']
-                missing_price_payload['PREVIOUS_PROCESSING_DATE'] = holiday_calendar_data['PREVIOUS_PROCESSING_DATE']
-                filtered_payloads.append(missing_price_payload)
-
-        process_price_logs = execute_process_group_using_metadata('PRICE_DAILY_PROCESS_GROUP', None, None, filtered_payloads, "true")
-        return jsonify(process_price_logs)
-    except Exception as e:
-        return jsonify({'message': repr(e), 'status': "Failed"})
-
 @api.route('/api/create_metadata_tables/', methods = ['GET'])
 def create_metadata_tables():
     try:

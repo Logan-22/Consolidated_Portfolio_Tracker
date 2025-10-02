@@ -17,7 +17,7 @@ get_max_next_processing_date_from_table
 from utils.sql_utils.query_db.update_in_db import \
 update_table_with_payload
 
-def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None, user_id = None, instrument_id = None):
+def execute_process_using_metadata(process_name, start_date = None, end_date = None, payload_from_source = None, process_frequency = None, user_id = None, instrument_ids = None):
     try:
         payloads          = []
         proc_typ_cds_list = []
@@ -28,6 +28,8 @@ def execute_process_using_metadata(process_name, start_date = None, end_date = N
         if end_date:
             end_date = datetime.strptime(end_date,'%Y-%m-%d').date()
             log_end_date = datetime.strftime(end_date,'%Y-%m-%d')
+        if start_date:
+            start_date = datetime.strptime(start_date,'%Y-%m-%d').date()
 
         # Get process metadata and validate
         process_metadata = fetch_queries_as_dictionaries(f"""
@@ -140,7 +142,7 @@ WHERE
 
                     # Input View Payload
                     user_id_filter = f"AND INP.USER_ID = {user_id}" if user_id and process_metadata['USER_LEVEL_PROCESS'] == 1 else ""
-                    instrument_id_filter = f"AND INP.INSTRUMENT_ID = {instrument_id}" if instrument_id and process_metadata['INSTRUMENT_LEVEL_PROCESS'] == 1 else ""
+                    instrument_id_filter = f"AND INP.INSTRUMENT_ID IN ({instrument_ids})" if instrument_ids and process_metadata['INSTRUMENT_LEVEL_PROCESS'] == 1 else ""
                     input_view_rows = fetch_queries_as_dictionaries(f"SELECT INP.* FROM {process_metadata['INPUT_DATABASE']}.{process_metadata['INPUT_VIEW']} INP WHERE 1 = 1 {user_id_filter} {instrument_id_filter};")
                     for row in input_view_rows:
                         payloads.append(row)

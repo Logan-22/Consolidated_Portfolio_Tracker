@@ -22,10 +22,13 @@ def mf_transaction_entry():
             user_id = g.user_id
         else:
             return jsonify({'message': 'Transaction Declined: Invalid User Request', 'status' : 'Failed'}), 403
+        mf_txn_payloads_instrument_id_list = []
         min_txn_date = datetime.strptime('9998-12-31','%Y-%m-%d')
         for payload in mf_txn_payloads:
             payload['USER_ID'] = user_id
             payload['INSTRUMENT_ID'] = get_or_create_instrument_id(payload['EXCHANGE_SYMBOL'], 'get')
+            
+            mf_txn_payloads_instrument_id_list.append(payload['INSTRUMENT_ID'])
             payload['UNITS'] = round(Decimal(payload['AMC_AMOUNT']) / Decimal(payload['NAV_DURING_TRANSACTION']), 4)
 
             payload['STAMP_FEES_AMOUNT'] = abs(round(Decimal(payload['TXN_AMOUNT']) - Decimal(payload['AMC_AMOUNT']), 4))
@@ -44,15 +47,15 @@ def mf_transaction_entry():
                 min_txn_date = datetime.strptime(payload['TXN_DATE'],'%Y-%m-%d')
         start_date = get_prev_proc_date_from_holiday_calendar_table(datetime.strftime(min_txn_date, '%Y-%m-%d'))
         start_date = datetime.strftime(start_date, '%Y-%m-%d')
-
+        mf_txn_payloads_instrument_ids = ",".join(str(instrument) for instrument in sorted(set(mf_txn_payloads_instrument_id_list)))
         mf_txn_final_payload = {
             'PR_MF_TRASACTION_LOAD'        : mf_txn_payloads
-            ,'PR_MF_DEP_HOLD_LOAD'         : None
+            ,'PR_H0_MF_DEP_HOLD_LOAD'      : None
             ,'PR_H1_MF_PORTFOLIO_LOAD'     : None
             ,'PR_H2_AGG_MF_PORTFOLIO_LOAD' : None
             ,'PR_H3_FIN_MF_PORTFOLIO_LOAD' : None
         }
-        task_id = submit_threaded_task(execute_process_group_using_metadata, 'PG_MF_TRANSACTION_LOAD', start_date = start_date, payloads = mf_txn_final_payload, process_frequency = 'Ad hoc', user_id = user_id)
+        task_id = submit_threaded_task(execute_process_group_using_metadata, 'PG_MF_TRANSACTION_LOAD', start_date = start_date, payloads = mf_txn_final_payload, process_frequency = 'Ad hoc', user_id = user_id, instrument_ids = mf_txn_payloads_instrument_ids)
         return jsonify({'message': f'Mutual Fund transaction entry has been successfully added. Background process started with Task ID: {task_id}', 'status' : 'Success'})
     except Exception as e:
         return jsonify({'message': repr(e), 'status': "Failed"}), 500

@@ -22,13 +22,6 @@ while(trade_types.length > 0){
 trade_types.pop() // Remove existing entries from previous pdf
 }
 
-const trade_table = document.getElementById('trade_table')
-const fee_table   = document.getElementById('fee_table')
-
-trade_table.innerHTML   = ""
-fee_table.innerHTML     = ""
-update_button.classList = "hidden"
-
 const stock_pdf      = document.getElementById('stock_pdf')
 const stock_pdf_file = stock_pdf.files[0]
 const file_password  = document.getElementById('file_password').value;
@@ -38,141 +31,54 @@ const formData = new FormData()
 formData.append('stock_pdf_file',stock_pdf_file)
 formData.append('file_password',file_password)
 
-const pdf_post_response = await fetch(`/api/stock_pdf/`, {
+const pdf_post_response = await fetch(`/api/file_process/stock_pdf/`, {
 method: 'POST',
 body: formData
 })
 
 const pdf_post_data = await pdf_post_response.json();
-api_response = pdf_post_data
-global_data = pdf_post_data
 
 if(pdf_post_data.status === "Success"){
-    create_notification(pdf_post_data.message, pdf_post_data.status)
-    trade_table.innerHTML = `
-    <tr>
-    <th class="color-accent">Stock Name</th>
-    <th class="color-accent">ISIN</th>
-    <th class="color-accent">Order Number</th>
-    <th class="color-accent">Order Time</th>
-    <th class="color-accent">Trade Number</th>
-    <th class="color-accent">Trade Time</th>
-    <th class="color-accent">Buy Or Sell</th>
-    <th class="color-accent">Stock Quantity</th>
-    <th class="color-accent">Brokerage Per Trade</th>
-    <th class="color-accent">Net Trade Price</th>
-    <th class="color-accent">Net Total</th>
-    <th class="color-accent">Trade Set</th>
-    <th class="color-accent">Trade Position</th>
-    <th class="color-accent">Trade Entry Date</th>
-    <th class="color-accent">Trade Entry Time</th>
-    <th class="color-accent">Trade Exit Date</th>
-    <th class="color-accent">Trade Exit Time</th>
-    <th class="color-accent">Trade Type</th>
-    <th class="color-accent">Leverage</th>
-    </tr>`
-
-    pdf_post_data.data.forEach(element => {
-    if(element.trade_exit_date == 'null'){
-      element.trade_exit_date = ""
-      element.trade_exit_time = ""
-    }
-
-    if (! trade_types.includes(element.trade_type)){
-      trade_types.push(element.trade_type)
-    }
-    
-    trade_table.innerHTML += `
-    <tr id = ${String(element.order_number)}^${String(element.trade_number)}>
-      <td contenteditable='true'>${element.stock_symbol}</td>
-      <td contenteditable='true'>${element.stock_isin}</td>
-      <td contenteditable='true'>${element.order_number}</td>
-      <td contenteditable='true'>${element.order_time}</td>
-      <td contenteditable='true'>${element.trade_number}</td>
-      <td contenteditable='true'>${element.trade_time}</td>
-      <td contenteditable='true'>${element.buy_or_sell}</td>
-      <td contenteditable='true'>${element.stock_quantity}</td>
-      <td contenteditable='true'>${element.brokerage_per_trade}</td>
-      <td contenteditable='true'>${element.net_trade_price_per_unit}</td>
-      <td contenteditable='true'>${element.net_total_before_levies}</td>
-      <td contenteditable='true'>${element.trade_set}</td>
-      <td contenteditable='true'>${element.trade_position}</td>
-      <td contenteditable='true'>${element.trade_entry_date}</td>
-      <td contenteditable='true'>${element.trade_entry_time}</td>
-      <td contenteditable='true'>${element.trade_exit_date}</td>
-      <td contenteditable='true'>${element.trade_exit_time}</td>
-      <td contenteditable='true'>${element.trade_type}</td>
-      <td contenteditable='true'>${element.leverage}</td>
-    </tr>`
-
+const custom_fields = [
+  {
+    name: 'stock_symbol',
+    populate: async () => await pdf_post_data.stock_symbol
+  },
+  {
+    name: 'stock_symbol',
+    populate: async () => await pdf_post_data.stock_symbol
+  },
+  {
+    name: 'stock_symbol',
+    populate: async () => await pdf_post_data.stock_symbol
+  },
+  {
+    name: 'stock_symbol',
+    populate: async () => await pdf_post_data.stock_symbol
+  },
+  {
+    name: 'stock_symbol',
+    populate: async () => await pdf_post_data.stock_symbol
+  },
+  {
+    name: 'stock_symbol',
+    populate: async () => await pdf_post_data.stock_symbol
+  },
+  {
+    name: 'stock_symbol',
+    populate: async () => await pdf_post_data.stock_symbol
+  },
+]
+const column_types = {
+  exchange_symbol: { type: 'string' }
+  , txn_date: { type: 'date' }
+  , txn_type: { type: 'string', allowed: ['Buy', 'Sell'] }
+  , txn_amount: { type: 'number_gt_0' }
+  , amc_amount: { type: 'number_gt_0' }
+  , nav_during_transaction: { type: 'number_gt_0' }
+  , units: { type: 'number_gt_0' }
 }
-)
-
-let intraday_trading_present_class = ""
-let swing_trading_present_class    = ""
-
-if (trade_types.includes("Intraday Trading") && trade_types.includes("Swing Trading")){
-  intraday_trading_present_class = ""
-  swing_trading_present_class = ""
-} else 
-if (trade_types.includes("Intraday Trading") && ! trade_types.includes("Swing Trading")){
-  intraday_trading_present_class = ""
-  swing_trading_present_class = "hidden"
-} else 
-if (! trade_types.includes("Intraday Trading") && trade_types.includes("Swing Trading")){
-  intraday_trading_present_class = "hidden"
-  swing_trading_present_class = ""
-} 
-
-fee_table.innerHTML = `
-    <tr id = "fee_header">
-    <th class="color-accent">Fee Type</th>
-        <td class = '${intraday_trading_present_class}'>Intraday Trading Fees</td>
-        <td class = '${swing_trading_present_class}'>Swing Trading Fees</td>
-    </tr>
-    <tr id = "net_obligation">
-    <th class="color-accent">Net Obligation</th>
-        <td class = '${intraday_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.net_obligation}</td>
-        <td class = '${swing_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.net_obligation}</td>
-    </tr>
-    <tr id = "brokerage">
-    <th class="color-accent">Brokerage</th>
-        <td class = '${intraday_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.brokerage}</td>
-        <td class = '${swing_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.brokerage}</td>
-    </tr>
-    <tr id = "exc_trans_charges">
-    <th class="color-accent">Exchange Transaction Charges</th>
-        <td class = '${intraday_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.exc_trans_charges}</td>
-        <td class = '${swing_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.exc_trans_charges}</td>
-    </tr>
-    <tr id = "igst">
-    <th class="color-accent">IGST</th>
-        <td class = '${intraday_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.igst}</td>
-        <td class = '${swing_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.igst}</td>
-    </tr>
-    <tr id = "sec_trans_tax">
-    <th class="color-accent">Securities Transaction Tax</th>
-        <td class = '${intraday_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.sec_trans_tax}</td>
-        <td class = '${swing_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.sec_trans_tax}</td>
-    </tr>
-    <tr id = "sebi_turn_fees">
-    <th class="color-accent">SEBI Turnover Fees</th>
-        <td class = '${intraday_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.sebi_turn_fees}</td>
-        <td class = '${swing_trading_present_class}' contenteditable='true'>${pdf_post_data.fees.sebi_turn_fees}</td>
-    </tr>
-    <tr id = "auto_square_off_charges_row">
-    <th class="color-accent">Auto Square Off Charges(If Any)</th>
-        <td id = "intraday_auto_square_off_charges" class = '${intraday_trading_present_class}' contenteditable='true'></td>
-        <td id = "swing_auto_square_off_charges" class = '${swing_trading_present_class}' contenteditable='true'></td>
-    </tr>
-    <tr id = "depository_charges_row">
-    <th class="color-accent">Depository Charges(If Any)</th>
-        <td id = "intraday_depository_charges" class = '${intraday_trading_present_class}' contenteditable='true'></td>
-        <td id = "swing_depository_charges" class = '${swing_trading_present_class}' contenteditable='true'></td>
-    </tr>`
-
-    update_button.classList = ""
-    add_fee_button.classList = ""
+const form_framework = new FormToTable('#mf_txn_form', 'mf_txn_payload', '#mf_txn_form_to_table', custom_fields, [], column_types, ['exchange_symbol'])
 
 }
 else{

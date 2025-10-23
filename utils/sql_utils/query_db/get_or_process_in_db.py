@@ -724,3 +724,31 @@ WHERE
 GROUP BY 1,2;
     """, 'return_none', fetch = 'One')
     return consolidated_quantity_data
+
+def get_user(user_id):
+    env = current_app.config['ENVIRONMENT']
+    user_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    US.USER_ID
+FROM
+    {env}T_AUTH.USERS US
+WHERE
+    US.RECORD_DELETED_FLAG = 0
+    AND US.USER_ID         = '{user_id}'
+GROUP BY 1;
+    """, 'return_none', fetch = 'One')
+    return user_data
+
+def get_instrument(instrument_id):
+    env = current_app.config['ENVIRONMENT']
+    instrument_data = fetch_queries_as_dictionaries(f"""
+SELECT
+    MI.INSTRUMENT_ID
+FROM
+    {env}T_META.METADATA_INSTRUMENTS MI
+WHERE
+    MI.RECORD_DELETED_FLAG = 0
+    AND MI.INSTRUMENT_ID   = {instrument_id}
+GROUP BY 1;
+    """, 'return_none', fetch = 'One')
+    return instrument_data

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Adhoc Processing{% endblock %}
+
+{% block content %}
+    <div>
+    <form id = "adhoc_process_form">
+
+    <b>Ad Hoc Processing</b></label></br></br>
+
+    <label for = "user_id">
+    <b>Enter the User ID</b></label></br>
+    <input type = "text" id = "user_id" name = "user_id" placeholder="Enter the User ID to be processed or leave blank if all users has to be processed" autocomplete="off"></br>
+
+    <label for = "instrument_id">
+    <b>Enter the Instrument ID</b></label></br>
+    <input type = "text" id = "instrument_id" name = "instrument_id" placeholder="Enter the Instrument ID to be processed or leave blank if all instruments has to be processed" autocomplete="off"></br>
+
+    <label for = "process_type">
+    <b>Process Type</b></label></br>
+    <select id = "process_type" name = "process_type" required>
+        <option>All</option>
+        <option>Mutual Fund Process</option>
+        <option>Stock Process</option>
+    </select></br>
+
+    <label for = "start_date">
+    <b>Start Date</b></label></br>
+    <input type = "date" id = "start_date" name = "start_date" autocomplete="off"></br>
+
+    <label for = "end_date">
+    <b>End Date</b></label></br>
+    <input type = "date" id = "end_date" name = "end_date" autocomplete="off"></br>
+
+    <button type = "submit" class = "submit">Process the Ad Hoc Request</button>
+    </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='adhoc_process.js') }}" defer></script>
+{% endblock %}

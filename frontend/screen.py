@@ -20,6 +20,11 @@ def process_price_form():
 def metadata_entry():
     return render_template('metadata_entry.html')
 
+@frontend.route('/adhoc_process/')
+@require_admin_access
+def adhoc_process():
+    return render_template('adhoc_process.html')
+
 @frontend.route('/mf_txn/')
 @require_login
 def mf_txn_entry():

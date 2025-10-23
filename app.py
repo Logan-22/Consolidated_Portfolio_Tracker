@@ -11,6 +11,7 @@ from routes.apis.metrics import metrics_bp
 from routes.apis.user_transactions import user_transactions_bp
 from routes.apis.file_process import file_process_bp
 from routes.apis.thread_status import thread_status_bp
+from routes.apis.process import process_bp
 from datetime import datetime
 from os import getenv
 from secrets import token_urlsafe
@@ -49,6 +50,7 @@ app.register_blueprint(metrics_bp, url_prefix = '/api/metrics')
 app.register_blueprint(user_transactions_bp, url_prefix = '/api/user_txn')
 app.register_blueprint(file_process_bp, url_prefix = '/api/file_process')
 app.register_blueprint(thread_status_bp, url_prefix = '/api/thread_status')
+app.register_blueprint(process_bp, url_prefix = '/api/process')
 
 app.config['ENVIRONMENT']              = getenv('ENVIRONMENT')
 app.config['SESSION_COOKIE_AGE']       = int(getenv("SESSION_COOKIE_AGE", 60 * 60 * 24))

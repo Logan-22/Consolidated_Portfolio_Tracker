@@ -70,6 +70,9 @@ WHERE
                 message = f'Expected dict/list payloads, but received {type(payload_from_source).__name__}'
                 update_log_record(process_name, process_id, 'Failed', message, None, None, None, None, None, None, None, None, None)
                 return({'message': message, 'status': 'Failed'})
+        elif not process_metadata['INPUT_DATABASE'] and not process_metadata['INPUT_VIEW']:
+            update_log_record(process_name, process_id, 'Skipped', 'No Payload is provided for the process and No Associated Input Views Found for the process', None, None, None, None, None, None, None, None, None)
+            return({'message': 'No Payload is provided for the process and No Associated Input Views Found for the process', 'status': 'Skipped'})
         else:
             # Get the Associated Proc Type Codes from Metadata
             if process_metadata['PROC_TYP_CD_LIST']:
@@ -79,13 +82,13 @@ WHERE
             if process_frequency == 'Ad hoc':
                 if not start_date:
                     if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'ALL':
-                        first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios()
+                        first_purchase_data_across_portfolio_type = get_first_purchase_date_from_all_portfolios(user_id)
                         start_date = first_purchase_data_across_portfolio_type['FIRST_PURCHASE_DATE']
                     if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'MUTUAL_FUND':
-                        first_mf_purchase_data = get_first_purchase_date_from_mf_txn_table()
+                        first_mf_purchase_data = get_first_purchase_date_from_mf_txn_table(user_id)
                         start_date = first_mf_purchase_data['MF_FIRST_PURCHASE_DATE']
                     if process_metadata['DEFAULT_START_DATE_TYPE_CD'] == 'STOCK':
-                        first_swing_trade_data = get_first_trade_date_from_trades_table()
+                        first_swing_trade_data = get_first_trade_date_from_trades_table(user_id)
                         start_date = first_swing_trade_data['FIRST_TRADE_DATE']
             elif process_frequency == 'On Start':
                 if not start_date:

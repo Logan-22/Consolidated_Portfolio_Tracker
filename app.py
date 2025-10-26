@@ -74,4 +74,4 @@ def close_db_connection(exc):
 
 if __name__ == '__main__':
     init_scheduler(app)
-    app.run(debug=True, use_reloader = False)
+    app.run(debug = True)

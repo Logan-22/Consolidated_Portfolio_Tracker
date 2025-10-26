@@ -183,7 +183,7 @@ WHERE
 
 def get_first_purchase_date_from_mf_txn_table(user_id = None):
     env = current_app.config['ENVIRONMENT']
-    user_id_filter = f"AND TXN.USER_ID = {user_id}" if user_id else None
+    user_id_filter = f"AND TXN.USER_ID = {user_id}" if user_id else ""
     first_mf_purchase_data = fetch_queries_as_dictionaries(f"""
 SELECT
     MIN(TXN.TXN_DATE) AS MF_FIRST_PURCHASE_DATE

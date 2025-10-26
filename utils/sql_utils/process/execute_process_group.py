@@ -26,7 +26,7 @@ WHERE
     
     try:
         for process_group_metadata in process_group_metadata_rows:
-            process_group_logs[process_group_metadata['OUT_PROCESS_NAME']] = execute_process_using_metadata(process_group_metadata['OUT_PROCESS_NAME'], start_date, end_date, payloads[process_group_metadata['OUT_PROCESS_NAME']], process_frequency, user_id, instrument_ids)
+            process_group_logs[process_group_metadata['OUT_PROCESS_NAME']] = execute_process_using_metadata(process_group_metadata['OUT_PROCESS_NAME'], start_date, end_date, payloads.get(process_group_metadata['OUT_PROCESS_NAME'], None), process_frequency, user_id, instrument_ids)
             if process_group_logs[process_group_metadata['OUT_PROCESS_NAME']]['status'] == "Failed":
                 process_group_status = "Failed"
                 process_group_message = f"Failures in Process Group {process_group_name} in {process_group_metadata['OUT_PROCESS_NAME']} with Error: {process_group_logs[process_group_metadata['OUT_PROCESS_NAME']]['message']}"

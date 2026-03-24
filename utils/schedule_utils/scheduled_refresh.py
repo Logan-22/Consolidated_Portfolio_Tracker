@@ -42,10 +42,6 @@ def scheduled_refresh(app):
                             print(f'Invalid Date from Yahoo Finance for {instrument}')
             scheduled_refresh_final_payload = {
                 'PR_DAILY_INSTRUMENTS_PRICE_LOAD' : price_payloads
-                ,'PR_H0_MF_DEP_HOLD_LOAD'         : None
-                ,'PR_H1_MF_PORTFOLIO_LOAD'        : None
-                ,'PR_H2_AGG_MF_PORTFOLIO_LOAD'    : None
-                ,'PR_H3_FIN_MF_PORTFOLIO_LOAD'    : None
             }
 
             task_id = submit_threaded_task(execute_process_group_using_metadata, 'PG_SCHEDULED_REFRESH', start_date = None, end_date = end_date_for_instrument, payloads = scheduled_refresh_final_payload, process_frequency = 'On Start')
